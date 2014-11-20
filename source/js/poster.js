@@ -1,6 +1,6 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
-var canvas = require('./canvas.js');
+var scrolling_canvas = require('./scrolling_canvas.js');
 var cursors = require('./cursors.js');
 var document_model = require('./document_model.js');
 var document_view = require('./document_view.js');
@@ -15,7 +15,7 @@ var Poster = function() {
     utils.PosterClass.call(this);
 
     // Create canvas
-    this.canvas = new canvas.Canvas();
+    this.canvas = new scrolling_canvas.ScrollingCanvas();
     this.el = this.canvas.el; // Convenience
 
     // Create model and controllers

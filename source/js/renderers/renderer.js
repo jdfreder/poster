@@ -1,14 +1,15 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
+var canvas = require('../canvas.js');
 var utils = require('../utils.js');
 
 /**
  * Renders to a canvas
- * @param {[type]} canvas
+ * @param {Canvas} default_canvas
  */
-var RendererBase = function(canvas) {
+var RendererBase = function(default_canvas) {
     utils.PosterClass.call(this);
-    this._canvas = canvas;
+    this._canvas = default_canvas ? default_canvas : new canvas.Canvas();
 };
 utils.inherit(RendererBase, utils.PosterClass);
 
