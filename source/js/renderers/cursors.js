@@ -5,13 +5,12 @@ var utils = require('../utils.js');
 var renderer = require('./renderer.js');
 
 /**
- * Render the text rows of a DocumentModel.
- * @param {Canvas} canvas instance
- * @param {DocumentModel} model instance
+ * Render document cursors
  */
-var CursorsRenderer = function(canvas, cursors, style, get_row_height, get_row_top, measure_partial_row) {
-    renderer.RendererBase.call(this, canvas);
+var CursorsRenderer = function(cursors, style, get_row_height, get_row_top, measure_partial_row, has_focus) {
+    renderer.RendererBase.call(this);
     this.style = style;
+    this._has_focus = has_focus;
     this._cursors = cursors;
     this._get_row_height = get_row_height;
     this._get_row_top = get_row_top;
@@ -21,6 +20,9 @@ var CursorsRenderer = function(canvas, cursors, style, get_row_height, get_row_t
 
     // Start the cursor rendering clock.
     this._render_clock();
+        
+    // Stretch the image for retina support.
+    this._canvas.scale(2,2);
 };
 utils.inherit(CursorsRenderer, renderer.RendererBase);
 
@@ -31,8 +33,10 @@ utils.inherit(CursorsRenderer, renderer.RendererBase);
  * @return {null}
  */
 CursorsRenderer.prototype.render = function() {
+    this._canvas.clear();
+
     // Only render if the canvas has focus.
-    if (this._canvas.focused) {
+    if (this._has_focus()) {
         var that = this;
         this._cursors.cursors.forEach(function(cursor) {
 
@@ -40,7 +44,7 @@ CursorsRenderer.prototype.render = function() {
             // beginning of the document.
             var row_index = cursor._start_row || 0;
             var char_index = cursor._start_char || 0;
-
+            
             // Draw the cursor.
             that._canvas.draw_rectangle(
                 char_index === 0 ? 0 : that._measure_partial_row(row_index, char_index), 
@@ -83,16 +87,20 @@ CursorsRenderer.prototype.render = function() {
  */
 CursorsRenderer.prototype._render_clock = function() {
     // If the canvas is focused, redraw.
-    if (this._canvas.focused) {
+    if (this._has_focus()) {
         this._was_focused = true;
-        this._canvas.redraw();
+        this.render();
+        // Tell parent layer this one has changed.
+        this.trigger('changed');
 
     // The canvas isn't focused.  If this is the first time
     // it hasn't been focused, render again without the 
     // cursors.
     } else if (this._was_focused) {
         this._was_focused = false;
-        this._canvas.redraw();
+        this.render();
+        // Tell parent layer this one has changed.
+        this.trigger('changed');
     }
 
     // 100 FPS

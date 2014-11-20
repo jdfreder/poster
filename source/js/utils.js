@@ -119,6 +119,7 @@ var resolve_callable = function(value) {
  * @return {function} proxied function.
  */
 var proxy = function(f, context) {
+    if (f===undefined) { throw new Error('f cannot be undefined'); }
     return function() { return f.apply(context, arguments); };
 };
 

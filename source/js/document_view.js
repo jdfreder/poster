@@ -18,23 +18,23 @@ var DocumentView = function(canvas, model, cursors_model, style) {
     this._model = model;
 
     // Create child renderers.
-    var row_renderer = new highlighted_row.HighlightedRowRenderer(canvas, model, style);
+    var row_renderer = new highlighted_row.HighlightedRowRenderer(model, canvas, style);
     var cursors_renderer = new cursors.CursorsRenderer(
-        canvas,
         cursors_model, 
         style, 
         utils.proxy(row_renderer.get_row_height, row_renderer), 
         utils.proxy(row_renderer.get_row_top, row_renderer), 
-        utils.proxy(row_renderer.measure_partial_row_width, row_renderer));
+        utils.proxy(row_renderer.measure_partial_row_width, row_renderer),
+        function() { return canvas.focused; });
 
     // Pass get_row_char into cursors.
     cursors_model.get_row_char = utils.proxy(row_renderer.get_row_char, row_renderer);
 
     // Call base constructor.
-    batch.BatchRenderer.call(this, canvas, [
+    batch.BatchRenderer.call(this, [
         row_renderer,
         cursors_renderer,
-    ]);
+    ], canvas);
 
     // Hookup render events.
     this._canvas.on('redraw', utils.proxy(this.render, this));

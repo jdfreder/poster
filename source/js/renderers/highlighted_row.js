@@ -5,15 +5,10 @@ var row = require('./row.js');
 
 /**
  * Render the text rows of a DocumentModel.
- * @param {Canvas} canvas instance
  * @param {DocumentModel} model instance
  */
-var HighlightedRowRenderer = function(canvas, model, style) {
-    row.RowRenderer.call(this, canvas, model);
-    
-    // Set some basic rendering properties.
-    this._base_options.text_baseline = 'alphabetic';
-
+var HighlightedRowRenderer = function(model, scrolling_canvas, style) {
+    row.RowRenderer.call(this, model, scrolling_canvas);
     this.style = style;
 };
 utils.inherit(HighlightedRowRenderer, row.RowRenderer);
@@ -27,49 +22,10 @@ HighlightedRowRenderer.prototype._render_row = function(index) {
     var groups = this._get_groups(index);
     var left = 0;
     for (var i=0; i<groups.length; i++) {
-        this._canvas.draw_text(left, this._row_tops[index] + this._row_heights[index], groups[i].text, groups[i].options);
+        this._canvas.draw_text(left, this.get_row_top(index), groups[i].text, groups[i].options);
         left += this._canvas.measure_text(groups[i].text, groups[i].options);
     }
 };
-
-/**
- * Measures the partial width of a text row.
- * @param  {integer} index
- * @param  {integer} length - number of characters
- * @return {float} width
- */
-HighlightedRowRenderer.prototype.measure_partial_row_width = function(index, length) {
-    var groups = this._get_groups(index);
-    var width = 0;
-    var characters = 0;
-    length = length || this._model._rows[index].length;
-    for (var i=0; i<groups.length; i++) {
-        var group = groups[i];
-        if (characters + group.text.length > length) {
-            width += this._canvas.measure_text(group.text.substring(0, length - characters), group.options);
-            break;
-        } else {
-            width += this._canvas.measure_text(group.text, group.options);
-            characters += group.text.length;
-        }
-    }
-    return width;
-};
-
-/**
- * Measures the height of a text row as if it were rendered.
- * @param  {integer} index
- * @return {float} height
- */
-HighlightedRowRenderer.prototype._measure_row_height = function(index) {
-    var groups = this._get_groups(index);
-    var height = 0;
-    for (var i=0; i<groups.length; i++) {
-        height = Math.max(height, groups[i].options.font_size + this._line_spacing);
-    }
-    return height;
-};
-
 
 /**
  * Get render groups for a row.
@@ -108,7 +64,6 @@ HighlightedRowRenderer.prototype._get_options = function(syntax) {
 
     if (syntax && this.style && this.style[syntax]) {
         render_options.color = this.style[syntax];
-        render_options.font_size = 14;
     }
     
     return render_options;
