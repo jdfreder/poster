@@ -106,9 +106,9 @@ ScrollingCanvas.prototype._init_properties = function() {
      * @return {float}
      */
     this.property('height', function() { 
-        return that._canvas.height; 
+        return that._canvas.height / 2; 
     }, function(value) {
-        that._canvas.setAttribute('height', value);
+        that._canvas.setAttribute('height', value * 2);
         that.el.setAttribute('style', 'width: ' + that.width + '; height: ' + value + ';');
 
         that.trigger('resize', {height: value});
@@ -120,9 +120,9 @@ ScrollingCanvas.prototype._init_properties = function() {
      * @return {float}
      */
     this.property('width', function() { 
-        return that._canvas.width; 
+        return that._canvas.width / 2; 
     }, function(value) {
-        that._canvas.setAttribute('width', value);
+        that._canvas.setAttribute('width', value * 2);
         that.el.setAttribute('style', 'width: ' + value + '; height: ' + that.height + ';');
 
         that.trigger('resize', {width: value});
