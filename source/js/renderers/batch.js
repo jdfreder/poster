@@ -20,6 +20,9 @@ var BatchRenderer = function(renderers, canvas) {
             that._copy_renderers();
         });
     });
+        
+    // Stretch the image for retina support.
+    this._canvas.scale(2,2);
 };
 utils.inherit(BatchRenderer, renderer.RendererBase);
 
