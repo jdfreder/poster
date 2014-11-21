@@ -20,9 +20,6 @@ var CursorsRenderer = function(cursors, style, get_row_height, get_row_top, meas
 
     // Start the cursor rendering clock.
     this._render_clock();
-        
-    // Stretch the image for retina support.
-    this._canvas.scale(2,2);
 };
 utils.inherit(CursorsRenderer, renderer.RendererBase);
 
@@ -58,24 +55,28 @@ CursorsRenderer.prototype.render = function() {
             );
 
             // Draw the selection box.
-            for (var i = cursor._start_row; i <= cursor._end_row; i++) {
+            if (cursor._end_row !== null && cursor._end_char !== null &&
+                cursor._end_row != row_index && cursor._end_char != char_index) {
+                
+                for (var i = row_index; i <= cursor._end_row; i++) {
 
-                var left = 0;
-                if (i == cursor._start_row && cursor._start_char > 0) {
-                    left = that._measure_partial_row(i, cursor._start_char);
-                }
-
-                that._canvas.draw_rectangle(
-                    left, 
-                    that._get_row_top(i), 
-                    i !== cursor._end_row ? that._measure_partial_row(i) - left : that._measure_partial_row(i, cursor._end_char) - left, 
-                    that._get_row_height(i), 
-                    {
-                        fill_color: 'skyblue',
-                        alpha: 0.5,
+                    var left = 0;
+                    if (i == row_index && char_index > 0) {
+                        left = that._measure_partial_row(i, char_index);
                     }
-                );
 
+                    that._canvas.draw_rectangle(
+                        left, 
+                        that._get_row_top(i), 
+                        i !== cursor._end_row ? that._measure_partial_row(i) - left : that._measure_partial_row(i, cursor._end_char) - left, 
+                        that._get_row_height(i), 
+                        {
+                            fill_color: 'skyblue',
+                            alpha: 0.5,
+                        }
+                    );
+
+                }
             }
         });
     }

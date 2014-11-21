@@ -22,9 +22,6 @@ var RowRenderer = function(model, scrolling_canvas) {
     this._model.on('tags_changed', utils.proxy(this._handle_value_changed, this));
     this._model.on('text_changed', utils.proxy(this._handle_value_changed, this));
     this._model.on('row_changed', utils.proxy(this._handle_row_changed, this)); // TODO: Implement my event.
-        
-    // Stretch the image for retina support.
-    this._canvas.scale(2,2);
 };
 utils.inherit(RowRenderer, renderer.RendererBase);
 

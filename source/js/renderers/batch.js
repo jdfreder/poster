@@ -20,9 +20,24 @@ var BatchRenderer = function(renderers, canvas) {
             that._copy_renderers();
         });
     });
-        
-    // Stretch the image for retina support.
-    this._canvas.scale(2,2);
+    
+    // Create properties.
+    this.property('width', function() {
+        return that._canvas.width;
+    }, function(value) {
+        that._canvas.width = value;
+        that._renderers.forEach(function(renderer) {
+            renderer.width = value;
+        });
+    });
+    this.property('height', function() {
+        return that._canvas.height;
+    }, function(value) {
+        that._canvas.height = value;
+        that._renderers.forEach(function(renderer) {
+            renderer.height = value;
+        });
+    });
 };
 utils.inherit(BatchRenderer, renderer.RendererBase);
 

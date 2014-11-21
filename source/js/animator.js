@@ -3,7 +3,7 @@
 var utils = require('./utils.js');
 
 /**
- * Input cursor.
+ * Animation helper.
  */
 var Animator = function(duration) {
     utils.PosterClass.call(this);

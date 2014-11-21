@@ -1,14 +1,15 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+var keymap = require('./events/map.js');
+var register = keymap.Map.register;
 
 var utils = require('./utils.js');
 
 /**
  * Input cursor.
  */
-var Cursor = function(model, input_dispatcher) {
+var Cursor = function(model) {
     utils.PosterClass.call(this);
     this._model = model;
-    this._input_dispatcher = input_dispatcher;
     this._click_row = null;
     this._click_char = null;
     this._anchor_row = null;
@@ -20,19 +21,28 @@ var Cursor = function(model, input_dispatcher) {
 
     // Bind events
     var that = this;
-    this._input_dispatcher.on('keypress', utils.proxy(this._handle_keypress, this));
-    this._input_dispatcher.on('delete', utils.proxy(this._handle_delete, this));
-    this._input_dispatcher.on('backspace', utils.proxy(this._handle_backspace, this));
-    this._input_dispatcher.on('left', function() { that._move_cursor(-1, 0); });
-    this._input_dispatcher.on('right', function() { that._move_cursor(1, 0); });
-    this._input_dispatcher.on('up', function() { that._move_cursor(0, -1); });
-    this._input_dispatcher.on('down', function() { that._move_cursor(0, 1); });
-    this._input_dispatcher.on('select_left', function() { that._move_cursor(-1, 0, true); });
-    this._input_dispatcher.on('select_right', function() { that._move_cursor(1, 0, true); });
-    this._input_dispatcher.on('select_up', function() { that._move_cursor(0, -1, true); });
-    this._input_dispatcher.on('select_down', function() { that._move_cursor(0, 1, true); });
+    register('cursor.keypress', utils.proxy(this.keypress, this), this);
+    register('cursor.newline', utils.proxy(this.newline, this), this);
+    register('cursor.delete_forward', utils.proxy(this.delete_forward, this), this);
+    register('cursor.delete_backward', utils.proxy(this.delete_backward, this), this);
+    register('cursor.left', function() { that.move_cursor(-1, 0); return true; }, this);
+    register('cursor.right', function() { that.move_cursor(1, 0); return true; }, this);
+    register('cursor.up', function() { that.move_cursor(0, -1); return true; }, this);
+    register('cursor.down', function() { that.move_cursor(0, 1); return true; }, this);
+    register('cursor.select_left', function() { that.move_cursor(-1, 0, true); return true; }, this);
+    register('cursor.select_right', function() { that.move_cursor(1, 0, true); return true; }, this);
+    register('cursor.select_up', function() { that.move_cursor(0, -1, true); return true; }, this);
+    register('cursor.select_down', function() { that.move_cursor(0, 1, true); return true; }, this);
 };
 utils.inherit(Cursor, utils.PosterClass);
+
+/**
+ * Remove the registered actions for this cursor.
+ * @return {null}
+ */
+Cursor.prototype.destroy = function() {
+    keymap.Map.unregister_by_tag(this);
+};
 
 /**
  * Set the cursor's start position.
@@ -76,21 +86,31 @@ Cursor.prototype.set_end = function(row_index, char_index) {
  * @param  {string} key - key that was pressed.
  * @return {null}
  */
-Cursor.prototype._handle_keypress = function(key) {
+Cursor.prototype.keypress = function(e) {
+    var char_code = e.which || e.keyCode;
+    var char_typed = String.fromCharCode(char_code);
     this._remove_blob();
-    this._model.add_text(this._start_row, this._start_char, key);
-    if (key == '\n') { 
-        this.set_start(this._start_row + 1, 0);
-    } else {
-        this.set_start(this._start_row, this._start_char + 1);
-    }
+    this._model.add_text(this._start_row, this._start_char, char_typed);
+    this.set_start(this._start_row, this._start_char + 1);
+    return true;
+};
+
+/**
+ * Create a newline where the cursor is.
+ * @return {null}
+ */
+Cursor.prototype.newline = function() {
+    this._remove_blob();
+    this._model.add_text(this._start_row, this._start_char, '\n');
+    this.set_start(this._start_row + 1, 0);
+    return true;
 };
 
 /**
  * Handles when delete is pressed.
  * @return {null}
  */
-Cursor.prototype._handle_delete = function() {
+Cursor.prototype.delete_forward = function() {
     if (!this._remove_blob()) {
         var moved = this._calculate_move_cursor(this._start_row, this._start_char, 0, 1);
         if (moved.moved) {
@@ -98,13 +118,14 @@ Cursor.prototype._handle_delete = function() {
             this.set_start(this._start_row, this._start_char);
         }
     }
+    return true;
 };
 
 /**
  * Handles when backspace is pressed.
  * @return {null}
  */
-Cursor.prototype._handle_backspace = function() {
+Cursor.prototype.delete_backward = function() {
     if (!this._remove_blob()) {
         var moved = this._calculate_move_cursor(this._start_row, this._start_char, 0, -1);
         if (moved.moved) {
@@ -112,6 +133,7 @@ Cursor.prototype._handle_backspace = function() {
             this.set_start(moved.row_index, moved.char_index);    
         }
     }
+    return true;
 };
 
 /**
@@ -120,7 +142,7 @@ Cursor.prototype._handle_backspace = function() {
  * @param  {integer} delta_y
  * @return {boolean} true if moved
  */
-Cursor.prototype._move_cursor = function(delta_x, delta_y, selecting) {
+Cursor.prototype.move_cursor = function(delta_x, delta_y, selecting) {
     var moved;
     moved = this._calculate_move_cursor(this._anchor_row, this._anchor_char, delta_y, delta_x);
     if (moved.moved) {

@@ -5,6 +5,7 @@ Base class with helpful utilities
 */
 var PosterClass = function() {
     this._events = {};
+    this._on_all = [];
 };
 
 /**
@@ -17,7 +18,8 @@ var PosterClass = function() {
 PosterClass.prototype.property = function(name, getter, setter) {
     Object.defineProperty(this, name, {
         get: getter,
-        set: setter
+        set: setter,
+        configurable: true
     });
 };
 
@@ -60,6 +62,37 @@ PosterClass.prototype.off = function(event, handler) {
 };
 
 /**
+ * Register a global event handler. 
+ * 
+ * A global event handler fires for any event that's
+ * triggered.
+ * @param  {string} handler - function that accepts one
+ *                            argument, the name of the
+ *                            event,
+ * @return {null}
+ */
+PosterClass.prototype.on_all = function(handler) {
+    var index = this._on_all.indexOf(handler);
+    if (index === -1) {
+        this._on_all.push(handler);
+    }
+};
+
+/**
+ * Unregister a global event handler.
+ * @param  {[type]} handler
+ * @return {boolean} true if a handler was removed
+ */
+PosterClass.prototype.off_all = function(handler) {
+    var index = this._on_all.indexOf(handler);
+    if (index != -1) {
+        this._on_all.splice(index, 1);
+        return true;
+    }
+    return false;
+};
+
+/**
  * Triggers the callbacks of an event to fire.
  * @param  {string} event
  * @return {array} array of return values
@@ -67,14 +100,21 @@ PosterClass.prototype.off = function(event, handler) {
 PosterClass.prototype.trigger = function(event) {
     event = event.trim().toLowerCase();
 
+    // Convert arguments to an array and call callbacks.
+    var args = Array.prototype.slice.call(arguments);
+    args.splice(0,1);
+
+    // Trigger global handlers first.
+    this._on_all.forEach(function(handler) {
+        handler.apply(this, [event].concat(args));
+    });
+
+    // Trigger individual handlers second.
     var events = this._events[event];
     if (events) {
-
-        // Convert arguments to an array and call callbacks.
-        var args = Array.prototype.slice.call(arguments);
         var returns = [];
         events.forEach(function(callback) {
-            returns.push(callback[0].apply(callback[1], args.splice(1)));
+            returns.push(callback[0].apply(callback[1], args));
         });
         return returns;
     }
@@ -140,6 +180,15 @@ var clear_array = function(array) {
 };
 
 /**
+ * Checks if a value is an array
+ * @param  {any} x
+ * @return {boolean} true if value is an array
+ */
+var is_array = function(x) {
+    return x instanceof Array;
+};
+
+/**
  * Find the closest value in a list
  * 
  * Interpolation search algorithm.  
@@ -198,5 +247,6 @@ exports.callable = callable;
 exports.resolve_callable = resolve_callable;
 exports.proxy = proxy;
 exports.clear_array = clear_array;
+exports.is_array = is_array;
 exports.find_closest = find_closest;
 exports.shallow_copy = shallow_copy;
