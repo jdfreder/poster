@@ -16,4 +16,3 @@ HTML Canvas based and syntax highlighted text editor.
 ## The ugly
 - There are still quite a few missing keyboard event handlers (Ctrl-A, Ctrl-Left, etc..)
 - I haven't actually implemented a real syntax highlighter, instead I've written an extremely simple test highlighter which highlights `es` wherever it can be found.  I think when I do write the syntax highlighter, I'll make it compatible with CodeMirror's or Ace's language syntax files.
-- input_dispatcher is a mess.  I'm going to rewrite it so it uses key/action mappings.  Some of the cursor code is messy too.
