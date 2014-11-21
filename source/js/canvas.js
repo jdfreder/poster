@@ -10,8 +10,8 @@ var Canvas = function() {
     this._init_properties();
 
     // Set default size.
-    this.width = 800;
-    this.height = 600;
+    this.width = 400;
+    this.height = 300;
 };
 utils.inherit(Canvas, utils.PosterClass);
 
@@ -25,6 +25,9 @@ Canvas.prototype._layout = function() {
     this._canvas = document.createElement('canvas');
     this._canvas.setAttribute('class', 'poster hidden-canvas');
     this.context = this._canvas.getContext('2d');
+        
+    // Stretch the image for retina support.
+    this.scale(2,2);
 };
 
 /**
@@ -39,9 +42,9 @@ Canvas.prototype._init_properties = function() {
      * @return {float}
      */
     this.property('height', function() { 
-        return that._canvas.height; 
+        return that._canvas.height / 2; 
     }, function(value) {
-        that._canvas.setAttribute('height', value);
+        that._canvas.setAttribute('height', value * 2);
     });
 
     /**
@@ -49,9 +52,9 @@ Canvas.prototype._init_properties = function() {
      * @return {float}
      */
     this.property('width', function() { 
-        return that._canvas.width; 
+        return that._canvas.width / 2; 
     }, function(value) {
-        that._canvas.setAttribute('width', value);
+        that._canvas.setAttribute('width', value * 2);
     });
 };
 
