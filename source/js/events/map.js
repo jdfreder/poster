@@ -278,12 +278,16 @@ Map.prototype._handle_event = function(name, e) {
             var action_callbacks = Map.registry[action];
             if (action_callbacks) {
                 if (utils.is_array(action_callbacks)) {
+                    var returns = [];
                     action_callbacks.forEach(function(action_callback) {
-                        if (action_callback.call(undefined, e)===true) {
-                            that._cancel_bubble(e);
-                            return true;
-                        }
+                        returns.append(action_callback.call(undefined, e)===true);
                     });
+
+                    // 
+                    if (returns.some(function(x) {return x;})) {
+                        that._cancel_bubble(e);
+                        return true;
+                    }
                 } else {
                     if (action_callbacks.call(undefined, e)===true) {
                         that._cancel_bubble(e);
