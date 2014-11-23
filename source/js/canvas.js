@@ -174,6 +174,34 @@ Canvas.prototype.draw_text = function(x, y, text, options) {
 };
 
 /**
+ * Get's a chunk of the canvas as a raw image.
+ * @param  {float} x
+ * @param  {float} y
+ * @param  {float} width
+ * @param  {float} height
+ * @return {image} canvas image data
+ */
+Canvas.prototype.get_raw_image = function(x, y, width, height) {
+    x = this._tx(x);
+    y = this._ty(y);
+    // Multiply by two for pixel doubling.
+    return this.context.getImageData(x*2, y*2, width*2, height*2);
+};
+
+/**
+ * Put's a raw image on the canvas somewhere.
+ * @param  {float} x
+ * @param  {float} y
+ * @return {image} canvas image data
+ */
+Canvas.prototype.put_raw_image = function(img, x, y) {
+    x = this._tx(x);
+    y = this._ty(y);
+    // Multiply by two for pixel doubling.
+    return this.context.putImageData(img, x*2, y*2);
+};
+
+/**
  * Measures the width of a text string.
  * @param  {string} text
  * @param  {dictionary} options, see _apply_options() for details

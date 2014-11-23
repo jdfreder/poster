@@ -19,6 +19,8 @@ utils.inherit(HighlightedRowRenderer, row.RowRenderer);
  * @return {null}
  */
 HighlightedRowRenderer.prototype._render_row = function(index) {
+    if (index < 0 || this._model._rows.length <= index) return;
+    
     var groups = this._get_groups(index);
     var left = 0;
     for (var i=0; i<groups.length; i++) {
@@ -34,6 +36,8 @@ HighlightedRowRenderer.prototype._render_row = function(index) {
  *                 the form {options, text}.
  */
 HighlightedRowRenderer.prototype._get_groups = function(index) {
+    if (index < 0 || this._model._rows.length <= index) return;
+
     var row_text = this._model._rows[index];
     var groups = [];
     var last_syntax = null;

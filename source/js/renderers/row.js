@@ -29,23 +29,59 @@ utils.inherit(RowRenderer, renderer.RendererBase);
  * Render to the canvas
  * Note: This method is called often, so it's important that it's
  * optimized for speed.
+ * @param {dictionary} (optional) scroll - How much the canvas was scrolled.  This
+ *                     is a dictionary of the form {x: float, y: float}
  * @return {null}
  */
-RowRenderer.prototype.render = function() {
-    this._canvas.clear();
+RowRenderer.prototype.render = function(scroll) {
+    var i;
 
     // Find the row closest to the scroll top.  If that row is below
-    // the scroll top, use the row above it.
-    var row_index = Math.floor(this._scrolling_canvas.scroll_top  / this.get_row_height());
+    // the scroll top, use the partially displayed row above it.
+    var new_top_row = Math.max(0, Math.floor(this._scrolling_canvas.scroll_top  / this.get_row_height()));
 
-    // Render till there are no rows left, or the top of the row is
-    // below the bottom of the visible area.
-    for (var i = row_index; 
-        i < Math.min(row_index + Math.ceil(this._scrolling_canvas.height / this.get_row_height()), this._model._rows.length); 
-        i++) {        
+    // Find the row closest to the scroll bottom.  If that row is above
+    // the scroll bottom, use the partially displayed row below it.
+    var row_count = Math.ceil(this._canvas.height / this.get_row_height());
+    var new_bottom_row = new_top_row + row_count;
 
-        this._render_row(i);
+    // If only the y axis was scrolled, blit the good contents and just render
+    // what's missing.
+    if (scroll && scroll.x === 0 && Math.abs(scroll.y) < this._canvas.height) {
+
+        // Copy old contents.
+        var old_render = this._canvas.get_raw_image(0, this._scrolling_canvas.scroll_top, this._canvas.width, this._canvas.height);
+        this._canvas.clear();
+
+        // Draw missing rows.
+        // Positive y, scrolling down the page (page itself is moving up).
+        var new_row_count = Math.ceil(Math.abs(scroll.y) / this.get_row_height()) + 1;
+        if (scroll.y > 0) {
+            for (i = new_bottom_row - new_row_count; i <= new_bottom_row; i++) {
+                this._render_row(i);
+            }
+        } else {
+            for (i = new_top_row; i <= new_top_row + new_row_count; i++) {
+                this._render_row(i);
+            }
+        }
+
+        // Redraw old contents in new location.
+        this._canvas.put_raw_image(old_render, 0, this._scrolling_canvas.scroll_top - scroll.y);
+
+    } else { // Full redraw
+        this._canvas.clear();
+
+        // Render till there are no rows left, or the top of the row is
+        // below the bottom of the visible area.
+        for (i = new_top_row; 
+            i < Math.min(new_bottom_row+1, this._model._rows.length); 
+            i++) {        
+
+            this._render_row(i);
+        }    
     }
+    
 };
 
 /**
