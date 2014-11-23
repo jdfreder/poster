@@ -8,6 +8,8 @@ var utils = require('./utils.js');
 var ScrollingCanvas = function() {
     canvas.Canvas.call(this);
     this._bind_events();
+    this._old_scroll_left = 0;
+    this._old_scroll_top = 0;
 
     // Set default size.
     this.width = 400;
@@ -19,9 +21,9 @@ utils.inherit(ScrollingCanvas, canvas.Canvas);
  * Causes the canvas contents to be redrawn.
  * @return {null}
  */
-ScrollingCanvas.prototype.redraw = function() {
+ScrollingCanvas.prototype.redraw = function(scroll) {
     this.clear();
-    this.trigger('redraw');
+    this.trigger('redraw', scroll);
 };
 
 /**
@@ -151,7 +153,17 @@ ScrollingCanvas.prototype._bind_events = function() {
     // Trigger scroll and redraw events on scroll.
     this._scroll_bars.onscroll = function(e) {
         that.trigger('scroll', e);
-        that._try_redraw();
+        if (that._old_scroll_top !== undefined && that._old_scroll_left !== undefined) {
+            var scroll = {
+                x: that.scroll_left - that._old_scroll_left,
+                y: that.scroll_top - that._old_scroll_top,
+            };
+            that._try_redraw(scroll);
+        } else {
+            that._try_redraw();
+        }
+        that._old_scroll_left = that.scroll_left;
+        that._old_scroll_top = that.scroll_top;
     };
 };
 
@@ -159,9 +171,9 @@ ScrollingCanvas.prototype._bind_events = function() {
  * Queries to see if redraw is okay, and then redraws if it is.
  * @return {boolean} true if redraw happened.
  */
-ScrollingCanvas.prototype._try_redraw = function() {
+ScrollingCanvas.prototype._try_redraw = function(scroll) {
     if (this._query_redraw()) {
-        this.redraw();
+        this.redraw(scroll);
         return true;
     }
     return false;

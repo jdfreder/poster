@@ -31,9 +31,11 @@ utils.inherit(RendererBase, utils.PosterClass);
 
 /**
  * Render to the canvas
+ * @param {dictionary} (optional) scroll - How much the canvas was scrolled.  This
+ *                     is a dictionary of the form {x: float, y: float}
  * @return {null}
  */
-RendererBase.prototype.render = function() {
+RendererBase.prototype.render = function(scroll) {
     throw new Error('Not implemented');
 };
 

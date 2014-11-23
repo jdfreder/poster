@@ -43,9 +43,11 @@ utils.inherit(BatchRenderer, renderer.RendererBase);
 
 /**
  * Render to the canvas
+ * @param {dictionary} (optional) scroll - How much the canvas was scrolled.  This
+ *                     is a dictionary of the form {x: float, y: float}
  * @return {null}
  */
-BatchRenderer.prototype.render = function() {
+BatchRenderer.prototype.render = function(scroll) {
     var that = this;
     this._renderers.forEach(function(renderer) {
 
@@ -54,7 +56,7 @@ BatchRenderer.prototype.render = function() {
         renderer._canvas._ty = utils.proxy(that._canvas._ty, that._canvas);
 
         // Tell the renderer to render itself.
-        renderer.render();
+        renderer.render(scroll);
     });
 
     // Copy the results to self.

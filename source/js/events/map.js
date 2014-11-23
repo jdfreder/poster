@@ -283,7 +283,7 @@ Map.prototype._handle_event = function(name, e) {
                         returns.append(action_callback.call(undefined, e)===true);
                     });
 
-                    // 
+                    // If one of the action callbacks returned true, cancel bubbling.
                     if (returns.some(function(x) {return x;})) {
                         that._cancel_bubble(e);
                         return true;
