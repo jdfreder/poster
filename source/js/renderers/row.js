@@ -50,7 +50,10 @@ RowRenderer.prototype.render = function(scroll) {
     if (scroll && scroll.x === 0 && Math.abs(scroll.y) < this._canvas.height) {
 
         // Copy old contents.
-        var old_render = this._canvas.get_raw_image(0, this._scrolling_canvas.scroll_top, this._canvas.width, this._canvas.height);
+        var old_render = this._canvas.get_raw_image(
+            this._scrolling_canvas.scroll_left, 
+            this._scrolling_canvas.scroll_top, 
+            this._canvas.width, this._canvas.height);
         this._canvas.clear();
 
         // Draw missing rows.
@@ -67,7 +70,10 @@ RowRenderer.prototype.render = function(scroll) {
         }
 
         // Redraw old contents in new location.
-        this._canvas.put_raw_image(old_render, 0, this._scrolling_canvas.scroll_top - scroll.y);
+        this._canvas.put_raw_image(
+            old_render, 
+            this._scrolling_canvas.scroll_left, 
+            this._scrolling_canvas.scroll_top - scroll.y);
 
     } else { // Full redraw
         this._canvas.clear();
