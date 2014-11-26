@@ -39,8 +39,8 @@ CursorsRenderer.prototype.render = function() {
 
             // If a cursor doesn't have a position, render it at the
             // beginning of the document.
-            var row_index = cursor._start_row || 0;
-            var char_index = cursor._start_char || 0;
+            var row_index = cursor.primary_row || 0;
+            var char_index = cursor.primary_char || 0;
             
             // Draw the cursor.
             that._canvas.draw_rectangle(
@@ -55,27 +55,26 @@ CursorsRenderer.prototype.render = function() {
             );
 
             // Draw the selection box.
-            if (cursor._end_row !== null && cursor._end_char !== null &&
-                cursor._end_row != row_index && cursor._end_char != char_index) {
+            if (cursor.start_row !== null && cursor.start_char !== null &&
+                cursor.end_row !== null && cursor.end_char !== null) {
                 
-                for (var i = row_index; i <= cursor._end_row; i++) {
+                for (var i = cursor.start_row; i <= cursor.end_row; i++) {
 
                     var left = 0;
-                    if (i == row_index && char_index > 0) {
-                        left = that._measure_partial_row(i, char_index);
+                    if (i == cursor.start_row && cursor.start_char > 0) {
+                        left = that._measure_partial_row(i, cursor.start_char);
                     }
 
                     that._canvas.draw_rectangle(
                         left, 
                         that._get_row_top(i), 
-                        i !== cursor._end_row ? that._measure_partial_row(i) - left : that._measure_partial_row(i, cursor._end_char) - left, 
+                        i !== cursor.end_row ? that._measure_partial_row(i) - left : that._measure_partial_row(i, cursor.end_char) - left, 
                         that._get_row_height(i), 
                         {
                             fill_color: 'skyblue',
                             alpha: 0.5,
                         }
                     );
-
                 }
             }
         });

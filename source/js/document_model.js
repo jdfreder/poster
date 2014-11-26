@@ -212,6 +212,30 @@ DocumentModel.prototype.remove_text = function(start_row, start_char, end_row, e
 };
 
 /**
+ * Gets a chunk of text.
+ * @param  {integer} start_row
+ * @param  {integer} start_char
+ * @param  {integer} end_row
+ * @param  {integer} end_char
+ * @return {string}
+ */
+DocumentModel.prototype.get_text = function(start_row, start_char, end_row, end_char) {
+    if (start_row==end_row) {
+        return this._rows[start_row].substring(start_char, end_char);
+    } else {
+        var text = [];
+        text.push(this._rows[start_row].substring(start_char));
+        if (end_row - start_row > 1) {
+            for (var i = start_row + 1; i < end_row; i++) {
+                text.push(this._rows[i]);
+            }
+        }
+        text.push(this._rows[end_row].substring(0, end_char));
+        return text.join('\n');
+    }
+};
+
+/**
  * Add a row to the document
  * @param {integer} row_index
  * @param {string} text - new row's text

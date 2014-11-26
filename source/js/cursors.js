@@ -7,12 +7,13 @@ var utils = require('./utils.js');
 /**
  * Manages one or more cursors
  */
-var Cursors = function(model) {
+var Cursors = function(model, clipboard) {
     utils.PosterClass.call(this);
     this._model = model;
     this.get_row_char = undefined;
     this.cursors = [];
     this._selecting_text = false;
+    this._clipboard = clipboard;
 
     // Create initial cursor.
     this.create();
@@ -21,6 +22,10 @@ var Cursors = function(model) {
     register('cursors.start_selection', utils.proxy(this.start_selection, this));
     register('cursors.set_selection', utils.proxy(this.set_selection, this));
     register('cursors.end_selection', utils.proxy(this.end_selection, this));
+
+    // Bind clipboard events.
+    this._clipboard.on('cut', utils.proxy(this._handle_cut, this));
+    this._clipboard.on('paste', utils.proxy(this._handle_paste, this));
 };
 utils.inherit(Cursors, utils.PosterClass);
 
@@ -35,9 +40,61 @@ Cursors.prototype.create = function() {
     var that = this;
     new_cursor.on('change', function() {
         that.trigger('change', new_cursor);
+        that._update_selection();
     });
 
     return new_cursor;
+};
+
+/**
+ * Handles when the selected text is cut to the clipboard.
+ * @param  {string} text - by val text that was cut
+ * @return {null}
+ */
+Cursors.prototype._handle_cut = function(text) {
+    this.cursors.forEach(function(cursor) {
+        cursor.cut();
+    });
+};
+
+/**
+ * Handles when text is pasted into the document.
+ * @param  {string} text
+ * @return {null}
+ */
+Cursors.prototype._handle_paste = function(text) {
+
+    // If the modulus of the number of cursors and the number of pasted lines
+    // of text is zero, split the cut lines among the cursors.
+    var lines = text.split('\n');
+    if (this.cursors.length > 1 && lines.length > 1 && lines.length % this.cursors.length === 0) {
+        var lines_per_cursor = lines.length / this.cursors.length;
+        this.cursors.forEach(function(cursor, index) {
+            cursor.insert_text(lines.slice(
+                index * lines_per_cursor, 
+                index * lines_per_cursor + lines_per_cursor).join('\n'));
+        });
+    } else {
+        this.cursors.forEach(function(cursor) {
+            cursor.insert_text(text);
+        });
+    }
+};
+
+/**
+ * Update the clippable text based on new selection.
+ * @return {null}
+ */
+Cursors.prototype._update_selection = function() {
+    
+    // Copy all of the selected text.
+    var selections = [];
+    this.cursors.forEach(function(cursor) {
+        selections.push(cursor.copy());
+    });
+
+    // Make the copied text clippable.
+    this._clipboard.set_clippable(selections.join('\n'));
 };
 
 /**
@@ -52,7 +109,8 @@ Cursors.prototype.start_selection = function(e) {
     this._selecting_text = true;
     if (this.get_row_char) {
         var location = this.get_row_char(x, y);
-        this.cursors[0].set_start(location.row_index, location.char_index);
+        this.cursors[0].set_primary(location.row_index, location.char_index);
+        this.cursors[0].set_secondary(location.row_index, location.char_index);
     }
 };
 
@@ -75,7 +133,7 @@ Cursors.prototype.set_selection = function(e) {
 
     if (this._selecting_text && this.get_row_char) {
         var location = this.get_row_char(x, y);
-        this.cursors[0].set_end(location.row_index, location.char_index);
+        this.cursors[this.cursors.length-1].set_primary(location.row_index, location.char_index);
     }
 };
 

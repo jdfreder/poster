@@ -240,6 +240,59 @@ var shallow_copy = function(x) {
     return y;
 };
 
+/**
+ * Hooks a function.
+ * @param  {object} obj - object to hook
+ * @param  {string} method - name of the function to hook
+ * @param  {function} hook - function to call before the original
+ * @return {object} hook reference, object with an `unhook` method
+ */
+var hook = function(obj, method, hook) {
+
+    // If the original has already been hooked, add this hook to the list 
+    // of hooks.
+    if (obj[method] && obj[method].original && obj[method].hooks) {
+        obj[method].hooks.push(hook);
+    } else {
+        // Create the hooked function
+        var hooks = [hook];
+        var original = obj[method];
+        var hooked = function() {
+            var args = arguments;
+            var ret;
+            var results;
+            var that = this;
+            hooks.forEach(function(hook) {
+                results = hook.apply(that, args);
+                ret = ret !== undefined ? ret : results;
+            });
+            if (original) {
+                results = original.apply(this, args);
+            }
+            return ret !== undefined ? ret : results;
+        };
+        hooked.original = original;
+        hooked.hooks = hooks;
+        obj[method] = hooked;
+    }
+
+    // Return unhook method.
+    return {
+        unhook: function() {
+            var index = obj[method].hooks.indexOf(hook);
+            if (index != -1) {
+                obj[method].hooks.splice(index, 1);
+            }
+
+            if (obj[method].hooks.length === 0) {
+                obj[method] = obj[method].original;
+            }
+        },
+    };
+    
+};
+
+
 // Export names.
 exports.PosterClass = PosterClass;
 exports.inherit = inherit;
@@ -250,3 +303,4 @@ exports.clear_array = clear_array;
 exports.is_array = is_array;
 exports.find_closest = find_closest;
 exports.shallow_copy = shallow_copy;
+exports.hook = hook;

@@ -17,12 +17,18 @@ var Poster = function() {
     this.el = this.canvas.el; // Convenience
 
     // Create model, controller, and view.
+    var that = this;
     this.model = new document_model.DocumentModel();
     this.controller = new document_controller.DocumentController(this.canvas.el, this.model);
-    this.view = new document_view.DocumentView(this.canvas, this.model, this.controller.cursors, {keyword: 'red'});
+    this.view = new document_view.DocumentView(
+        this.canvas, 
+        this.model, 
+        this.controller.cursors, 
+        {keyword: 'red'},
+        function() { return that.controller.clipboard.hidden_input === document.activeElement || that.canvas.focused; }
+    );
 
     // Create properties
-    var that = this;
     this.property('value', function() {
         return that.model.text;
     }, function(value) {

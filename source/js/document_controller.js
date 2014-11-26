@@ -6,18 +6,21 @@ var keymap = require('./events/map.js');
 var default_keymap = require('./events/default.js');
 var cursors = require('./cursors.js');
 var test_highlighter = require('./highlighters/test.js');
+var clipboard = require('./clipboard.js');
 
 /**
  * Controller for a DocumentModel.
  */
 var DocumentController = function(el, model) {
     utils.PosterClass.call(this);
+    this.clipboard = new clipboard.Clipboard(el);
     this.normalizer = new normalizer.Normalizer();
     this.normalizer.listen_to(el);
+    this.normalizer.listen_to(this.clipboard.hidden_input);
     this.map = new keymap.Map(this.normalizer);
     this.map.map(default_keymap.map);
 
-    this.cursors = new cursors.Cursors(model);
+    this.cursors = new cursors.Cursors(model, this.clipboard);
     this._highlighter = new test_highlighter.TestHighlighter(model);
 };
 utils.inherit(DocumentController, utils.PosterClass);
