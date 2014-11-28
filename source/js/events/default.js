@@ -1,3 +1,4 @@
+// OSX bindings
 exports.map = {
     'keypress' : 'cursor.keypress',
     'enter' : 'cursor.newline',
@@ -15,7 +16,12 @@ exports.map = {
     'alt-rightarrow' : 'cursor.word_right',
     'shift-alt-leftarrow' : 'cursor.select_word_left',
     'shift-alt-rightarrow' : 'cursor.select_word_right',
+    'meta-leftarrow' : 'cursor.line_start',
+    'meta-rightarrow' : 'cursor.line_end',
+    'shift-meta-leftarrow' : 'cursor.select_line_start',
+    'shift-meta-rightarrow' : 'cursor.select_line_end',
     'mouse0-down' : 'cursors.start_selection',
     'mouse-move' : 'cursors.set_selection',
     'mouse0-up' : 'cursors.end_selection',
+    'meta-a' : 'cursor.select_all',
 };

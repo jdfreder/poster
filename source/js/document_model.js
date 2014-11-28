@@ -212,6 +212,18 @@ DocumentModel.prototype.remove_text = function(start_row, start_char, end_row, e
 };
 
 /**
+ * Remove a row from the document.
+ * @param  {integer} row_index
+ * @return {null}
+ */
+DocumentModel.prototype.remove_row = function(row_index) {
+    if (0 < row_index && row_index < this._rows.length) {
+        this._rows.splice(row_index, 1);
+        this._resized_rows();
+    }
+};
+
+/**
  * Gets a chunk of text.
  * @param  {integer} start_row
  * @param  {integer} start_char

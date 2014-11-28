@@ -25,9 +25,32 @@ utils.inherit(Cursor, utils.PosterClass);
  * Moves the primary cursor a given offset.
  * @param  {integer} x
  * @param  {integer} y
+ * @param  {boolean} (optional) hop=false - hop to the other side of the
+ *                   selected region if the primary is on the opposite of the
+ *                   direction of motion.
  * @return {null}
  */
-Cursor.prototype.move_primary = function(x, y) {
+Cursor.prototype.move_primary = function(x, y, hop) {
+    if (hop) {
+        if (this.primary_row != this.secondary_row || this.primary_char != this.secondary_char) {
+            var start_row = this.start_row;
+            var start_char = this.start_char;
+            var end_row = this.end_row;
+            var end_char = this.end_char;
+            if (x<0 || y<0) {
+                this.primary_row = start_row;
+                this.primary_char = start_char;
+                this.secondary_row = end_row;
+                this.secondary_char = end_char;
+            } else {
+                this.primary_row = end_row;
+                this.primary_char = end_char;
+                this.secondary_row = start_row;
+                this.secondary_char = start_char;
+            }
+        }
+    }
+
     if (x < 0) {
         if (this.primary_char + x < 0) {
             if (this.primary_row === 0) {
@@ -119,6 +142,38 @@ Cursor.prototype.word_primary = function(direction) {
     }
 
     this.primary_char = i;
+    this._memory_char = this.primary_char;
+    this.trigger('change'); 
+};
+
+/**
+ * Select all of the text.
+ * @return {null}
+ */
+Cursor.prototype.select_all = function() {
+    this.primary_row = this._model._rows.length-1;
+    this.primary_char = this._model._rows[this.primary_row].length;
+    this.secondary_row = 0;
+    this.secondary_char = 0;
+    this.trigger('change'); 
+};
+
+/**
+ * Move the primary cursor to the line end.
+ * @return {null}
+ */
+Cursor.prototype.primary_goto_end = function() {
+    this.primary_char = this._model._rows[this.primary_row].length;
+    this._memory_char = this.primary_char;
+    this.trigger('change'); 
+};
+
+/**
+ * Move the primary cursor to the line start.
+ * @return {null}
+ */
+Cursor.prototype.primary_goto_start = function() {
+    this.primary_char = 0;
     this._memory_char = this.primary_char;
     this.trigger('change'); 
 };
@@ -223,7 +278,11 @@ Cursor.prototype.remove_selected = function() {
  * @return {string} selected text
  */
 Cursor.prototype.copy = function() {
-    return this._model.get_text(this.start_row, this.start_char, this.end_row, this.end_char);
+    if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
+        return this._model._rows[this.primary_row];
+    } else {
+        return this._model.get_text(this.start_row, this.start_char, this.end_row, this.end_char);
+    }
 };
 
 /**
@@ -232,8 +291,36 @@ Cursor.prototype.copy = function() {
  */
 Cursor.prototype.cut = function() {
     var text = this.copy();
-    this.remove_selected();
+    if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
+        this._model.remove_row(this.primary_row);
+    } else {
+        this.remove_selected();
+    }
     return text;
+};
+
+/**
+ * Delete forward, typically called by `delete` keypress.
+ * @return {null}
+ */
+Cursor.prototype.delete_forward = function() {
+    if (!this.remove_selected()) {
+        this.move_primary(1, 0);
+        this.remove_selected();
+    }
+    return true;
+};
+
+/**
+ * Delete backward, typically called by `backspace` keypress.
+ * @return {null}
+ */
+Cursor.prototype.delete_backward = function() {
+    if (!this.remove_selected()) {
+        this.move_primary(-1, 0);
+        this.remove_selected();
+    }
+    return true;
 };
 
 /**
@@ -290,10 +377,13 @@ Cursor.prototype._register_api = function() {
     register('cursor.keypress', utils.proxy(this.keypress, this), this);
     register('cursor.newline', utils.proxy(this.newline, this), this);
     register('cursor.insert_text', utils.proxy(this.insert_text, this), this);
-    register('cursor.left', function() { that.move_primary(-1, 0); that._reset_secondary(); return true; });
-    register('cursor.right', function() { that.move_primary(1, 0); that._reset_secondary(); return true; });
-    register('cursor.up', function() { that.move_primary(0, -1); that._reset_secondary(); return true; });
-    register('cursor.down', function() { that.move_primary(0, 1); that._reset_secondary(); return true; });
+    register('cursor.delete_backward', utils.proxy(this.delete_backward, this), this);
+    register('cursor.delete_forward', utils.proxy(this.delete_forward, this), this);
+    register('cursor.select_all', utils.proxy(this.select_all, this), this);
+    register('cursor.left', function() { that.move_primary(-1, 0, true); that._reset_secondary(); return true; });
+    register('cursor.right', function() { that.move_primary(1, 0, true); that._reset_secondary(); return true; });
+    register('cursor.up', function() { that.move_primary(0, -1, true); that._reset_secondary(); return true; });
+    register('cursor.down', function() { that.move_primary(0, 1, true); that._reset_secondary(); return true; });
     register('cursor.select_left', function() { that.move_primary(-1, 0); return true; });
     register('cursor.select_right', function() { that.move_primary(1, 0); return true; });
     register('cursor.select_up', function() { that.move_primary(0, -1); return true; });
@@ -302,6 +392,10 @@ Cursor.prototype._register_api = function() {
     register('cursor.word_right', function() { that.word_primary(1); that._reset_secondary(); return true; });
     register('cursor.select_word_left', function() { that.word_primary(-1); return true; });
     register('cursor.select_word_right', function() { that.word_primary(1); return true; });
+    register('cursor.line_start', function() { that.primary_goto_start(); that._reset_secondary(); return true; });
+    register('cursor.line_end', function() { that.primary_goto_end(); that._reset_secondary(); return true; });
+    register('cursor.select_line_start', function() { that.primary_goto_start(); return true; });
+    register('cursor.select_line_end', function() { that.primary_goto_end(); return true; });
 };
 
 exports.Cursor = Cursor;

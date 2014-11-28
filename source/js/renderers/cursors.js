@@ -6,6 +6,8 @@ var renderer = require('./renderer.js');
 
 /**
  * Render document cursors
+ *
+ * TODO: Only render visible.
  */
 var CursorsRenderer = function(cursors, style, get_row_height, get_row_top, measure_partial_row, has_focus) {
     renderer.RendererBase.call(this);
