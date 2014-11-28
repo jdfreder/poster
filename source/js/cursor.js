@@ -73,6 +73,57 @@ Cursor.prototype.move_primary = function(x, y) {
 };
 
 /**
+ * Walk the primary cursor in a direction until a not-text character is found.
+ * @param  {integer} direction
+ * @return {null}
+ */
+Cursor.prototype.word_primary = function(direction) {
+    // Make sure direction is 1 or -1.
+    direction = direction < 0 ? -1 : 1;
+
+    // If moving left and at end of row, move up a row if possible.
+    if (this.primary_char === 0 && direction == -1) {
+        if (this.primary_row !== 0) {
+            this.primary_row--;
+            this.primary_char = this._model._rows[this.primary_row].length;
+            this._memory_char = this.primary_char;
+            this.trigger('change'); 
+        }
+        return;
+    }
+
+    // If moving right and at end of row, move down a row if possible.
+    if (this.primary_char >= this._model._rows[this.primary_row].length && direction == 1) {
+        if (this.primary_row < this._model._rows.length-1) {
+            this.primary_row++;
+            this.primary_char = 0;
+            this._memory_char = this.primary_char;
+            this.trigger('change'); 
+        }
+        return;
+    }
+
+    var i = this.primary_char;
+    var hit_text = false;
+    var row_text = this._model._rows[this.primary_row];
+    if (direction == -1) {
+        while (0 < i && !(hit_text && this._not_text(row_text[i-1]))) {
+            hit_text = hit_text || !this._not_text(row_text[i-1]);
+            i += direction;
+        }
+    } else {
+        while (i < row_text.length && !(hit_text && this._not_text(row_text[i]))) {
+            hit_text = hit_text || !this._not_text(row_text[i]);
+            i += direction;
+        }
+    }
+
+    this.primary_char = i;
+    this._memory_char = this.primary_char;
+    this.trigger('change'); 
+};
+
+/**
  * Set the primary cursor position
  * @param {integer} row_index
  * @param {integer} char_index
@@ -221,6 +272,15 @@ Cursor.prototype._init_properties = function() {
 };
 
 /**
+ * Checks if the character isn't text.
+ * @param  {char} c - character
+ * @return {boolean} true if the character is not text.
+ */
+Cursor.prototype._not_text = function(c) {
+    return 'abcdefghijklmnopqrstuvwxyz1234567890'.indexOf(c.toLowerCase()) == -1;
+};
+
+/**
  * Registers an action API with the map
  * @return {null}
  */
@@ -238,6 +298,10 @@ Cursor.prototype._register_api = function() {
     register('cursor.select_right', function() { that.move_primary(1, 0); return true; });
     register('cursor.select_up', function() { that.move_primary(0, -1); return true; });
     register('cursor.select_down', function() { that.move_primary(0, 1); return true; });
+    register('cursor.word_left', function() { that.word_primary(-1); that._reset_secondary(); return true; });
+    register('cursor.word_right', function() { that.word_primary(1); that._reset_secondary(); return true; });
+    register('cursor.select_word_left', function() { that.word_primary(-1); return true; });
+    register('cursor.select_word_right', function() { that.word_primary(1); return true; });
 };
 
 exports.Cursor = Cursor;
