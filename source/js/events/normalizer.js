@@ -8,6 +8,7 @@ var utils = require('../utils.js');
  */
 var Normalizer = function() {
     utils.PosterClass.call(this);
+    this._el_hooks = {};
 };
 utils.inherit(Normalizer, utils.PosterClass);
 
@@ -17,14 +18,16 @@ utils.inherit(Normalizer, utils.PosterClass);
  * @return {null}
  */
 Normalizer.prototype.listen_to = function(el) {
-    el.onkeypress = this._proxy('press', this._handle_keypress_event, el);
-    el.onkeydown =  this._proxy('down', this._handle_keyboard_event, el);
-    el.onkeyup =  this._proxy('up', this._handle_keyboard_event, el);
-    el.ondblclick =  this._proxy('dblclick', this._handle_mouse_event, el);
-    el.onclick =  this._proxy('click', this._handle_mouse_event, el);
-    el.onmousedown =  this._proxy('down', this._handle_mouse_event, el);
-    el.onmouseup =  this._proxy('up', this._handle_mouse_event, el);
-    el.onmousemove =  this._proxy('move', this._handle_mousemove_event, el);
+    var hooks = [];
+    hooks.push(utils.hook(el, 'onkeypress', this._proxy('press', this._handle_keypress_event, el)));
+    hooks.push(utils.hook(el, 'onkeydown',  this._proxy('down', this._handle_keyboard_event, el)));
+    hooks.push(utils.hook(el, 'onkeyup',  this._proxy('up', this._handle_keyboard_event, el)));
+    hooks.push(utils.hook(el, 'ondblclick',  this._proxy('dblclick', this._handle_mouse_event, el)));
+    hooks.push(utils.hook(el, 'onclick',  this._proxy('click', this._handle_mouse_event, el)));
+    hooks.push(utils.hook(el, 'onmousedown',  this._proxy('down', this._handle_mouse_event, el)));
+    hooks.push(utils.hook(el, 'onmouseup',  this._proxy('up', this._handle_mouse_event, el)));
+    hooks.push(utils.hook(el, 'onmousemove',  this._proxy('move', this._handle_mousemove_event, el)));
+    this._el_hooks[el] = hooks;
 };
 
 /**
@@ -33,13 +36,12 @@ Normalizer.prototype.listen_to = function(el) {
  * @return {null}
  */
 Normalizer.prototype.stop_listening_to = function(el) {
-    el.onkeypress = null;
-    el.onkeydown = null;
-    el.ondblclick = null;
-    el.onclick = null;
-    el.onmousedown = null;
-    el.onmouseup = null;
-    el.onmousemove = null;
+    if (this._el_hooks[el] !== undefined) {
+        this._el_hooks[el].forEach(function(hook) {
+            hook.unhook();
+        });
+        delete this._el_hooks[el];
+    }
 };
 
 /**
@@ -153,10 +155,10 @@ Normalizer.prototype._lookup_keycode = function(keycode) {
             34: 'pagedown',
             35: 'end',
             36: 'home',
-            37: 'left',
-            38: 'up',
-            39: 'right',
-            40: 'down',
+            37: 'leftarrow',
+            38: 'uparrow',
+            39: 'rightarrow',
+            40: 'downarrow',
             44: 'printscreen',
             45: 'insert',
             46: 'delete',

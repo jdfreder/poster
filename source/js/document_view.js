@@ -13,8 +13,9 @@ var cursors = require('./renderers/cursors.js');
  * @param {DocumentModel} model instance
  * @param {Cursors} cursors_model instance
  * @param {dictionary} style - describes rendering style
+ * @param {function} has_focus - function that checks if the text area has focus
  */
-var DocumentView = function(canvas, model, cursors_model, style) {
+var DocumentView = function(canvas, model, cursors_model, style, has_focus) {
     this._model = model;
 
     // Create child renderers.
@@ -25,7 +26,7 @@ var DocumentView = function(canvas, model, cursors_model, style) {
         utils.proxy(row_renderer.get_row_height, row_renderer), 
         utils.proxy(row_renderer.get_row_top, row_renderer), 
         utils.proxy(row_renderer.measure_partial_row_width, row_renderer),
-        function() { return canvas.focused; });
+        has_focus);
 
     // Pass get_row_char into cursors.
     cursors_model.get_row_char = utils.proxy(row_renderer.get_row_char, row_renderer);
