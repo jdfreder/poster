@@ -55,11 +55,12 @@ DocumentModel.prototype.trigger_tag_events = function() {
  * @param {any} tag_value - overrides any previous tags
  */
 DocumentModel.prototype.set_tag = function(start_row, start_char, end_row, end_char, tag_name, tag_value) {
-    for (var row = start_row; row <= end_row; row++) {
-        var start = start_char;
-        var end = end_char;
-        if (row > start_row) { start = -1; }
-        if (row < end_row) { end = -1; }
+    var coords = this.validate_coords.apply(this, arguments);
+    for (var row = coords.start_row; row <= coords.end_row; row++) {
+        var start = coords.start_char;
+        var end = coords.end_char;
+        if (row > coords.start_row) { start = -1; }
+        if (row < coords.end_row) { end = -1; }
 
         // Remove or modify conflicting tags.
         var add_tags = [];
@@ -126,12 +127,13 @@ DocumentModel.prototype.clear_tags = function() {
  * @return {dictionary}
  */
 DocumentModel.prototype.get_tags = function(row_index, char_index) {
+    var coords = this.validate_coords.apply(this, arguments);
     var tags = {};
-    this._row_tags[row_index].forEach(function(tag) {
+    this._row_tags[coords.start_row].forEach(function(tag) {
         // Tag start of -1 means the tag continues to the previous line.
-        var after_start = (char_index >= tag.start || tag.start == -1);
+        var after_start = (coords.start_char >= tag.start || tag.start == -1);
         // Tag end of -1 means the tag continues to the next line.
-        var before_end = (char_index <= tag.end || tag.end == -1);
+        var before_end = (coords.start_char <= tag.end || tag.end == -1);
         if (after_start && before_end) {
             tags[tag.name] = tag.value;
         }
@@ -146,17 +148,18 @@ DocumentModel.prototype.get_tags = function(row_index, char_index) {
  * @param {string} text
  */
 DocumentModel.prototype.add_text = function(row_index, char_index, text) {
+    var coords = this.validate_coords.apply(this, Array.prototype.slice.call(arguments, 0,2));
     // If the text has a new line in it, just re-set
     // the rows list.
     if (text.indexOf('\n') != -1) {
         var new_rows = [];
-        if (row_index > 0) {
-            new_rows = this._rows.slice(0, row_index);
+        if (coords.start_row > 0) {
+            new_rows = this._rows.slice(0, coords.start_row);
         }
 
-        var old_row = this._rows[row_index];
-        var old_row_start = old_row.substring(0, char_index);
-        var old_row_end = old_row.substring(char_index);
+        var old_row = this._rows[coords.start_row];
+        var old_row_start = old_row.substring(0, coords.start_char);
+        var old_row_end = old_row.substring(coords.start_char);
         var split_text = text.split('\n');
         new_rows.push(old_row_start + split_text[0]);
 
@@ -166,8 +169,8 @@ DocumentModel.prototype.add_text = function(row_index, char_index, text) {
 
         new_rows.push(split_text[split_text.length-1] + old_row_end);
 
-        if (row_index+1 < this._rows.length) {
-            new_rows = new_rows.concat(this._rows.slice(row_index+1));
+        if (coords.start_row+1 < this._rows.length) {
+            new_rows = new_rows.concat(this._rows.slice(coords.start_row+1));
         }
 
         this._rows = new_rows;
@@ -176,9 +179,9 @@ DocumentModel.prototype.add_text = function(row_index, char_index, text) {
     // Text doesn't have any new lines, just modify the
     // line and then trigger the row changed event.
     } else {
-        var old_text = this._rows[row_index];
-        this._rows[row_index] = old_text.substring(0, char_index) + text + old_text.substring(char_index);
-        this.trigger('row_changed', row_index);
+        var old_text = this._rows[coords.start_row];
+        this._rows[coords.start_row] = old_text.substring(0, coords.start_char) + text + old_text.substring(coords.start_char);
+        this.trigger('row_changed', coords.start_row);
         this.trigger('changed');
     }
 };
@@ -192,21 +195,22 @@ DocumentModel.prototype.add_text = function(row_index, char_index, text) {
  * @return {null}
  */
 DocumentModel.prototype.remove_text = function(start_row, start_char, end_row, end_char) {
-    if (start_row == end_row) {
-        this._rows[start_row] = this._rows[start_row].substring(0, start_char) + this._rows[start_row].substring(end_char);
+    var coords = this.validate_coords.apply(this, arguments);
+    if (coords.start_row == coords.end_row) {
+        this._rows[coords.start_row] = this._rows[coords.start_row].substring(0, coords.start_char) + this._rows[coords.start_row].substring(coords.end_char);
     } else {
-        this._rows[start_row] = this._rows[start_row].substring(0, start_char) + this._rows[end_row].substring(end_char);
+        this._rows[coords.start_row] = this._rows[coords.start_row].substring(0, coords.start_char) + this._rows[coords.end_row].substring(coords.end_char);
     }
 
-    if (end_row - start_row > 0) {
-        this._rows.splice(start_row + 1, end_row - start_row);
+    if (coords.end_row - coords.start_row > 0) {
+        this._rows.splice(coords.start_row + 1, coords.end_row - coords.start_row);
         this._resized_rows();
-    } else if (end_row == start_row) {
-        this.trigger('row_changed', start_row);
+    } else if (coords.end_row == coords.start_row) {
+        this.trigger('row_changed', coords.start_row);
         this.trigger('changed');
     } else {
-        this.trigger('row_changed', start_row);
-        this.trigger('row_changed', end_row);
+        this.trigger('row_changed', coords.start_row);
+        this.trigger('row_changed', coords.end_row);
         this.trigger('changed');
     }
 };
@@ -232,17 +236,18 @@ DocumentModel.prototype.remove_row = function(row_index) {
  * @return {string}
  */
 DocumentModel.prototype.get_text = function(start_row, start_char, end_row, end_char) {
-    if (start_row==end_row) {
-        return this._rows[start_row].substring(start_char, end_char);
+    var coords = this.validate_coords.apply(this, arguments);
+    if (coords.start_row==coords.end_row) {
+        return this._rows[coords.start_row].substring(coords.start_char, coords.end_char);
     } else {
         var text = [];
-        text.push(this._rows[start_row].substring(start_char));
-        if (end_row - start_row > 1) {
-            for (var i = start_row + 1; i < end_row; i++) {
+        text.push(this._rows[coords.start_row].substring(coords.start_char));
+        if (coords.end_row - coords.start_row > 1) {
+            for (var i = coords.start_row + 1; i < coords.end_row; i++) {
                 text.push(this._rows[i]);
             }
         }
-        text.push(this._rows[end_row].substring(0, end_char));
+        text.push(this._rows[coords.end_row].substring(0, coords.end_char));
         return text.join('\n');
     }
 };
@@ -264,6 +269,59 @@ DocumentModel.prototype.add_row = function(row_index, text) {
 
     this._rows = new_rows;
     this._resized_rows();
+};
+
+/**
+ * Validates row, character coordinates in the document.
+ * @param  {integer} start_row
+ * @param  {integer} start_char
+ * @param  {integer} (optional) end_row
+ * @param  {integer} (optional) end_char
+ * @return {dictionary} dictionary containing validated coordinates {start_row, 
+ *                      start_char, end_row, end_char}
+ */
+DocumentModel.prototype.validate_coords = function(start_row, start_char, end_row, end_char) {
+
+    // Make sure the values aren't undefined.
+    if (start_row === undefined) start_row = 0;
+    if (start_char === undefined) start_char = 0;
+    if (end_row === undefined) end_row = start_row;
+    if (end_char === undefined) end_char = start_char;
+
+    // Make sure the values are within the bounds of the contents.
+    if (this._rows.length === 0) {
+        start_row = 0;
+        start_char = 0;
+        end_row = 0;
+        end_char = 0;
+    } else {
+        if (start_row >= this._rows.length) start_row = this._rows.length - 1;
+        if (start_row < 0) start_row = 0;
+        if (end_row >= this._rows.length) end_row = this._rows.length - 1;
+        if (end_row < 0) end_row = 0;
+
+        if (start_char > this._rows[start_row].length) start_char = this._rows[start_row].length;
+        if (start_char < 0) start_char = 0;
+        if (end_char > this._rows[end_row].length) end_char = this._rows[end_row].length;
+        if (end_char < 0) end_char = 0;
+    }
+
+    // Make sure the start is before the end.
+    if (start_row > end_row || (start_row == end_row && start_char > end_char)) {
+        return {
+            start_row: end_row,
+            start_char: end_char,
+            end_row: start_row,
+            end_char: start_char,
+        };
+    } else {
+        return {
+            start_row: start_row,
+            start_char: start_char,
+            end_row: end_row,
+            end_char: end_char,
+        };
+    }
 };
 
 /**

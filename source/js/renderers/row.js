@@ -108,7 +108,11 @@ RowRenderer.prototype.get_row_char = function(cursor_x, cursor_y) {
     } catch (e) {
         // Nom nom nom...
     }
-    return {row_index: row_index, char_index: utils.find_closest(widths, cursor_x + this._scrolling_canvas.scroll_left)};
+    var coords = this._model.validate_coords(row_index, utils.find_closest(widths, cursor_x + this._scrolling_canvas.scroll_left));
+    return {
+        row_index: coords.start_row,
+        char_index: coords.start_char,
+    };
 };
 
 /**
@@ -118,7 +122,7 @@ RowRenderer.prototype.get_row_char = function(cursor_x, cursor_y) {
  * @return {float} width
  */
 RowRenderer.prototype.measure_partial_row_width = function(index, length) {
-    if (index >= this._model._rows.length) { throw new Error('Row index ' + index + ' does not exist'); }
+    if (index >= this._model._rows.length) { return 0; }
     var text = this._model._rows[index];
     text = length === undefined ? text : text.substring(0, length);
     return this._canvas.measure_text(text, this._base_options);
