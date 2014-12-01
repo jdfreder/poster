@@ -24,7 +24,29 @@ var Poster = function() {
         this.canvas, 
         this.model, 
         this.controller.cursors, 
-        {keyword: 'red'},
+        {
+            comment: 'red',
+            todo: 'orange',
+            special: 'gold',
+            string: 'green',
+            character: 'blue',
+            conditional: 'purple',
+            repeat: 'white',
+            operator: 'lightcoral',
+            type: 'lightsalmon',
+            statement: 'lightgoldenrodyellow',
+            function: 'lightgreen',
+            error: 'lightskyblue',
+            boolean: 'magenta',
+            identifier: 'indigo',
+            label: 'gray',
+            exception: 'olive',
+            keyword: 'orangered',
+            debug: 'royalblue',
+
+            text: 'violet',
+            background: 'black',
+        },
         function() { return that.controller.clipboard.hidden_input === document.activeElement || that.canvas.focused; }
     );
 

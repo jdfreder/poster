@@ -68,6 +68,8 @@ HighlightedRowRenderer.prototype._get_options = function(syntax) {
 
     if (syntax && this.style && this.style[syntax]) {
         render_options.color = this.style[syntax];
+    } else {
+        render_options.color = this.style.text;
     }
     
     return render_options;

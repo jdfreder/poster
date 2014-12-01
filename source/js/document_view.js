@@ -6,6 +6,7 @@ var utils = require('./utils.js');
 var batch = require('./renderers/batch.js');
 var highlighted_row = require('./renderers/highlighted_row.js');
 var cursors = require('./renderers/cursors.js');
+var color = require('./renderers/color.js');
 
 /**
  * Visual representation of a DocumentModel instance
@@ -27,12 +28,15 @@ var DocumentView = function(canvas, model, cursors_model, style, has_focus) {
         utils.proxy(row_renderer.get_row_top, row_renderer), 
         utils.proxy(row_renderer.measure_partial_row_width, row_renderer),
         has_focus);
+    var color_renderer = new color.ColorRenderer();
+    color_renderer.color = style ? style.background : 'white';
 
     // Pass get_row_char into cursors.
     cursors_model.get_row_char = utils.proxy(row_renderer.get_row_char, row_renderer);
 
     // Call base constructor.
     batch.BatchRenderer.call(this, [
+        color_renderer,
         row_renderer,
         cursors_renderer,
     ], canvas);
@@ -47,6 +51,7 @@ var DocumentView = function(canvas, model, cursors_model, style, has_focus) {
     }, function(value) {
         row_renderer.style = value;
         cursors_renderer.style = value;
+        color_renderer.color = value.background;
     });
 };
 utils.inherit(DocumentView, batch.BatchRenderer);

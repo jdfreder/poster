@@ -52,8 +52,10 @@ BatchRenderer.prototype.render = function(scroll) {
     this._renderers.forEach(function(renderer) {
 
         // Apply the rendering coordinate transforms of the parent.
-        renderer._canvas._tx = utils.proxy(that._canvas._tx, that._canvas);
-        renderer._canvas._ty = utils.proxy(that._canvas._ty, that._canvas);
+        if (!renderer.options.parent_independent) {
+            renderer._canvas._tx = utils.proxy(that._canvas._tx, that._canvas);
+            renderer._canvas._ty = utils.proxy(that._canvas._ty, that._canvas);
+        }
 
         // Tell the renderer to render itself.
         renderer.render(scroll);
