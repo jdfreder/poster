@@ -83,7 +83,7 @@ Cursor.prototype.move_primary = function(x, y, hop) {
 
     if (y !== 0) {
         this.primary_row += y;
-        this.primary_row = Math.min(Math.max(this.primary_row, 0), this._model._rows.length);
+        this.primary_row = Math.min(Math.max(this.primary_row, 0), this._model._rows.length-1);
         if (this._memory_char !== undefined) {
             this.primary_char = this._memory_char;
         }
