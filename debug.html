@@ -2,6 +2,16 @@
     <head>
         <script type="text/javascript" src="./build/poster.js"></script>
         <link rel="stylesheet" type="text/css" href="./build/poster.css">
+
+        <style>
+        #test-area {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            margin-left: -300px;
+            margin-top: -200px;
+        }
+        </style>
     </head>
     <body>
         <div id='test-area'></div>
@@ -9,6 +19,8 @@
         <script type="text/javascript">
             var test_area = document.getElementById('test-area');
             var poster = new poster.Poster();
+            poster.width = 600;
+            poster.height = 400;
             test_area.appendChild(poster.el);
 
             // TEST TEXT

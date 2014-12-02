@@ -292,6 +292,17 @@ var hook = function(obj, method, hook) {
     
 };
 
+/**
+ * Cancels event bubbling.
+ * @param  {event} e
+ * @return {null}
+ */
+var cancel_bubble = function(e) {
+    if (e.stopPropagation) e.stopPropagation();
+    if (e.cancelBubble !== null) e.cancelBubble = true;
+    if (e.preventDefault) e.preventDefault();
+};
+
 
 // Export names.
 exports.PosterClass = PosterClass;
@@ -304,3 +315,4 @@ exports.is_array = is_array;
 exports.find_closest = find_closest;
 exports.shallow_copy = shallow_copy;
 exports.hook = hook;
+exports.cancel_bubble = cancel_bubble;

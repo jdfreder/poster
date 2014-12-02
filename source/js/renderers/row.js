@@ -35,15 +35,16 @@ utils.inherit(RowRenderer, renderer.RendererBase);
  */
 RowRenderer.prototype.render = function(scroll) {
     var i;
+    var visible_rows = this.get_visible_rows();
+    var new_top_row = visible_rows.top_row;
+    var new_bottom_row = visible_rows.bottom_row;
 
-    // Find the row closest to the scroll top.  If that row is below
-    // the scroll top, use the partially displayed row above it.
-    var new_top_row = Math.max(0, Math.floor(this._scrolling_canvas.scroll_top  / this.get_row_height()));
-
-    // Find the row closest to the scroll bottom.  If that row is above
-    // the scroll bottom, use the partially displayed row below it.
-    var row_count = Math.ceil(this._canvas.height / this.get_row_height());
-    var new_bottom_row = new_top_row + row_count;
+    // Check if this is a new range of rows.  If it is, notify anyone who's listening.
+    if (this.last_top_row !== new_top_row || this.last_bottom_row !== new_bottom_row) {
+        this.last_top_row = new_top_row;
+        this.last_bottom_row = new_bottom_row;
+        this.trigger('rows_changed', new_top_row, new_bottom_row);
+    }
 
     // If only the y axis was scrolled, blit the good contents and just render
     // what's missing.
@@ -97,7 +98,7 @@ RowRenderer.prototype.render = function(scroll) {
  * @return {dictionary} dictionary of the form {row_index, char_index}
  */
 RowRenderer.prototype.get_row_char = function(cursor_x, cursor_y) {
-    var row_index = Math.floor((cursor_y + this._scrolling_canvas.scroll_top) / this.get_row_height());
+    var row_index = Math.floor(cursor_y / this.get_row_height());
 
     // Find the character index.
     var widths = [0];
@@ -144,6 +145,27 @@ RowRenderer.prototype.get_row_height = function(index) {
  */
 RowRenderer.prototype.get_row_top = function(index) {
     return index * this.get_row_height(index);
+};
+
+/**
+ * Gets the visible rows.
+ * @return {dictionary} dictionary containing information about 
+ *                      the visible rows.  Format {top_row, 
+ *                      bottom_row, row_count}.
+ */
+RowRenderer.prototype.get_visible_rows = function() {
+
+    // Find the row closest to the scroll top.  If that row is below
+    // the scroll top, use the partially displayed row above it.
+    var top_row = Math.max(0, Math.floor(this._scrolling_canvas.scroll_top  / this.get_row_height()));
+
+    // Find the row closest to the scroll bottom.  If that row is above
+    // the scroll bottom, use the partially displayed row below it.
+    var row_count = Math.ceil(this._canvas.height / this.get_row_height());
+    var bottom_row = top_row + row_count;
+
+    // Row count + 1 to include first row.
+    return {top_row: top_row, bottom_row: bottom_row, row_count: row_count+1};
 };
 
 /**

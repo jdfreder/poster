@@ -7,8 +7,9 @@ var utils = require('../utils.js');
  * Renders to a canvas
  * @param {Canvas} default_canvas
  */
-var RendererBase = function(default_canvas) {
+var RendererBase = function(default_canvas, options) {
     utils.PosterClass.call(this);
+    this.options = options || {};
     this._canvas = default_canvas ? default_canvas : new canvas.Canvas();
     
     // Create properties.

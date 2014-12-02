@@ -281,12 +281,12 @@ Map.prototype._handle_event = function(name, e) {
 
                     // If one of the action callbacks returned true, cancel bubbling.
                     if (returns.some(function(x) {return x;})) {
-                        that._cancel_bubble(e);
+                        utils.cancel_bubble(e);
                         return true;
                     }
                 } else {
                     if (action_callbacks.call(undefined, e)===true) {
-                        that._cancel_bubble(e);
+                        utils.cancel_bubble(e);
                         return true;
                     }
                 }
@@ -303,17 +303,6 @@ Map.prototype._handle_event = function(name, e) {
  */
 Map.prototype._normalize_event_name = function(name) {
     return name.toLowerCase().trim().split('-').sort().join('-');
-};
-
-/**
- * Cancels event bubbling.
- * @param  {event} e
- * @return {null}
- */
-Map.prototype._cancel_bubble = function(e) {
-    if (e.stopPropagation) e.stopPropagation();
-    if (e.cancelBubble !== null) e.cancelBubble = true;
-    if (e.preventDefault) e.preventDefault();
 };
 
 // Exports
