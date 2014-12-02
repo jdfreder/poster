@@ -24,7 +24,7 @@ utils.inherit(HighlighterBase, utils.PosterClass);
  * Highlight the document
  * @return {null}
  */
-HighlighterBase.prototype.highlight = function() {
+HighlighterBase.prototype.highlight = function(start_row, end_row) {
     throw new Error('Not implemented');
 };
 
@@ -42,7 +42,10 @@ HighlighterBase.prototype._queue_highlighter = function() {
         this._queued = setTimeout(function() {
             that._model.acquire_tag_event_lock();
             try {
-                that.highlight();
+                var visible_rows = that._row_renderer.get_visible_rows();
+                var top_row = visible_rows.top_row;
+                var bottom_row = visible_rows.bottom_row;
+                that.highlight(top_row, bottom_row);
             } finally {
                 that._model.release_tag_event_lock();
                 that._model.trigger_tag_events();

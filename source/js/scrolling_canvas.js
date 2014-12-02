@@ -178,7 +178,6 @@ ScrollingCanvas.prototype._bind_events = function() {
     // Prevent scroll bar handled mouse events from bubbling.
     var scrollbar_event = function(e) {
         if (e.target !== that._touch_pane) {
-            console.log('scrollbar', e.target);
             utils.cancel_bubble(e);
         }
     };
