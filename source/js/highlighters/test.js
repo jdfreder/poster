@@ -7,8 +7,8 @@ var highlighter = require('./highlighter.js');
  * Listens to a model and higlights the text accordingly.
  * @param {DocumentModel} model
  */
-var TestHighlighter = function(model) {
-    highlighter.HighlighterBase.call(this, model);
+var TestHighlighter = function(model, row_renderer) {
+    highlighter.HighlighterBase.call(this, model, row_renderer);
 };
 utils.inherit(TestHighlighter, highlighter.HighlighterBase);
 
@@ -28,6 +28,14 @@ TestHighlighter.prototype.highlight = function() {
             index = row.indexOf('es', index+1);
         }
     }
+};
+
+/**
+ * Handles when the text changes.
+ * @return {null}
+ */
+TestHighlighter.prototype._handle_text_change = function() {
+    this._model.clear_tags();
 };
 
 // Exports

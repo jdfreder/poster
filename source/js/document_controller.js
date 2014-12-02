@@ -5,7 +5,6 @@ var normalizer = require('./events/normalizer.js');
 var keymap = require('./events/map.js');
 var default_keymap = require('./events/default.js');
 var cursors = require('./cursors.js');
-var test_highlighter = require('./highlighters/test.js');
 var clipboard = require('./clipboard.js');
 
 /**
@@ -21,7 +20,6 @@ var DocumentController = function(el, model) {
     this.map.map(default_keymap.map);
 
     this.cursors = new cursors.Cursors(model, this.clipboard);
-    this._highlighter = new test_highlighter.TestHighlighter(model);
 };
 utils.inherit(DocumentController, utils.PosterClass);
 

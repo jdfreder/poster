@@ -7,6 +7,7 @@ var batch = require('./renderers/batch.js');
 var highlighted_row = require('./renderers/highlighted_row.js');
 var cursors = require('./renderers/cursors.js');
 var color = require('./renderers/color.js');
+var test_highlighter = require('./highlighters/test.js');
 
 /**
  * Visual representation of a DocumentModel instance
@@ -24,12 +25,14 @@ var DocumentView = function(canvas, model, cursors_model, style, has_focus) {
     var cursors_renderer = new cursors.CursorsRenderer(
         cursors_model, 
         style, 
-        utils.proxy(row_renderer.get_row_height, row_renderer), 
-        utils.proxy(row_renderer.get_row_top, row_renderer), 
-        utils.proxy(row_renderer.measure_partial_row_width, row_renderer),
+        row_renderer,
         has_focus);
     var color_renderer = new color.ColorRenderer();
     color_renderer.color = style ? style.background : 'white';
+
+    // Create the document highlighter, which needs to know about the currently
+    // rendered rows in order to know where to highlight.
+    this.highlighter = new test_highlighter.TestHighlighter(model, row_renderer);
 
     // Pass get_row_char into cursors.
     cursors_model.get_row_char = utils.proxy(row_renderer.get_row_char, row_renderer);

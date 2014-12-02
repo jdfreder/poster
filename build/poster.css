@@ -29,6 +29,11 @@
   width: 100%;
   height: 100%;
 }
+.poster .touch-pane {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+}
 .poster .scroll-dummy {
   position: relative;
   width: 1px;

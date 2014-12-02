@@ -42,12 +42,15 @@ ScrollingCanvas.prototype._layout = function() {
     this.el.setAttribute('tabindex', 0);
     this._scroll_bars = document.createElement('div');
     this._scroll_bars.setAttribute('class', 'scroll-bars');
+    this._touch_pane = document.createElement('div');
+    this._touch_pane.setAttribute('class', 'touch-pane');
     this._dummy = document.createElement('div');
     this._dummy.setAttribute('class', 'scroll-dummy');
 
     this.el.appendChild(this._canvas);
     this.el.appendChild(this._scroll_bars);
     this._scroll_bars.appendChild(this._dummy);
+    this._scroll_bars.appendChild(this._touch_pane);
 };
 
 /**
@@ -115,6 +118,9 @@ ScrollingCanvas.prototype._init_properties = function() {
 
         that.trigger('resize', {height: value});
         that._try_redraw();
+        
+        // Stretch the image for retina support.
+        this.scale(2,2);
     });
 
     /**
@@ -129,6 +135,9 @@ ScrollingCanvas.prototype._init_properties = function() {
 
         that.trigger('resize', {width: value});
         that._try_redraw();
+        
+        // Stretch the image for retina support.
+        this.scale(2,2);
     });
 
     /**
@@ -165,6 +174,18 @@ ScrollingCanvas.prototype._bind_events = function() {
         that._old_scroll_left = that.scroll_left;
         that._old_scroll_top = that.scroll_top;
     };
+
+    // Prevent scroll bar handled mouse events from bubbling.
+    var scrollbar_event = function(e) {
+        if (e.target !== that._touch_pane) {
+            console.log('scrollbar', e.target);
+            utils.cancel_bubble(e);
+        }
+    };
+    this._scroll_bars.onmousedown = scrollbar_event;
+    this._scroll_bars.onmouseup = scrollbar_event;
+    this._scroll_bars.onclick = scrollbar_event;
+    this._scroll_bars.ondblclick = scrollbar_event;
 };
 
 /**
@@ -195,6 +216,9 @@ ScrollingCanvas.prototype._query_redraw = function() {
  */
 ScrollingCanvas.prototype._move_dummy = function(x, y) {
     this._dummy.setAttribute('style', 'left: ' + String(x) + '; top: ' + String(y) + ';');
+    this._touch_pane.setAttribute('style', 
+        'width: ' + String(Math.max(x, this._scroll_bars.clientWidth)) + '; ' +
+        'height: ' + String(Math.max(y, this._scroll_bars.clientHeight)) + ';');
 };
 
 /**

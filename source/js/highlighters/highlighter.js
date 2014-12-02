@@ -6,15 +6,17 @@ var utils = require('../utils.js');
  * Listens to a model and higlights the text accordingly.
  * @param {DocumentModel} model
  */
-var HighlighterBase = function(model) {
+var HighlighterBase = function(model, row_renderer) {
     utils.PosterClass.call(this);
     this._model = model;
+    this._row_renderer = row_renderer;
     this._queued = null;
     this.delay = 100; //ms
 
     // Bind events.
-    this._model.on('text_changed', utils.proxy(this._queue_highlighter, this));
-    this._model.on('row_changed', utils.proxy(this._queue_highlighter, this));
+    this._row_renderer.on('rows_changed', utils.proxy(this._handle_scroll, this));
+    this._model.on('text_changed', utils.proxy(this._handle_text_change, this));
+    this._model.on('row_changed', utils.proxy(this._handle_text_change, this));
 };
 utils.inherit(HighlighterBase, utils.PosterClass);
 
@@ -48,6 +50,22 @@ HighlighterBase.prototype._queue_highlighter = function() {
             }
         }, this.delay);
     }
+};
+
+/**
+ * Handles when the visible row indicies are changed.
+ * @return {null}
+ */
+HighlighterBase.prototype._handle_scroll = function(start_row, end_row) {
+    this._queue_highlighter();
+};
+
+/**
+ * Handles when the text changes.
+ * @return {null}
+ */
+HighlighterBase.prototype._handle_text_change = function() {
+    this._queue_highlighter();
 };
 
 // Exports

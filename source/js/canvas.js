@@ -45,6 +45,9 @@ Canvas.prototype._init_properties = function() {
         return that._canvas.height / 2; 
     }, function(value) {
         that._canvas.setAttribute('height', value * 2);
+        
+        // Stretch the image for retina support.
+        this.scale(2,2);
     });
 
     /**
@@ -55,6 +58,9 @@ Canvas.prototype._init_properties = function() {
         return that._canvas.width / 2; 
     }, function(value) {
         that._canvas.setAttribute('width', value * 2);
+        
+        // Stretch the image for retina support.
+        this.scale(2,2);
     });
 };
 

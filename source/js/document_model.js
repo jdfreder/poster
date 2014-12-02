@@ -110,10 +110,14 @@ DocumentModel.prototype.set_tag = function(start_row, start_char, end_row, end_c
 
 /**
  * Removed all of the tags on the document.
+ * @param  {integer} start_row
+ * @param  {integer} end_row
  * @return {null}
  */
-DocumentModel.prototype.clear_tags = function() {
-    for (var i = 0; i < this._row_tags.length; i++) {
+DocumentModel.prototype.clear_tags = function(start_row, end_row) {
+    start_row = start_row !== undefined ? start_row : 0;
+    end_row = end_row !== undefined ? end_row : this._row_tags.length - 1;
+    for (var i = start_row; i <= end_row; i++) {
         this._row_tags[i] = [];
     }
     this.trigger('tags_changed');

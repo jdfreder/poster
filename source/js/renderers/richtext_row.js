@@ -1,5 +1,9 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
+/*
+TODO: REMOVE THIS CLASS, IT'S OUT OF DATE.
+ */
+
 var utils = require('../utils.js');
 var row = require('./row.js');
 
