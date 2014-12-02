@@ -47,13 +47,10 @@ Clipboard.prototype._focus = function() {
  * Handle when the user pastes into the textbox.
  * @return {null}
  */
-Clipboard.prototype._handle_paste = function() {
-    var that = this;
-    setTimeout(function() {
-        that.trigger('paste', that.hidden_input.value);
-        that.hidden_input.value = that._clippable;
-        that._focus();
-    }, 0);
+Clipboard.prototype._handle_paste = function(e) {
+    var pasted = e.clipboardData.getData(e.clipboardData.types[0]);
+    utils.cancel_bubble(e);
+    this.trigger('paste', pasted);
 };
 
 /**
@@ -68,13 +65,13 @@ Clipboard.prototype._bind_events = function() {
     utils.hook(this._el, 'onfocus', utils.proxy(this._focus, this));
 
     utils.hook(this.hidden_input, 'onpaste', utils.proxy(this._handle_paste, this));
-    utils.hook(this.hidden_input, 'oncut', function() {
+    utils.hook(this.hidden_input, 'oncut', function(e) {
         // Trigger the event in a timeout so it fires after the system event.
         setTimeout(function(){
             that.trigger('cut', that._clippable);
         }, 0);
     });
-    utils.hook(this.hidden_input, 'oncopy', function() {
+    utils.hook(this.hidden_input, 'oncopy', function(e) {
         that.trigger('copy', that._clippable);
     });
     utils.hook(this.hidden_input, 'onkeypress', function() {
