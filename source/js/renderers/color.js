@@ -65,7 +65,7 @@ ColorRenderer.prototype.render = function(scroll) {
  */
 ColorRenderer.prototype._render = function() {
     this._canvas.clear();
-    this._canvas.draw_rectangle(0, 0, this._canvas.width, this._canvas.height, {color: this._color});
+    this._canvas.draw_rectangle(0, 0, this._canvas.width, this._canvas.height, {fill_color: this._color});
 };
 
 // Exports
