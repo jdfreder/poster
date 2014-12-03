@@ -19,10 +19,11 @@ var CursorsRenderer = function(cursors, style, row_renderer, has_focus) {
     this._get_row_top = utils.proxy(row_renderer.get_row_top, row_renderer);
     this._measure_partial_row = utils.proxy(row_renderer.measure_partial_row_width, row_renderer);
     this._blink_animator = new animator.Animator(1000);
-    this._fps = 100;
+    this._fps = 30;
 
     // Start the cursor rendering clock.
     this._render_clock();
+    this._last_rendered = null;
 };
 utils.inherit(CursorsRenderer, renderer.RendererBase);
 
@@ -33,6 +34,10 @@ utils.inherit(CursorsRenderer, renderer.RendererBase);
  * @return {null}
  */
 CursorsRenderer.prototype.render = function() {
+    // Frame limit the rendering.
+    if (Date.now() - this._last_rendered < 1000/this._fps) {
+        return;
+    }
     this._canvas.clear();
 
     // Only render if the canvas has focus.
@@ -89,6 +94,7 @@ CursorsRenderer.prototype.render = function() {
             }
         });
     }
+    this._last_rendered = Date.now();
 };
 
 /**
@@ -113,8 +119,8 @@ CursorsRenderer.prototype._render_clock = function() {
         this.trigger('changed');
     }
 
-    // 100 FPS
-    setTimeout(utils.proxy(this._render_clock, this), 1000 / this._fps); 
+    // Timer.
+    setTimeout(utils.proxy(this._render_clock, this), 1000 / this._fps);
 };
 
 // Exports
