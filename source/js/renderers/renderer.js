@@ -24,9 +24,6 @@ var RendererBase = function(default_canvas, options) {
     }, function(value) {
         that._canvas.height = value;
     });
-        
-    // Stretch the image for retina support.
-    this._canvas.scale(2,2);
 };
 utils.inherit(RendererBase, utils.PosterClass);
 
