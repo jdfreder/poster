@@ -1,5 +1,6 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
+var canvas = require('../canvas.js');
 var utils = require('../utils.js');
 var renderer = require('./renderer.js');
 
@@ -8,9 +9,15 @@ var renderer = require('./renderer.js');
  * @param {DocumentModel} model instance
  */
 var RowRenderer = function(model, scrolling_canvas) {
-    this._scrolling_canvas = scrolling_canvas;
-    renderer.RendererBase.call(this);
     this._model = model;
+    this._visible_row_count = 0;
+
+    // Setup canvases
+    this._text_canvas = new canvas.Canvas();
+    this._scrolling_canvas = scrolling_canvas;
+
+    // Base
+    renderer.RendererBase.call(this);
 
     // Set some basic rendering properties.
     this._base_options = {
@@ -18,6 +25,33 @@ var RowRenderer = function(model, scrolling_canvas) {
         font_size: 12,
     };
     this._line_spacing = 2;
+
+    // Create properties.
+    var that = this;
+    this.property('width', function() {
+        return that._canvas.width;
+    }, function(value) {
+        that._canvas.width = value;
+        that._text_canvas.width = value;
+    });
+    this.property('height', function() {
+        return that._canvas.height;
+    }, function(value) {
+        that._canvas.height = value;
+
+        // The text canvas should be the right height to fit all of the lines
+        // that will be rendered in the base canvas.  This includes the lines
+        // that are partially rendered at the top and bottom of the base canvas.
+        var row_height = that.get_row_height();
+        that._visible_row_count = Math.ceil(value/row_height) + 1;
+        that._text_canvas.height =  that._visible_row_count * row_height;
+    });
+
+    // Set initial canvas sizes.  These lines may look redundant, but beware
+    // because they actually cause an appropriate width and height to be set for
+    // the text canvas because of the properties declared above.
+    this.width = this._canvas.width;
+    this.height = this._canvas.height;
 
     this._model.on('tags_changed', utils.proxy(this._handle_value_changed, this));
     this._model.on('text_changed', utils.proxy(this._handle_value_changed, this));
@@ -34,61 +68,90 @@ utils.inherit(RowRenderer, renderer.RendererBase);
  * @return {null}
  */
 RowRenderer.prototype.render = function(scroll) {
-    var i;
-    var visible_rows = this.get_visible_rows();
-    var new_top_row = visible_rows.top_row;
-    var new_bottom_row = visible_rows.bottom_row;
-
-    // Check if this is a new range of rows.  If it is, notify anyone who's listening.
-    if (this.last_top_row !== new_top_row || this.last_bottom_row !== new_bottom_row) {
-        this.last_top_row = new_top_row;
-        this.last_bottom_row = new_bottom_row;
-        this.trigger('rows_changed', new_top_row, new_bottom_row);
-    }
 
     // If only the y axis was scrolled, blit the good contents and just render
     // what's missing.
-    if (scroll && scroll.x === 0 && Math.abs(scroll.y) < this._canvas.height) {
+    var partial_redraw = (scroll && scroll.x === 0 && Math.abs(scroll.y) < this._canvas.height);
 
-        // Copy old contents.
-        var old_render = this._canvas.get_raw_image(
-            this._scrolling_canvas.scroll_left, 
-            this._scrolling_canvas.scroll_top, 
-            this._canvas.width, this._canvas.height);
-        this._canvas.clear();
+    // Update the text rendering
+    var visible_rows = this.get_visible_rows();
+    this._render_text_canvas(-this._scrolling_canvas.scroll_left, visible_rows.top_row, !partial_redraw);
 
-        // Draw missing rows.
-        // Positive y, scrolling down the page (page itself is moving up).
-        var new_row_count = Math.ceil(Math.abs(scroll.y) / this.get_row_height()) + 1;
-        if (scroll.y > 0) {
-            for (i = new_bottom_row - new_row_count; i <= new_bottom_row; i++) {
-                this._render_row(i);
+    // Copy the text image to this canvas
+    this._canvas.clear();
+    this._canvas.put_raw_image(
+        this._text_canvas.get_raw_image(), 
+        this._scrolling_canvas.scroll_left, 
+        this.get_row_top(visible_rows.top_row));
+};
+
+/**
+ * Render text to the text canvas.
+ *
+ * Later, the main rendering function can use this rendered text to draw the
+ * base canvas.
+ * @param  {float} x_offset - horizontal offset of the text
+ * @param  {integer} top_row
+ * @param  {boolean} force_redraw - redraw the contents even if they are
+ *                                the same as the cached contents.
+ * @return {null}          
+ */
+RowRenderer.prototype._render_text_canvas = function(x_offset, top_row, force_redraw) {
+
+    // Try to reuse some of the already rendered text if possible.
+    var rendered = false;
+    var row_height = this.get_row_height();
+    if (!force_redraw && this._last_rendered_offset === x_offset) {
+        var last_top = this._last_rendered_row;
+        var scroll = top_row - last_top; // Positive = user scrolling downward.
+        if (scroll < this._last_rendered_row_count) {
+
+            // Get a snapshot of the text before the scroll.
+            var old_content = this._text_canvas.get_raw_image();
+
+            // Render the new text.
+            var saved_rows = this._last_rendered_row_count - Math.abs(scroll);
+            var new_rows = this._visible_row_count - saved_rows;
+            if (scroll > 0) {
+                // Render the bottom.
+                this._text_canvas.clear();
+                for (i = top_row+saved_rows; i < top_row+this._visible_row_count; i++) {     
+                    this._render_row(i, x_offset, (i - top_row) * row_height);
+                }
+            } else if (scroll < 0) {
+                // Render the top.
+                this._text_canvas.clear();
+                for (i = top_row; i < top_row+new_rows; i++) {   
+                    this._render_row(i, x_offset, (i - top_row) * row_height);
+                }
+            } else {
+                // Nothing has changed.
+                return;
             }
-        } else {
-            for (i = new_top_row; i <= new_top_row + new_row_count; i++) {
-                this._render_row(i);
-            }
+            
+            // Use the old content to fill in the rest.
+            this._text_canvas.put_raw_image(old_content, 0, -scroll * this.get_row_height());
+            this.trigger('rows_changed', top_row, top_row + this._visible_row_count - 1);
+            rendered = true;
         }
+    }
 
-        // Redraw old contents in new location.
-        this._canvas.put_raw_image(
-            old_render, 
-            this._scrolling_canvas.scroll_left, 
-            this._scrolling_canvas.scroll_top - scroll.y);
-
-    } else { // Full redraw
-        this._canvas.clear();
+    // Full rendering.
+    if (!rendered) {
+        this._text_canvas.clear();
 
         // Render till there are no rows left, or the top of the row is
         // below the bottom of the visible area.
-        for (i = new_top_row; 
-            i < Math.min(new_bottom_row+1, this._model._rows.length); 
-            i++) {        
-
-            this._render_row(i);
-        }    
+        for (i = top_row; i < top_row + this._visible_row_count; i++) {        
+            this._render_row(i, x_offset, (i - top_row) * row_height);
+        }   
+        this.trigger('rows_changed', top_row, top_row + this._visible_row_count - 1);
     }
-    
+
+    // Remember for delta rendering.
+    this._last_rendered_row = top_row;
+    this._last_rendered_row_count = this._visible_row_count;
+    this._last_rendered_offset = x_offset;
 };
 
 /**
@@ -131,7 +194,7 @@ RowRenderer.prototype.measure_partial_row_width = function(index, length) {
 
 /**
  * Measures the height of a text row as if it were rendered.
- * @param  {integer} index
+ * @param  {integer} (optional) index
  * @return {float} height
  */
 RowRenderer.prototype.get_row_height = function(index) {
@@ -144,7 +207,7 @@ RowRenderer.prototype.get_row_height = function(index) {
  * @return {null}
  */
 RowRenderer.prototype.get_row_top = function(index) {
-    return index * this.get_row_height(index);
+    return index * this.get_row_height();
 };
 
 /**
@@ -195,10 +258,12 @@ RowRenderer.prototype._handle_row_changed = function(index) {
 /**
  * Render a single row
  * @param  {integer} index
+ * @param  {float} x
+ * @param  {float} y
  * @return {null}
  */
-RowRenderer.prototype._render_row = function(index) {
-    this._canvas.draw_text(0, this._row_tops[index], this._model._rows[index], this._base_options);
+RowRenderer.prototype._render_row = function(index, x ,y) {
+    this._text_canvas.draw_text(x, y, this._model._rows[index], this._base_options);
 };
 
 /**

@@ -8,7 +8,7 @@ var utils = require('./utils.js');
 var Animator = function(duration) {
     utils.PosterClass.call(this);
     this.duration = duration;
-    this._start = new Date().getTime();
+    this._start = Date.now();
 };
 utils.inherit(Animator, utils.PosterClass);
 
@@ -17,7 +17,7 @@ utils.inherit(Animator, utils.PosterClass);
  * @return {float} between 0 and 1
  */
 Animator.prototype.time = function() {
-    var elapsed = new Date().getTime() - this._start;
+    var elapsed = Date.now() - this._start;
     return (elapsed % this.duration) / this.duration;
 };
 

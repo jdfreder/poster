@@ -181,15 +181,26 @@ Canvas.prototype.draw_text = function(x, y, text, options) {
 
 /**
  * Get's a chunk of the canvas as a raw image.
- * @param  {float} x
- * @param  {float} y
- * @param  {float} width
- * @param  {float} height
+ * @param  {float} (optional) x
+ * @param  {float} (optional) y
+ * @param  {float} (optional) width
+ * @param  {float} (optional) height
  * @return {image} canvas image data
  */
 Canvas.prototype.get_raw_image = function(x, y, width, height) {
-    x = this._tx(x);
-    y = this._ty(y);
+    if (x===undefined) {
+        x = 0;
+    } else {
+        x = this._tx(x);
+    }
+    if (y===undefined) {
+        y = 0;
+    } else {
+        y = this._ty(y);
+    }
+    if (width === undefined) width = this.width;
+    if (height === undefined) height = this.height;
+
     // Multiply by two for pixel doubling.
     return this.context.getImageData(x*2, y*2, width*2, height*2);
 };

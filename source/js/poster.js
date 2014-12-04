@@ -46,6 +46,9 @@ var Poster = function() {
 
             text: 'violet',
             background: 'black',
+
+            // Debug
+            highlight_draw: false,
         },
         function() { return that.controller.clipboard.hidden_input === document.activeElement || that.canvas.focused; }
     );
