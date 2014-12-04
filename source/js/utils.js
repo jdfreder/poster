@@ -315,6 +315,20 @@ var random_color = function() {
     return '#' + random_byte() + random_byte() + random_byte();
 };
 
+/**
+ * Compare two arrays by contents for equality.
+ * @param  {array} x
+ * @param  {array} y
+ * @return {boolean}
+ */
+var compare_arrays = function(x, y) {
+    if (x.length != y.length) return false;
+    for (i=0; i<x.length; i++) {
+        if (x[i]!==y[i]) return false;
+    }
+    return true;
+};
+
 
 // Export names.
 exports.PosterClass = PosterClass;
@@ -329,3 +343,4 @@ exports.shallow_copy = shallow_copy;
 exports.hook = hook;
 exports.cancel_bubble = cancel_bubble;
 exports.random_color = random_color;
+exports.compare_arrays = compare_arrays;

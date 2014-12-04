@@ -48,6 +48,7 @@ Canvas.prototype._init_properties = function() {
         
         // Stretch the image for retina support.
         this.scale(2,2);
+        this._touch();
     });
 
     /**
@@ -61,6 +62,7 @@ Canvas.prototype._init_properties = function() {
         
         // Stretch the image for retina support.
         this.scale(2,2);
+        this._touch();
     });
 };
 
@@ -79,6 +81,7 @@ Canvas.prototype.draw_rectangle = function(x, y, width, height, options) {
     this.context.beginPath();
     this.context.rect(x, y, width, height);
     this._do_draw(options);
+    this._touch();
 };
 
 /**
@@ -95,6 +98,7 @@ Canvas.prototype.draw_circle = function(x, y, r, options) {
     this.context.beginPath();
     this.context.arc(x, y, r, 0, 2 * Math.PI);
     this._do_draw(options);
+    this._touch();
 };
 
 /**
@@ -110,6 +114,7 @@ Canvas.prototype.draw_image = function(img, x, y, width, height) {
     x = this._tx(x);
     y = this._ty(y);
     this.context.drawImage(img, x, y, width, height);
+    this._touch();
 };
 
 /**
@@ -130,6 +135,7 @@ Canvas.prototype.draw_line = function(x1, y1, x2, y2, options) {
     this.context.moveTo(x1, y1);
     this.context.lineTo(x2, y2);
     this._do_draw(options);
+    this._touch();
 };
 
 /**
@@ -152,7 +158,8 @@ Canvas.prototype.draw_polyline = function(points, options) {
             point = points[i];
             this.context.lineTo(this._tx(point[0]), this._ty(point[1]));
         }
-        this._do_draw(options);    
+        this._do_draw(options); 
+        this._touch();   
     }
 };
 
@@ -177,6 +184,7 @@ Canvas.prototype.draw_text = function(x, y, text, options) {
     if (options.stroke) {
         this.context.strokeText(text, x, y);       
     }
+    this._touch();
 };
 
 /**
@@ -202,7 +210,21 @@ Canvas.prototype.get_raw_image = function(x, y, width, height) {
     if (height === undefined) height = this.height;
 
     // Multiply by two for pixel doubling.
-    return this.context.getImageData(x*2, y*2, width*2, height*2);
+    x = 2 * x;
+    y = 2 * y;
+    width = 2 * width;
+    height = 2 * height;
+    
+    // Update the cached image if it's not the requested one.
+    var region = [x, y, width, height];
+    if (!(this._cached_timestamp === this._modified && utils.compare_arrays(region, this._cached_region))) {
+        this._cached_image = this.context.getImageData(x, y, width, height);
+        this._cached_timestamp = this._modified;
+        this._cached_region = region;
+    }
+
+    // Return the cached image.
+    return this._cached_image;
 };
 
 /**
@@ -215,7 +237,9 @@ Canvas.prototype.put_raw_image = function(img, x, y) {
     x = this._tx(x);
     y = this._ty(y);
     // Multiply by two for pixel doubling.
-    return this.context.putImageData(img, x*2, y*2);
+    ret = this.context.putImageData(img, x*2, y*2);
+    this._touch();
+    return ret;
 };
 
 /**
@@ -235,6 +259,7 @@ Canvas.prototype.measure_text = function(text, options) {
  */
 Canvas.prototype.clear = function() {
     this.context.clearRect(0, 0, this.width, this.height);
+    this._touch();
 };
 
 /**
@@ -245,6 +270,7 @@ Canvas.prototype.clear = function() {
  */
 Canvas.prototype.scale = function(x, y) {
     this.context.scale(x, y);
+    this._touch();
 };
 
 /**
@@ -339,6 +365,14 @@ Canvas.prototype._apply_options = function(options) {
     // TODO: Support shadows.
 
     return options;
+};
+
+/**
+ * Update the timestamp that the canvas was modified.
+ * @return {null}
+ */
+Canvas.prototype._touch = function() {
+    this._modified = Date.now();
 };
 
 /**
