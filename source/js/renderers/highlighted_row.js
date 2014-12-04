@@ -16,16 +16,26 @@ utils.inherit(HighlightedRowRenderer, row.RowRenderer);
 /**
  * Render a single row
  * @param  {integer} index
+ * @param  {float} x
+ * @param  {float} y
  * @return {null}
  */
-HighlightedRowRenderer.prototype._render_row = function(index) {
+HighlightedRowRenderer.prototype._render_row = function(index, x ,y) {
     if (index < 0 || this._model._rows.length <= index) return;
     
     var groups = this._get_groups(index);
-    var left = 0;
+    var left = x;
     for (var i=0; i<groups.length; i++) {
-        this._canvas.draw_text(left, this.get_row_top(index), groups[i].text, groups[i].options);
-        left += this._canvas.measure_text(groups[i].text, groups[i].options);
+        var width = this._text_canvas.measure_text(groups[i].text, groups[i].options);
+        
+        if (this.style.highlight_draw) {
+            this._text_canvas.draw_rectangle(left, y, width, this.get_row_height(i), {
+                fill_color: utils.random_color(),
+            });
+        }
+
+        this._text_canvas.draw_text(left, y, groups[i].text, groups[i].options);
+        left += width;
     }
 };
 

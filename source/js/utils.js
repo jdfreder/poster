@@ -303,6 +303,18 @@ var cancel_bubble = function(e) {
     if (e.preventDefault) e.preventDefault();
 };
 
+/**
+ * Generates a random color string
+ * @return {string} hexadecimal color string
+ */
+var random_color = function() {
+    var random_byte = function() { 
+        var b = Math.round(Math.random() * 255).toString(16);
+        return b.length == 1 ? '0' + b : b;
+    };
+    return '#' + random_byte() + random_byte() + random_byte();
+};
+
 
 // Export names.
 exports.PosterClass = PosterClass;
@@ -316,3 +328,4 @@ exports.find_closest = find_closest;
 exports.shallow_copy = shallow_copy;
 exports.hook = hook;
 exports.cancel_bubble = cancel_bubble;
+exports.random_color = random_color;
