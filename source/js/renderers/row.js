@@ -14,6 +14,7 @@ var RowRenderer = function(model, scrolling_canvas) {
 
     // Setup canvases
     this._text_canvas = new canvas.Canvas();
+    this._tmp_canvas = new canvas.Canvas();
     this._scrolling_canvas = scrolling_canvas;
 
     // Base
@@ -33,6 +34,7 @@ var RowRenderer = function(model, scrolling_canvas) {
     }, function(value) {
         that._canvas.width = value;
         that._text_canvas.width = value;
+        that._tmp_canvas.width = value;
     });
     this.property('height', function() {
         return that._canvas.height;
@@ -44,7 +46,8 @@ var RowRenderer = function(model, scrolling_canvas) {
         // that are partially rendered at the top and bottom of the base canvas.
         var row_height = that.get_row_height();
         that._visible_row_count = Math.ceil(value/row_height) + 1;
-        that._text_canvas.height =  that._visible_row_count * row_height;
+        that._text_canvas.height = that._visible_row_count * row_height;
+        that._tmp_canvas.height = that._text_canvas.height;
     });
 
     // Set initial canvas sizes.  These lines may look redundant, but beware
@@ -79,8 +82,8 @@ RowRenderer.prototype.render = function(scroll) {
 
     // Copy the text image to this canvas
     this._canvas.clear();
-    this._canvas.put_raw_image(
-        this._text_canvas.get_raw_image(), 
+    this._canvas.draw_image(
+        this._text_canvas, 
         this._scrolling_canvas.scroll_left, 
         this.get_row_top(visible_rows.top_row));
 };
@@ -107,7 +110,8 @@ RowRenderer.prototype._render_text_canvas = function(x_offset, top_row, force_re
         if (scroll < this._last_rendered_row_count) {
 
             // Get a snapshot of the text before the scroll.
-            var old_content = this._text_canvas.get_raw_image();
+            this._tmp_canvas.clear();
+            this._tmp_canvas.draw_image(this._text_canvas, 0, 0);
 
             // Render the new text.
             var saved_rows = this._last_rendered_row_count - Math.abs(scroll);
@@ -130,7 +134,7 @@ RowRenderer.prototype._render_text_canvas = function(x_offset, top_row, force_re
             }
             
             // Use the old content to fill in the rest.
-            this._text_canvas.put_raw_image(old_content, 0, -scroll * this.get_row_height());
+            this._text_canvas.draw_image(this._tmp_canvas, 0, -scroll * this.get_row_height());
             this.trigger('rows_changed', top_row, top_row + this._visible_row_count - 1);
             rendered = true;
         }

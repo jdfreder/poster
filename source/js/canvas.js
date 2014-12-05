@@ -128,6 +128,9 @@ Canvas.prototype.draw_circle = function(x, y, r, options) {
 Canvas.prototype.draw_image = function(img, x, y, width, height) {
     x = this._tx(x);
     y = this._ty(y);
+    width = width || img.width;
+    height = height || img.height;
+    img = img._canvas ? img._canvas : img;
     this.context.drawImage(img, x, y, width, height);
     this._touch(x, y, this.width, this.height);
 };
@@ -221,6 +224,7 @@ Canvas.prototype.draw_text = function(x, y, text, options) {
  * @return {image} canvas image data
  */
 Canvas.prototype.get_raw_image = function(x, y, width, height) {
+    console.warn('get_raw_image image is slow, use canvas references instead with draw_image');
     if (x===undefined) {
         x = 0;
     } else {
@@ -259,6 +263,7 @@ Canvas.prototype.get_raw_image = function(x, y, width, height) {
  * @return {image} canvas image data
  */
 Canvas.prototype.put_raw_image = function(img, x, y) {
+    console.warn('put_raw_image image is slow, use draw_image instead');
     x = this._tx(x);
     y = this._ty(y);
     // Multiply by two for pixel doubling.

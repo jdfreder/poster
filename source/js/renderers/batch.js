@@ -84,7 +84,7 @@ BatchRenderer.prototype._copy_renderers = function() {
  */
 BatchRenderer.prototype._copy_renderer = function(renderer) {
     this._canvas.draw_image(
-        renderer._canvas._canvas, 
+        renderer._canvas, 
         -this._canvas._tx(0), 
         -this._canvas._ty(0), 
         this._canvas.width, 
