@@ -5,6 +5,8 @@ var utils = require('./utils.js');
  * HTML canvas with drawing convinience functions.
  */
 var Canvas = function() {
+    this._rendered_region = [null, null, null, null]; // x1,y1,x2,y2
+
     utils.PosterClass.call(this);
     this._layout();
     this._init_properties();
@@ -64,6 +66,19 @@ Canvas.prototype._init_properties = function() {
         this.scale(2,2);
         this._touch();
     });
+
+    /**
+     * Region of the canvas that has been rendered to
+     * @return {dictionary} dictionary describing a rectangle {x,y,width,height}
+     */
+    this.property('rendered_region', function() {
+        return {
+            x: this._tx(this._rendered_region[0], true),
+            y: this._ty(this._rendered_region[1], true),
+            width: this._rendered_region[2] - this._rendered_region[0],
+            height: this._rendered_region[3] - this._rendered_region[1],
+        };
+    });
 };
 
 /**
@@ -81,7 +96,7 @@ Canvas.prototype.draw_rectangle = function(x, y, width, height, options) {
     this.context.beginPath();
     this.context.rect(x, y, width, height);
     this._do_draw(options);
-    this._touch();
+    this._touch(x, y, x+width, y+height);
 };
 
 /**
@@ -98,7 +113,7 @@ Canvas.prototype.draw_circle = function(x, y, r, options) {
     this.context.beginPath();
     this.context.arc(x, y, r, 0, 2 * Math.PI);
     this._do_draw(options);
-    this._touch();
+    this._touch(x-r, y-r, x+r, y+r);
 };
 
 /**
@@ -113,8 +128,11 @@ Canvas.prototype.draw_circle = function(x, y, r, options) {
 Canvas.prototype.draw_image = function(img, x, y, width, height) {
     x = this._tx(x);
     y = this._ty(y);
+    width = width || img.width;
+    height = height || img.height;
+    img = img._canvas ? img._canvas : img;
     this.context.drawImage(img, x, y, width, height);
-    this._touch();
+    this._touch(x, y, this.width, this.height);
 };
 
 /**
@@ -135,7 +153,7 @@ Canvas.prototype.draw_line = function(x1, y1, x2, y2, options) {
     this.context.moveTo(x1, y1);
     this.context.lineTo(x2, y2);
     this._do_draw(options);
-    this._touch();
+    this._touch(x1, y1, x2, y2);
 };
 
 /**
@@ -154,12 +172,22 @@ Canvas.prototype.draw_polyline = function(points, options) {
         this.context.beginPath();
         var point = points[0];
         this.context.moveTo(this._tx(point[0]), this._ty(point[1]));
+
+        var minx = this.width;
+        var miny = this.height;
+        var maxx = 0;
+        var maxy = 0;
         for (var i = 1; i < points.length; i++) {
             point = points[i];
             this.context.lineTo(this._tx(point[0]), this._ty(point[1]));
+
+            minx = Math.min(this._tx(point[0]), minx);
+            miny = Math.min(this._ty(point[1]), miny);
+            maxx = Math.max(this._tx(point[0]), maxx);
+            maxy = Math.max(this._ty(point[1]), maxy);
         }
         this._do_draw(options); 
-        this._touch();   
+        this._touch(minx, miny, maxx, maxy);   
     }
 };
 
@@ -184,7 +212,7 @@ Canvas.prototype.draw_text = function(x, y, text, options) {
     if (options.stroke) {
         this.context.strokeText(text, x, y);       
     }
-    this._touch();
+    this._touch(x, y, this.width, this.height);
 };
 
 /**
@@ -196,6 +224,7 @@ Canvas.prototype.draw_text = function(x, y, text, options) {
  * @return {image} canvas image data
  */
 Canvas.prototype.get_raw_image = function(x, y, width, height) {
+    console.warn('get_raw_image image is slow, use canvas references instead with draw_image');
     if (x===undefined) {
         x = 0;
     } else {
@@ -234,11 +263,12 @@ Canvas.prototype.get_raw_image = function(x, y, width, height) {
  * @return {image} canvas image data
  */
 Canvas.prototype.put_raw_image = function(img, x, y) {
+    console.warn('put_raw_image image is slow, use draw_image instead');
     x = this._tx(x);
     y = this._ty(y);
     // Multiply by two for pixel doubling.
     ret = this.context.putImageData(img, x*2, y*2);
-    this._touch();
+    this._touch(x, y, this.width, this.height);
     return ret;
 };
 
@@ -368,26 +398,42 @@ Canvas.prototype._apply_options = function(options) {
 };
 
 /**
- * Update the timestamp that the canvas was modified.
+ * Update the timestamp that the canvas was modified and
+ * the region that has contents rendered to it.
  * @return {null}
  */
-Canvas.prototype._touch = function() {
+Canvas.prototype._touch = function(x1, y1, x2, y2) {
     this._modified = Date.now();
+
+    // Set the render region.
+    var comparitor = function(old_value, new_value, comparison) {
+        if (old_value === null || old_value === undefined || new_value === null || new_value === undefined) {
+            return new_value;
+        } else {
+            return comparison.call(undefined, old_value, new_value);
+        }
+    };
+    this._rendered_region[0] = comparitor(this._rendered_region[0], x1, Math.min);
+    this._rendered_region[1] = comparitor(this._rendered_region[1], y1, Math.min);
+    this._rendered_region[2] = comparitor(this._rendered_region[2], x2, Math.max);
+    this._rendered_region[3] = comparitor(this._rendered_region[3], y2, Math.max);
 };
 
 /**
  * Transform an x value before rendering.
  * @param  {float} x
+ * @param  {boolean} inverse - perform inverse transformation
  * @return {float}
  */
-Canvas.prototype._tx = function(x) { return x; };
+Canvas.prototype._tx = function(x, inverse) { return x; };
 
 /**
  * Transform a y value before rendering.
  * @param  {float} y
+ * @param  {boolean} inverse - perform inverse transformation
  * @return {float}
  */
-Canvas.prototype._ty = function(y) { return y; };
+Canvas.prototype._ty = function(y, inverse) { return y; };
 
 // Exports
 exports.Canvas = Canvas;
