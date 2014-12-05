@@ -223,16 +223,18 @@ ScrollingCanvas.prototype._move_dummy = function(x, y) {
 /**
  * Transform an x value based on scroll position.
  * @param  {float} x
+ * @param  {boolean} inverse - perform inverse transformation
  * @return {float}
  */
-ScrollingCanvas.prototype._tx = function(x) { return x - this.scroll_left; };
+ScrollingCanvas.prototype._tx = function(x, inverse) { return x - (inverse?-1:1) * this.scroll_left; };
 
 /**
  * Transform a y value based on scroll position.
  * @param  {float} y
+ * @param  {boolean} inverse - perform inverse transformation
  * @return {float}
  */
-ScrollingCanvas.prototype._ty = function(y) { return y - this.scroll_top; };
+ScrollingCanvas.prototype._ty = function(y, inverse) { return y - (inverse?-1:1) * this.scroll_top; };
 
 // Exports
 exports.ScrollingCanvas = ScrollingCanvas;
