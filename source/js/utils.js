@@ -329,6 +329,21 @@ var compare_arrays = function(x, y) {
     return true;
 };
 
+/**
+ * Find all the occurances of a regular expression inside a string.
+ * @param  {string} text - string to look in
+ * @param  {string} re - regular expression to find
+ * @return {array} array of [start_index, end_index] pairs
+ */
+var findall = function(text, re) {
+    re = new RegExp(re, 'gm');
+    var results;
+    var found = [];
+    while ((results = re.exec(text)) !== null) {
+        found.push([results.index, results.index + results[0].length]);
+    }
+    return found;
+};
 
 // Export names.
 exports.PosterClass = PosterClass;
@@ -344,3 +359,4 @@ exports.hook = hook;
 exports.cancel_bubble = cancel_bubble;
 exports.random_color = random_color;
 exports.compare_arrays = compare_arrays;
+exports.findall = findall;
