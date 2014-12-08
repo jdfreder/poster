@@ -16,6 +16,34 @@ var Poster = function() {
     this.canvas = new scrolling_canvas.ScrollingCanvas();
     this.el = this.canvas.el; // Convenience
 
+    var style = {
+        comment: '#75715E',
+        todo: '#FFFFFF', // BOLD
+        special: '#66D9EF',
+        string: '#E6DB74',
+        character: '#E6DB74',
+        conditional: '#F92672', // BOLD
+        repeat: '#F92672',
+        operator: '#F92672',
+        type: '#66D9EF',
+        statement: '#F92672',
+        function: '#A6E22E',
+        error: '#E6DB74', // BG: #1E0010
+        boolean: '#AE81FF',
+        identifier: '#FD971F',
+        label: '#E6DB74',
+        exception: '#A6E22E',
+        keyword: '#F92672',
+        debug: '#BCA3A3', // BOLD
+
+        text: '#F8F8F2',
+        background: '#333333',
+
+        // Debug
+        highlight_draw: false,
+
+    };
+
     // Create model, controller, and view.
     var that = this;
     this.model = new document_model.DocumentModel();
@@ -24,32 +52,7 @@ var Poster = function() {
         this.canvas, 
         this.model, 
         this.controller.cursors, 
-        {
-            comment: 'red',
-            todo: 'orange',
-            special: 'gold',
-            string: 'green',
-            character: 'blue',
-            conditional: 'purple',
-            repeat: 'white',
-            operator: 'lightcoral',
-            type: 'lightsalmon',
-            statement: 'lightgoldenrodyellow',
-            function: 'lightgreen',
-            error: 'lightskyblue',
-            boolean: 'magenta',
-            identifier: 'indigo',
-            label: 'gray',
-            exception: 'olive',
-            keyword: 'orangered',
-            debug: 'royalblue',
-
-            text: 'violet',
-            background: 'black',
-
-            // Debug
-            highlight_draw: false,
-        },
+        style,
         function() { return that.controller.clipboard.hidden_input === document.activeElement || that.canvas.focused; }
     );
 
