@@ -33,7 +33,6 @@ var DocumentView = function(canvas, model, cursors_model, style, has_focus) {
     // Create the document highlighter, which needs to know about the currently
     // rendered rows in order to know where to highlight.
     this.highlighter = new syntax_highlighter.SyntaxHighlighter(model, row_renderer);
-    this.highlighter.load_syntax('javascript');
 
     // Pass get_row_char into cursors.
     cursors_model.get_row_char = utils.proxy(row_renderer.get_row_char, row_renderer);
@@ -56,6 +55,14 @@ var DocumentView = function(canvas, model, cursors_model, style, has_focus) {
         row_renderer.style = value;
         cursors_renderer.style = value;
         color_renderer.color = value.background;
+    });
+
+    var that = this;
+    this.property('language', function() {
+        return that._language;
+    }, function(value) {
+        that.highlighter.load_syntax(value);
+        that._language = value;
     });
 };
 utils.inherit(DocumentView, batch.BatchRenderer);

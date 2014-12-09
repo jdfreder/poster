@@ -19,11 +19,14 @@
         <script type="text/javascript">
             var test_area = document.getElementById('test-area');
             var poster = new poster.Poster();
-            poster.width = 600;
-            poster.height = 400;
             test_area.appendChild(poster.el);
 
-            // TEST TEXT
+            // Test the API
+            poster.width = 600;
+            poster.height = 400;
+            poster.language = 'javascript';
+
+            // Test text
             poster.value = 'var a = 5;\n' +
                 'if (a == 2) {\n' + 
                 '    console.log(a);\n' + 
