@@ -72,6 +72,11 @@ var Poster = function() {
     }, function(value) {
         that.view.height = value;
     });
+    this.property('language', function() {
+        return that.view.language;
+    }, function(value) {
+        that.view.language = value;
+    });
 };
 utils.inherit(Poster, utils.PosterClass);
 
