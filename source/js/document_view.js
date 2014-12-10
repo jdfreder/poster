@@ -6,6 +6,7 @@ var utils = require('./utils.js');
 var batch = require('./renderers/batch.js');
 var highlighted_row = require('./renderers/highlighted_row.js');
 var cursors = require('./renderers/cursors.js');
+var selections = require('./renderers/selections.js');
 var color = require('./renderers/color.js');
 var syntax_highlighter = require('./highlighters/syntax.js');
 
@@ -28,6 +29,11 @@ var DocumentView = function(canvas, model, cursors_model, style, config, has_foc
         style, 
         row_renderer,
         has_focus);
+    var selections_renderer = new selections.SelectionsRenderer(
+        cursors_model, 
+        style, 
+        row_renderer,
+        has_focus);
 
     // Create the background renderer
     var color_renderer = new color.ColorRenderer();
@@ -45,6 +51,7 @@ var DocumentView = function(canvas, model, cursors_model, style, config, has_foc
     batch.BatchRenderer.call(this, [
         color_renderer,
         row_renderer,
+        selections_renderer,
         cursors_renderer,
     ], canvas);
 
