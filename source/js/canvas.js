@@ -364,14 +364,14 @@ Canvas.prototype._apply_options = function(options) {
     options = utils.resolve_callable(options);
 
     // Special options.
-    this.context.globalAlpha = options.alpha || 1.0;
+    this.context.globalAlpha = options.alpha===undefined ? 1.0 : options.alpha;
     this.context.globalCompositeOperation = options.composite_operation || 'source-over';
     
     // Line style.
     this.context.lineCap = options.line_cap || 'butt';
     this.context.lineJoin = options.line_join || 'bevel';
-    this.context.lineWidth = options.line_width || 1.0;
-    this.context.miterLimit = options.line_miter_limit || 10;
+    this.context.lineWidth = options.line_width===undefined ? 1.0 : options.line_width;
+    this.context.miterLimit = options.line_miter_limit===undefined ? 10 : options.line_miter_limit;
     this.context.strokeStyle = options.line_color || options.color || 'black'; // TODO: Support gradient
     options.stroke = (options.line_color !== undefined || options.line_width !== undefined);
 

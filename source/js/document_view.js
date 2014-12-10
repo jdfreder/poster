@@ -50,8 +50,8 @@ var DocumentView = function(canvas, model, cursors_model, style, config, has_foc
     // Call base constructor.
     batch.BatchRenderer.call(this, [
         color_renderer,
-        row_renderer,
         selections_renderer,
+        row_renderer,
         cursors_renderer,
     ], canvas);
 

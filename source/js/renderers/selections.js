@@ -66,8 +66,7 @@ SelectionsRenderer.prototype.render = function() {
                         i !== cursor.end_row ? that._measure_partial_row(i) - left : that._measure_partial_row(i, cursor.end_char) - left, 
                         that._get_row_height(i), 
                         {
-                            fill_color: 'skyblue',
-                            alpha: 0.5,
+                            fill_color: that.style.selection,
                         }
                     );
                 }

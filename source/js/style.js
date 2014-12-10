@@ -26,6 +26,10 @@ var Style = function() {
         'exception',
         'keyword',
         'debug',
+
+        'cursor',
+        'selection',
+
         'text',
         'background',
     ]);
