@@ -183,7 +183,7 @@ SyntaxHighlighter.prototype._find_highlights = function(text, group_name, group,
  * @param  {string or dictionary} language
  * @return {boolean} success
  */
-SyntaxHighlighter.prototype.load_syntax = function(language) {
+SyntaxHighlighter.prototype.load = function(language) {
     try {
 
         // Unload current language
@@ -192,11 +192,11 @@ SyntaxHighlighter.prototype.load_syntax = function(language) {
         this._tags = {};
 
         // See if the language is built-in
-        if (languages.languages[language]) {
-            language = languages.languages[language];
+        if (languages[language]) {
+            language = languages[language];
         }
-        this._groups = language.syntax.groups;
-        this._tags = language.syntax.tags;
+        this._groups = language.groups;
+        this._tags = language.tags;
 
         // Find all groups where contained == false
         var that = this;

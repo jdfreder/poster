@@ -4,6 +4,7 @@ var scrolling_canvas = require('./scrolling_canvas.js');
 var document_controller = require('./document_controller.js');
 var document_model = require('./document_model.js');
 var document_view = require('./document_view.js');
+var style = require('./style.js');
 var utils = require('./utils.js');
 
 /**
@@ -15,34 +16,8 @@ var Poster = function() {
     // Create canvas
     this.canvas = new scrolling_canvas.ScrollingCanvas();
     this.el = this.canvas.el; // Convenience
-
-    var style = {
-        comment: '#75715E',
-        todo: '#FFFFFF', // BOLD
-        special: '#66D9EF',
-        string: '#E6DB74',
-        character: '#E6DB74',
-        conditional: '#F92672', // BOLD
-        repeat: '#F92672',
-        operator: '#F92672',
-        type: '#66D9EF',
-        statement: '#F92672',
-        function: '#A6E22E',
-        error: '#E6DB74', // BG: #1E0010
-        boolean: '#AE81FF',
-        identifier: '#FD971F',
-        label: '#E6DB74',
-        exception: '#A6E22E',
-        keyword: '#F92672',
-        debug: '#BCA3A3', // BOLD
-
-        text: '#F8F8F2',
-        background: '#333333',
-
-        // Debug
-        highlight_draw: false,
-
-    };
+    this._style = new style.Style();
+    this._config = new utils.PosterClass(['highlight_draw']);
 
     // Create model, controller, and view.
     var that = this;
@@ -52,11 +27,18 @@ var Poster = function() {
         this.canvas, 
         this.model, 
         this.controller.cursors, 
-        style,
+        this._style,
+        this._config,
         function() { return that.controller.clipboard.hidden_input === document.activeElement || that.canvas.focused; }
     );
 
     // Create properties
+    this.property('style', function() {
+        return that._style;
+    });
+    this.property('config', function() {
+        return that._config;
+    });
     this.property('value', function() {
         return that.model.text;
     }, function(value) {
