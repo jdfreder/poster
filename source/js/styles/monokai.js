@@ -1,4 +1,4 @@
-exports = {
+exports.style = {
     comment: '#75715E',
     todo: '#FFFFFF', // BOLD
     special: '#66D9EF',

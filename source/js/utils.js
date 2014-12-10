@@ -13,16 +13,17 @@ var PosterClass = function(eventful_properties) {
     if (eventful_properties && eventful_properties.length>0) {
         var that = this;
         for (var i=0; i<eventful_properties.length; i++) {
-            var name = eventful_properties[i];
-            this.property(name, function() {
-                return that['_' + name];
-            }, function(value) {
-                this.trigger('change:' + name, value);
-                this.trigger('change', name, value);
-                that['_' + name] = value;
-                this.trigger('changed:' + name);
-                this.trigger('changed', name);
-            });
+            (function(name) {
+                that.property(name, function() {
+                    return that['_' + name];
+                }, function(value) {
+                    that.trigger('change:' + name, value);
+                    that.trigger('change', name, value);
+                    that['_' + name] = value;
+                    that.trigger('changed:' + name);
+                    that.trigger('changed', name);
+                });
+            })(eventful_properties[i]);
         }
     }
 };

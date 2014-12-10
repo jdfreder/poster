@@ -192,8 +192,8 @@ SyntaxHighlighter.prototype.load = function(language) {
         this._tags = {};
 
         // See if the language is built-in
-        if (languages[language]) {
-            language = languages[language];
+        if (languages.languages[language]) {
+            language = languages.languages[language].language;
         }
         this._groups = language.groups;
         this._tags = language.tags;

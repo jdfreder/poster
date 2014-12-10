@@ -44,8 +44,8 @@ utils.inherit(Style, utils.PosterClass);
 Style.prototype.load = function(style) {
     try {
         // Load the style if it's built-in.
-        if (styles[style]) {
-            style = styles[style];
+        if (styles.styles[style]) {
+            style = styles.styles[style].style;
         }
 
         // Read each attribute of the style.
