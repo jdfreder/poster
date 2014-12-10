@@ -1,11 +1,31 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
 /**
-Base class with helpful utilities
-*/
-var PosterClass = function() {
+ * Base class with helpful utilities
+ * @param {array} [eventful_properties] list of property names (strings)
+ *                to create and wire change events to.
+ */
+var PosterClass = function(eventful_properties) {
     this._events = {};
     this._on_all = [];
+
+    // Construct eventful properties.
+    if (eventful_properties && eventful_properties.length>0) {
+        var that = this;
+        for (var i=0; i<eventful_properties.length; i++) {
+            (function(name) {
+                that.property(name, function() {
+                    return that['_' + name];
+                }, function(value) {
+                    that.trigger('change:' + name, value);
+                    that.trigger('change', name, value);
+                    that['_' + name] = value;
+                    that.trigger('changed:' + name);
+                    that.trigger('changed', name);
+                });
+            })(eventful_properties[i]);
+        }
+    }
 };
 
 /**
