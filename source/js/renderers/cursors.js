@@ -65,33 +65,6 @@ CursorsRenderer.prototype.render = function() {
                     }
                 );
             }
-            
-            // Draw the selection box.
-            if (cursor.start_row !== null && cursor.start_char !== null &&
-                cursor.end_row !== null && cursor.end_char !== null) {
-                
-
-                for (var i = Math.max(cursor.start_row, visible_rows.top_row); 
-                    i <= Math.min(cursor.end_row, visible_rows.bottom_row); 
-                    i++) {
-
-                    var left = 0;
-                    if (i == cursor.start_row && cursor.start_char > 0) {
-                        left = that._measure_partial_row(i, cursor.start_char);
-                    }
-
-                    that._canvas.draw_rectangle(
-                        left, 
-                        that._get_row_top(i), 
-                        i !== cursor.end_row ? that._measure_partial_row(i) - left : that._measure_partial_row(i, cursor.end_char) - left, 
-                        that._get_row_height(i), 
-                        {
-                            fill_color: 'skyblue',
-                            alpha: 0.5,
-                        }
-                    );
-                }
-            }
         });
     }
     this._last_rendered = Date.now();
