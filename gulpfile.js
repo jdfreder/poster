@@ -14,7 +14,9 @@ gulp.task('watch', function() {
   gulp.watch('source/js/*.js', ['javascript']);
   gulp.watch('source/js/events/*.js', ['javascript']);
   gulp.watch('source/js/highlighters/*.js', ['javascript']);
+  gulp.watch('source/js/highlighters/syntax/*.js', ['javascript']);
   gulp.watch('source/js/renderers/*.js', ['javascript']);
+  gulp.watch('source/js/styles/*.js', ['javascript']);
   gulp.watch('source/less/*.less', ['less']);
 });
 

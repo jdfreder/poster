@@ -51,20 +51,30 @@ CursorsRenderer.prototype.render = function() {
             // beginning of the document.
             var row_index = cursor.primary_row || 0;
             var char_index = cursor.primary_char || 0;
-            
+
+            // Calculate opacity of the cursor.  Blinking cursor.
+            var sin = Math.sin(2*Math.PI*that._blink_animator.time());
+            var alpha = Math.min(Math.max(sin+0.5, 0), 1); // Offset, truncated sine wave.
+
             // Draw the cursor.
-            if (visible_rows.top_row <= row_index && row_index <= visible_rows.bottom_row) {
-                that._canvas.draw_rectangle(
-                    char_index === 0 ? 0 : that._measure_partial_row(row_index, char_index), 
-                    that._get_row_top(row_index), 
-                    1, 
-                    that._get_row_height(row_index), 
-                    {
-                        fill_color: 'red',
-                        alpha: Math.max(0, Math.sin(Math.PI * that._blink_animator.time())),
-                    }
-                );
-            }
+            if (alpha > 0) {
+                var height = that._get_row_height(row_index);
+                var multiplier = that.style.cursor_height || 1.0;
+                var offset = (height - (multiplier*height)) / 2;
+                height *= multiplier;
+                if (visible_rows.top_row <= row_index && row_index <= visible_rows.bottom_row) {
+                    that._canvas.draw_rectangle(
+                        char_index === 0 ? 0 : that._measure_partial_row(row_index, char_index), 
+                        that._get_row_top(row_index) + offset, 
+                        that.style.cursor_width===undefined ? 1.0 : that.style.cursor_width, 
+                        height, 
+                        {
+                            fill_color: that.style.cursor || 'back',
+                            alpha: alpha,
+                        }
+                    );
+                }    
+            }   
         });
     }
     this._last_rendered = Date.now();
@@ -77,10 +87,12 @@ CursorsRenderer.prototype.render = function() {
 CursorsRenderer.prototype._render_clock = function() {
     // If the canvas is focused, redraw.
     if (this._has_focus()) {
+        var first_render = !this._was_focused;
         this._was_focused = true;
         this.render();
         // Tell parent layer this one has changed.
         this.trigger('changed');
+        if (first_render) this.trigger('toggle');
 
     // The canvas isn't focused.  If this is the first time
     // it hasn't been focused, render again without the 
@@ -90,6 +102,7 @@ CursorsRenderer.prototype._render_clock = function() {
         this.render();
         // Tell parent layer this one has changed.
         this.trigger('changed');
+        this.trigger('toggle');
     }
 
     // Timer.

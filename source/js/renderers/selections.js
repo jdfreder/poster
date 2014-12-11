@@ -9,7 +9,7 @@ var renderer = require('./renderer.js');
  *
  * TODO: Only render visible.
  */
-var SelectionsRenderer = function(cursors, style, row_renderer, has_focus) {
+var SelectionsRenderer = function(cursors, style, row_renderer, has_focus, cursors_renderer) {
     renderer.RendererBase.call(this);
     this.style = style;
     this._has_focus = has_focus;
@@ -27,6 +27,13 @@ var SelectionsRenderer = function(cursors, style, row_renderer, has_focus) {
     this._get_row_height = utils.proxy(row_renderer.get_row_height, row_renderer);
     this._get_row_top = utils.proxy(row_renderer.get_row_top, row_renderer);
     this._measure_partial_row = utils.proxy(row_renderer.measure_partial_row_width, row_renderer);
+
+    // When the cursor is hidden/shown, redraw the selection.
+    cursors_renderer.on('toggle', function() {
+        that.render();
+        // Tell parent layer this one has changed.
+        that.trigger('changed');
+    });
 };
 utils.inherit(SelectionsRenderer, renderer.RendererBase);
 
@@ -40,40 +47,44 @@ SelectionsRenderer.prototype.render = function() {
     this._canvas.clear();
 
     // Only render if the canvas has focus.
-    if (this._has_focus()) {
-        var that = this;
-        this._cursors.cursors.forEach(function(cursor) {
-            // Get the visible rows.
-            var visible_rows = that._get_visible_rows();
+    var that = this;
+    this._cursors.cursors.forEach(function(cursor) {
+        // Get the visible rows.
+        var visible_rows = that._get_visible_rows();
 
-            // Draw the selection box.
-            if (cursor.start_row !== null && cursor.start_char !== null &&
-                cursor.end_row !== null && cursor.end_char !== null) {
-                
+        // Draw the selection box.
+        if (cursor.start_row !== null && cursor.start_char !== null &&
+            cursor.end_row !== null && cursor.end_char !== null) {
+            
 
-                for (var i = Math.max(cursor.start_row, visible_rows.top_row); 
-                    i <= Math.min(cursor.end_row, visible_rows.bottom_row); 
-                    i++) {
+            for (var i = Math.max(cursor.start_row, visible_rows.top_row); 
+                i <= Math.min(cursor.end_row, visible_rows.bottom_row); 
+                i++) {
 
-                    var left = 0;
-                    if (i == cursor.start_row && cursor.start_char > 0) {
-                        left = that._measure_partial_row(i, cursor.start_char);
-                    }
-
-                    that._canvas.draw_rectangle(
-                        left, 
-                        that._get_row_top(i), 
-                        i !== cursor.end_row ? that._measure_partial_row(i) - left : that._measure_partial_row(i, cursor.end_char) - left, 
-                        that._get_row_height(i), 
-                        {
-                            fill_color: 'skyblue',
-                            alpha: 0.5,
-                        }
-                    );
+                var left = 0;
+                if (i == cursor.start_row && cursor.start_char > 0) {
+                    left = that._measure_partial_row(i, cursor.start_char);
                 }
+
+                var selection_color;
+                if (that._has_focus()) {
+                    selection_color = that.style.selection || 'skyblue';
+                } else {
+                    selection_color = that.style.selection_unfocused || 'gray';
+                }
+
+                that._canvas.draw_rectangle(
+                    left, 
+                    that._get_row_top(i), 
+                    i !== cursor.end_row ? that._measure_partial_row(i) - left : that._measure_partial_row(i, cursor.end_char) - left, 
+                    that._get_row_height(i), 
+                    {
+                        fill_color: selection_color,
+                    }
+                );
             }
-        });
-    }
+        }
+    });
 };
 
 // Exports

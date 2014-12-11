@@ -18,6 +18,12 @@ exports.style = {
     keyword: '#F92672',
     debug: '#BCA3A3', // BOLD
 
+    cursor: '#F8F8F2',
+    cursor_width: 1.0,
+    cursor_height: 1.1,
+    selection: '#465457',
+    selection_unfocused: '#364447',
+
     text: '#F8F8F2',
     background: '#333333',
 };

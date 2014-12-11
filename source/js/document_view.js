@@ -33,7 +33,8 @@ var DocumentView = function(canvas, model, cursors_model, style, config, has_foc
         cursors_model, 
         style, 
         row_renderer,
-        has_focus);
+        has_focus,
+        cursors_renderer);
 
     // Create the background renderer
     var color_renderer = new color.ColorRenderer();
@@ -50,8 +51,8 @@ var DocumentView = function(canvas, model, cursors_model, style, config, has_foc
     // Call base constructor.
     batch.BatchRenderer.call(this, [
         color_renderer,
-        row_renderer,
         selections_renderer,
+        row_renderer,
         cursors_renderer,
     ], canvas);
 

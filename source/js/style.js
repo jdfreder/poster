@@ -26,6 +26,11 @@ var Style = function() {
         'exception',
         'keyword',
         'debug',
+
+        'cursor',
+        'selection',
+        'selection_unfocused',
+
         'text',
         'background',
     ]);
