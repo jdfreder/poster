@@ -29,6 +29,7 @@ var Style = function() {
 
         'cursor',
         'selection',
+        'selection_unfocused',
 
         'text',
         'background',

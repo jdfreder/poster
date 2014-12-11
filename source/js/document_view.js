@@ -33,7 +33,8 @@ var DocumentView = function(canvas, model, cursors_model, style, config, has_foc
         cursors_model, 
         style, 
         row_renderer,
-        has_focus);
+        has_focus,
+        cursors_renderer);
 
     // Create the background renderer
     var color_renderer = new color.ColorRenderer();

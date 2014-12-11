@@ -87,10 +87,12 @@ CursorsRenderer.prototype.render = function() {
 CursorsRenderer.prototype._render_clock = function() {
     // If the canvas is focused, redraw.
     if (this._has_focus()) {
+        var first_render = !this._was_focused;
         this._was_focused = true;
         this.render();
         // Tell parent layer this one has changed.
         this.trigger('changed');
+        if (first_render) this.trigger('toggle');
 
     // The canvas isn't focused.  If this is the first time
     // it hasn't been focused, render again without the 
@@ -100,6 +102,7 @@ CursorsRenderer.prototype._render_clock = function() {
         this.render();
         // Tell parent layer this one has changed.
         this.trigger('changed');
+        this.trigger('toggle');
     }
 
     // Timer.
