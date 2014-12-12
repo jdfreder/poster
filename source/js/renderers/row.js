@@ -56,7 +56,6 @@ var RowRenderer = function(model, scrolling_canvas) {
     this.width = this._canvas.width;
     this.height = this._canvas.height;
 
-    this._model.on('tags_changed', utils.proxy(this._handle_value_changed, this));
     this._model.on('text_changed', utils.proxy(this._handle_value_changed, this));
     this._model.on('row_changed', utils.proxy(this._handle_row_changed, this)); // TODO: Implement my event.
 };
@@ -192,7 +191,7 @@ RowRenderer.prototype.get_row_char = function(cursor_x, cursor_y) {
 RowRenderer.prototype.measure_partial_row_width = function(index, length) {
     if (index >= this._model._rows.length) { return 0; }
     var text = this._model._rows[index];
-    text = length === undefined ? text : text.substring(0, length);
+    text = (length === undefined) ? text : text.substring(0, length);
     return this._canvas.measure_text(text, this._base_options);
 };
 
