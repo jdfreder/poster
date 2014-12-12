@@ -109,8 +109,7 @@ Cursors.prototype.start_selection = function(e) {
     this._selecting_text = true;
     if (this.get_row_char) {
         var location = this.get_row_char(x, y);
-        this.cursors[0].set_primary(location.row_index, location.char_index);
-        this.cursors[0].set_secondary(location.row_index, location.char_index);
+        this.cursors[0].set_both(location.row_index, location.char_index);
     }
 };
 
