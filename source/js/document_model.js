@@ -8,6 +8,7 @@ var DocumentModel = function() {
     this._rows = [];
     this._row_tags = [];
     this._tag_lock = 0;
+    this._pending_tag_events = false;
     this._init_properties();
 };
 utils.inherit(DocumentModel, utils.PosterClass);
@@ -30,7 +31,13 @@ DocumentModel.prototype.acquire_tag_event_lock = function() {
  */
 DocumentModel.prototype.release_tag_event_lock = function() {
     this._tag_lock--;
-    if (this._tag_lock < 0) this._tag_lock = 0;
+    if (this._tag_lock < 0) {
+        this._tag_lock = 0;
+    }
+    if (this._tag_lock === 0 && this._pending_tag_events) {
+        this._pending_tag_events = false;
+        this.trigger_tag_events();
+    }
     return this._tag_lock;
 };
 
@@ -42,6 +49,8 @@ DocumentModel.prototype.trigger_tag_events = function() {
     if (this._tag_lock === 0) {
         this.trigger('tags_changed');
         this.trigger('changed');    
+    } else {
+        this._pending_tag_events = true;
     }
 };
 
@@ -120,8 +129,7 @@ DocumentModel.prototype.clear_tags = function(start_row, end_row) {
     for (var i = start_row; i <= end_row; i++) {
         this._row_tags[i] = [];
     }
-    this.trigger('tags_changed');
-    this.trigger('changed');
+    this.trigger_tag_events();
 };
 
 /**
