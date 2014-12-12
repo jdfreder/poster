@@ -12,6 +12,10 @@ var Canvas = function() {
     this._init_properties();
     this._last_set_options = {};
 
+    this._text_size_cache = {};
+    this._text_size_array = [];
+    this._text_size_cache_size = 1000;
+
     // Set default size.
     this.width = 400;
     this.height = 300;
@@ -281,7 +285,21 @@ Canvas.prototype.put_raw_image = function(img, x, y) {
  */
 Canvas.prototype.measure_text = function(text, options) {
     options = this._apply_options(options);
-    return this.context.measureText(text).width;
+
+    // Cache the size if it's not already cached.
+    if (this._text_size_cache[text] === undefined) {
+        this._text_size_cache[text] = this.context.measureText(text).width;
+        this._text_size_array.push(text);
+
+        // Remove the oldest item in the array if the cache is too large.
+        while (this._text_size_array.length > this._text_size_cache_size) {
+            var oldest = this._text_size_array.shift();
+            delete this._text_size_cache[oldest];
+        }
+    }
+    
+    // Use the cached size.
+    return this._text_size_cache[text];
 };
 
 /**
@@ -395,6 +413,12 @@ Canvas.prototype._apply_options = function(options) {
     set_options.textBaseline = options.text_baseline || 'top';
 
     // TODO: Support shadows.
+    
+    // Empty the measure text cache if the font is changed.
+    if (set_options.font !== this._last_set_options.font) {
+        this._text_size_cache = {};
+        this._text_size_array = [];
+    }
     
     // Set the options on the context object.  Only set options that
     // have changed since the last call.

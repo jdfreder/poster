@@ -267,9 +267,9 @@ Cursor.prototype.insert_text = function(text) {
         this.primary_row += lines.length - 1;
         this.primary_char = lines[lines.length-1].length;
     }
-    this.trigger('change'); 
-
     this._reset_secondary();
+
+    this.trigger('change'); 
     return true;
 };
 

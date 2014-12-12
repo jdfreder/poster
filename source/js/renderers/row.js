@@ -189,9 +189,13 @@ RowRenderer.prototype.get_row_char = function(cursor_x, cursor_y) {
  * @return {float} width
  */
 RowRenderer.prototype.measure_partial_row_width = function(index, length) {
-    if (index >= this._model._rows.length) { return 0; }
+    if (0 > index || index >= this._model._rows.length) {
+        return 0; 
+    }
+
     var text = this._model._rows[index];
     text = (length === undefined) ? text : text.substring(0, length);
+
     return this._canvas.measure_text(text, this._base_options);
 };
 
