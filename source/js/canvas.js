@@ -403,7 +403,7 @@ Canvas.prototype._apply_options = function(options) {
     var pixels = function(x) {
         if (x !== undefined && x !== null) {
             if (Number.isFinite(x)) {
-                return str(x) + 'px';
+                return String(x) + 'px';
             } else {
                 return x;
             }
