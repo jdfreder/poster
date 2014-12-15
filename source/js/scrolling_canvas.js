@@ -114,7 +114,7 @@ ScrollingCanvas.prototype._init_properties = function() {
         return that._canvas.height / 2; 
     }, function(value) {
         that._canvas.setAttribute('height', value * 2);
-        that.el.setAttribute('style', 'width: ' + that.width + '; height: ' + value + ';');
+        that.el.setAttribute('style', 'width: ' + that.width + 'px; height: ' + value + 'px;');
 
         that.trigger('resize', {height: value});
         that._try_redraw();
@@ -131,7 +131,7 @@ ScrollingCanvas.prototype._init_properties = function() {
         return that._canvas.width / 2; 
     }, function(value) {
         that._canvas.setAttribute('width', value * 2);
-        that.el.setAttribute('style', 'width: ' + value + '; height: ' + that.height + ';');
+        that.el.setAttribute('style', 'width: ' + value + 'px; height: ' + that.height + 'px;');
 
         that.trigger('resize', {width: value});
         that._try_redraw();
@@ -214,10 +214,10 @@ ScrollingCanvas.prototype._query_redraw = function() {
  * @return {null}
  */
 ScrollingCanvas.prototype._move_dummy = function(x, y) {
-    this._dummy.setAttribute('style', 'left: ' + String(x) + '; top: ' + String(y) + ';');
+    this._dummy.setAttribute('style', 'left: ' + String(x) + 'px; top: ' + String(y) + 'px;');
     this._touch_pane.setAttribute('style', 
-        'width: ' + String(Math.max(x, this._scroll_bars.clientWidth)) + '; ' +
-        'height: ' + String(Math.max(y, this._scroll_bars.clientHeight)) + ';');
+        'width: ' + String(Math.max(x, this._scroll_bars.clientWidth)) + 'px; ' +
+        'height: ' + String(Math.max(y, this._scroll_bars.clientHeight)) + 'px;');
 };
 
 /**
