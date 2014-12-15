@@ -131,7 +131,7 @@ var convert_vim_regex = function(s) {
 
     return {
         regex: s,
-        flags: (case_insesitive ? 'i' : '') + 'smg'
+        flags: (case_insesitive ? 'i' : '') + 'mg'
     };
 };
 

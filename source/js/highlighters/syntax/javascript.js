@@ -8,7 +8,7 @@ exports.language = {
             {
                 "start": {
                     "regex": "'", 
-                    "flags": "smg", 
+                    "flags": "mg", 
                     "delta": 0
                 }, 
                 "contains": [
@@ -17,13 +17,13 @@ exports.language = {
                 ], 
                 "end": {
                     "regex": "'|$", 
-                    "flags": "smg", 
+                    "flags": "mg", 
                     "delta": 0
                 }, 
                 "type": "region", 
                 "skip": {
                     "regex": "\\\\\\\\|\\\\'", 
-                    "flags": "smg", 
+                    "flags": "mg", 
                     "delta": 0
                 }
             }
@@ -32,7 +32,7 @@ exports.language = {
             {
                 "regex": {
                     "regex": "'\\\\.'", 
-                    "flags": "smg", 
+                    "flags": "mg", 
                     "delta": 0
                 }, 
                 "skipwhite": false, 
@@ -76,7 +76,7 @@ exports.language = {
             {
                 "start": {
                     "regex": "/[^/*]", 
-                    "flags": "smg", 
+                    "flags": "mg", 
                     "delta": -1
                 }, 
                 "contains": [
@@ -84,13 +84,13 @@ exports.language = {
                 ], 
                 "end": {
                     "regex": "/[gim]{0,2\\}\\s*[;.,\\)\\]}]", 
-                    "flags": "smg", 
+                    "flags": "mg", 
                     "delta": -1
                 }, 
                 "type": "region", 
                 "skip": {
                     "regex": "\\\\\\\\|\\\\/", 
-                    "flags": "smg", 
+                    "flags": "mg", 
                     "delta": 0
                 }
             }
@@ -99,7 +99,7 @@ exports.language = {
             {
                 "regex": {
                     "regex": "^[ \\t]*\\*($|[ \\t]+)", 
-                    "flags": "smg", 
+                    "flags": "mg", 
                     "delta": 0
                 }, 
                 "skipwhite": false, 
@@ -113,7 +113,7 @@ exports.language = {
             {
                 "regex": {
                     "regex": "\\\\\\d\\d\\d|\\\\.", 
-                    "flags": "smg", 
+                    "flags": "mg", 
                     "delta": 0
                 }, 
                 "skipwhite": false, 
@@ -127,7 +127,7 @@ exports.language = {
             {
                 "start": {
                     "regex": "\"", 
-                    "flags": "smg", 
+                    "flags": "mg", 
                     "delta": 0
                 }, 
                 "contains": [
@@ -136,13 +136,13 @@ exports.language = {
                 ], 
                 "end": {
                     "regex": "\"|$", 
-                    "flags": "smg", 
+                    "flags": "mg", 
                     "delta": 0
                 }, 
                 "type": "region", 
                 "skip": {
                     "regex": "\\\\\\\\|\\\\\"", 
-                    "flags": "smg", 
+                    "flags": "mg", 
                     "delta": 0
                 }
             }
@@ -190,7 +190,7 @@ exports.language = {
             {
                 "regex": {
                     "regex": "\\/\\/.*", 
-                    "flags": "smg", 
+                    "flags": "mg", 
                     "delta": 0
                 }, 
                 "skipwhite": false, 
@@ -221,7 +221,7 @@ exports.language = {
             {
                 "regex": {
                     "regex": "[\\{}\\[\\]]", 
-                    "flags": "smg", 
+                    "flags": "mg", 
                     "delta": 0
                 }, 
                 "skipwhite": false, 
@@ -275,7 +275,7 @@ exports.language = {
             {
                 "start": {
                     "regex": "/\\*", 
-                    "flags": "smg", 
+                    "flags": "mg", 
                     "delta": 0
                 }, 
                 "contains": [
@@ -284,7 +284,7 @@ exports.language = {
                 ], 
                 "end": {
                     "regex": "\\*/", 
-                    "flags": "smg", 
+                    "flags": "mg", 
                     "delta": 0
                 }, 
                 "type": "region", 
@@ -348,7 +348,7 @@ exports.language = {
             {
                 "regex": {
                     "regex": "[^a-zA-Z0-9]function[^a-zA-Z0-9]", 
-                    "flags": "smg", 
+                    "flags": "mg", 
                     "delta": 0
                 }, 
                 "skipwhite": false, 
@@ -371,13 +371,13 @@ exports.language = {
             {
                 "start": {
                     "regex": "[^a-zA-Z0-9]function[^a-zA-Z0-9].*[^};]$", 
-                    "flags": "smg", 
+                    "flags": "mg", 
                     "delta": 0
                 }, 
                 "contains": [], 
                 "end": {
                     "regex": "^\\z1}.*$", 
-                    "flags": "smg", 
+                    "flags": "mg", 
                     "delta": 0
                 }, 
                 "type": "region", 
@@ -400,7 +400,7 @@ exports.language = {
             {
                 "regex": {
                     "regex": "[\\(\\)]", 
-                    "flags": "smg", 
+                    "flags": "mg", 
                     "delta": 0
                 }, 
                 "skipwhite": false, 
@@ -469,7 +469,7 @@ exports.language = {
             {
                 "regex": {
                     "regex": "-?[^a-zA-Z0-9]\\d+L?[^a-zA-Z0-9]|0[xX][0-9a-fA-F]+[^a-zA-Z0-9]", 
-                    "flags": "smg", 
+                    "flags": "mg", 
                     "delta": 0
                 }, 
                 "skipwhite": false, 

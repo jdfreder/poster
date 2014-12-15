@@ -85,9 +85,12 @@ SyntaxHighlighter.prototype._find_highlights = function(text, group_name, group,
         case 'keyword':
             group.keywords.forEach(function(keyword) {
                 var index;
-                while (text.indexOf(keyword, index) != -1) {
-                    index = text.indexOf(keyword, index);
-                    found_groups.push([index, index + keyword.length, group_name]);
+                while ((index = text.indexOf(keyword, index)) != -1) {
+                    var non_text_start = (index === 0) || utils.not_text(text[index-1]);
+                    var non_text_end = (index + keyword.length >= text.length) || utils.not_text(text[index + keyword.length]);
+                    if (non_text_start && non_text_end) {
+                        found_groups.push([index, index + keyword.length, group_name]);
+                    }
                     index++;
                 }
             });
@@ -167,9 +170,9 @@ SyntaxHighlighter.prototype._find_highlights = function(text, group_name, group,
                 var sub_group = that._groups[contain];
                 if (sub_group) {
                     sub_group.forEach(function(sub_group_child) {
-                        that._find_highlights(subtext, contain, sub_group_child).forEach(function(found) {
-                            sub_found.push([found[0] + left, found[1] + left, found[2]]);
-                        });
+                        // that._find_highlights(subtext, contain, sub_group_child).forEach(function(found) {
+                        //     sub_found.push([found[0] + left, found[1] + left, found[2]]);
+                        // });
                     });
                 }
             });

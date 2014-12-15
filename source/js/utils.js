@@ -360,9 +360,20 @@ var findall = function(text, re, flags) {
     var results;
     var found = [];
     while ((results = re.exec(text)) !== null) {
-        found.push([results.index, results.index + results[0].length]);
+        var end_index = results.index + (results[0].length || 1);
+        found.push([results.index, end_index]);
+        re.lastIndex = Math.max(end_index, re.lastIndex);
     }
     return found;
+};
+
+/**
+ * Checks if the character isn't text.
+ * @param  {char} c - character
+ * @return {boolean} true if the character is not text.
+ */
+var not_text = function(c) {
+    return 'abcdefghijklmnopqrstuvwxyz1234567890'.indexOf(c.toLowerCase()) == -1;
 };
 
 // Export names.
@@ -380,3 +391,4 @@ exports.cancel_bubble = cancel_bubble;
 exports.random_color = random_color;
 exports.compare_arrays = compare_arrays;
 exports.findall = findall;
+exports.not_text = not_text;
