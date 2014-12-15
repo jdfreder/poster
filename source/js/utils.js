@@ -355,8 +355,8 @@ var compare_arrays = function(x, y) {
  * @param  {string} re - regular expression to find
  * @return {array} array of [start_index, end_index] pairs
  */
-var findall = function(text, re) {
-    re = new RegExp(re, 'gm');
+var findall = function(text, re, flags) {
+    re = new RegExp(re, flags || 'gm');
     var results;
     var found = [];
     while ((results = re.exec(text)) !== null) {
