@@ -31,7 +31,7 @@ exports.language = {
         "javaScriptSpecialCharacter": [
             {
                 "regex": {
-                    "regex": "'\\\\.'", 
+                    "regex": "'\\\\[\\s\\S]'", 
                     "flags": "mg", 
                     "delta": 0
                 }, 
@@ -83,7 +83,7 @@ exports.language = {
                     "@htmlPreproc"
                 ], 
                 "end": {
-                    "regex": "/[gim]{0,2\\}\\s*[;.,\\)\\]}]", 
+                    "regex": "/[gim]{0,2\\}\\s*[;[\\s\\S],\\)\\]}]", 
                     "flags": "mg", 
                     "delta": -1
                 }, 
@@ -112,7 +112,7 @@ exports.language = {
         "javaScriptSpecial": [
             {
                 "regex": {
-                    "regex": "\\\\\\d\\d\\d|\\\\.", 
+                    "regex": "\\\\\\d\\d\\d|\\\\[\\s\\S]", 
                     "flags": "mg", 
                     "delta": 0
                 }, 
@@ -189,7 +189,7 @@ exports.language = {
         "javaScriptLineComment": [
             {
                 "regex": {
-                    "regex": "\\/\\/.*", 
+                    "regex": "\\/\\/[\\s\\S]*", 
                     "flags": "mg", 
                     "delta": 0
                 }, 
@@ -370,13 +370,13 @@ exports.language = {
         "javaScriptFunctionFold": [
             {
                 "start": {
-                    "regex": "[^a-zA-Z0-9]function[^a-zA-Z0-9].*[^};]$", 
+                    "regex": "[^a-zA-Z0-9]function[^a-zA-Z0-9][\\s\\S]*[^};]$", 
                     "flags": "mg", 
                     "delta": 0
                 }, 
                 "contains": [], 
                 "end": {
-                    "regex": "^\\z1}.*$", 
+                    "regex": "^\\z1}[\\s\\S]*$", 
                     "flags": "mg", 
                     "delta": 0
                 }, 
