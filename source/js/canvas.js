@@ -402,7 +402,11 @@ Canvas.prototype._apply_options = function(options) {
     // Font style.
     var pixels = function(x) {
         if (x !== undefined && x !== null) {
-            return x + 'px';
+            if (Number.isFinite(x)) {
+                return str(x) + 'px';
+            } else {
+                return x;
+            }
         } else {
             return null;
         }
