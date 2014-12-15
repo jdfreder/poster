@@ -48,7 +48,6 @@ HighlighterBase.prototype._queue_highlighter = function() {
                 that.highlight(top_row, bottom_row);
             } finally {
                 that._model.release_tag_event_lock();
-                that._model.trigger_tag_events();
                 that._queued = null;
             }
         }, this.delay);

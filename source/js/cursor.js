@@ -201,7 +201,25 @@ Cursor.prototype.set_primary = function(row_index, char_index) {
  */
 Cursor.prototype.set_secondary = function(row_index, char_index) {
     this.secondary_row = row_index;
-    this.secondary_char = char_index;    
+    this.secondary_char = char_index;
+    this.trigger('change'); 
+};
+
+/**
+ * Sets both the primary and secondary cursor positions
+ * @param {integer} row_index
+ * @param {integer} char_index
+ */
+Cursor.prototype.set_both = function(row_index, char_index) {
+    this.primary_row = row_index;
+    this.primary_char = char_index;
+    this.secondary_row = row_index;
+    this.secondary_char = char_index;
+
+    // Remember the character position, vertical navigation across empty lines
+    // shouldn't cause the horizontal position to be lost.
+    this._memory_char = this.primary_char;
+
     this.trigger('change'); 
 };
 
@@ -249,9 +267,9 @@ Cursor.prototype.insert_text = function(text) {
         this.primary_row += lines.length - 1;
         this.primary_char = lines[lines.length-1].length;
     }
-    this.trigger('change'); 
-
     this._reset_secondary();
+
+    this.trigger('change'); 
     return true;
 };
 

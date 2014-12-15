@@ -10,6 +10,11 @@ var Canvas = function() {
     utils.PosterClass.call(this);
     this._layout();
     this._init_properties();
+    this._last_set_options = {};
+
+    this._text_size_cache = {};
+    this._text_size_array = [];
+    this._text_size_cache_size = 1000;
 
     // Set default size.
     this.width = 400;
@@ -280,7 +285,21 @@ Canvas.prototype.put_raw_image = function(img, x, y) {
  */
 Canvas.prototype.measure_text = function(text, options) {
     options = this._apply_options(options);
-    return this.context.measureText(text).width;
+
+    // Cache the size if it's not already cached.
+    if (this._text_size_cache[text] === undefined) {
+        this._text_size_cache[text] = this.context.measureText(text).width;
+        this._text_size_array.push(text);
+
+        // Remove the oldest item in the array if the cache is too large.
+        while (this._text_size_array.length > this._text_size_cache_size) {
+            var oldest = this._text_size_array.shift();
+            delete this._text_size_cache[oldest];
+        }
+    }
+    
+    // Use the cached size.
+    return this._text_size_cache[text];
 };
 
 /**
@@ -364,19 +383,20 @@ Canvas.prototype._apply_options = function(options) {
     options = utils.resolve_callable(options);
 
     // Special options.
-    this.context.globalAlpha = options.alpha===undefined ? 1.0 : options.alpha;
-    this.context.globalCompositeOperation = options.composite_operation || 'source-over';
+    var set_options = {};
+    set_options.globalAlpha = options.alpha===undefined ? 1.0 : options.alpha;
+    set_options.globalCompositeOperation = options.composite_operation || 'source-over';
     
     // Line style.
-    this.context.lineCap = options.line_cap || 'butt';
-    this.context.lineJoin = options.line_join || 'bevel';
-    this.context.lineWidth = options.line_width===undefined ? 1.0 : options.line_width;
-    this.context.miterLimit = options.line_miter_limit===undefined ? 10 : options.line_miter_limit;
-    this.context.strokeStyle = options.line_color || options.color || 'black'; // TODO: Support gradient
+    set_options.lineCap = options.line_cap || 'butt';
+    set_options.lineJoin = options.line_join || 'bevel';
+    set_options.lineWidth = options.line_width===undefined ? 1.0 : options.line_width;
+    set_options.miterLimit = options.line_miter_limit===undefined ? 10 : options.line_miter_limit;
+    set_options.strokeStyle = options.line_color || options.color || 'black'; // TODO: Support gradient
     options.stroke = (options.line_color !== undefined || options.line_width !== undefined);
 
     // Fill style.
-    this.context.fillStyle = options.fill_color || options.color || 'black'; // TODO: Support gradient
+    set_options.fillStyle = options.fill_color || options.color || 'black'; // TODO: Support gradient
     options.fill = options.fill_color !== undefined;
 
     // Font style.
@@ -386,13 +406,30 @@ Canvas.prototype._apply_options = function(options) {
     var font_size = options.font_size || '12pt';
     var font_family = options.font_family || 'Arial';
     var font = font_style + ' ' + font_variant + ' ' + font_weight + ' ' + font_size + ' ' + font_family;
-    this.context.font = options.font || font;
+    set_options.font = options.font || font;
 
     // Text style.
-    this.context.textAlign = options.text_align || 'left';
-    this.context.textBaseline = options.text_baseline || 'top';
+    set_options.textAlign = options.text_align || 'left';
+    set_options.textBaseline = options.text_baseline || 'top';
 
     // TODO: Support shadows.
+    
+    // Empty the measure text cache if the font is changed.
+    if (set_options.font !== this._last_set_options.font) {
+        this._text_size_cache = {};
+        this._text_size_array = [];
+    }
+    
+    // Set the options on the context object.  Only set options that
+    // have changed since the last call.
+    for (var key in set_options) {
+        if (set_options.hasOwnProperty(key)) {
+            if (this._last_set_options[key] !== set_options[key]) {
+                this._last_set_options[key] = set_options[key];
+                this.context[key] = set_options[key];
+            }
+        }
+    }
 
     return options;
 };
