@@ -187,6 +187,9 @@ DocumentModel.prototype.add_text = function(row_index, char_index, text) {
 
         this._rows = new_rows;
         this._resized_rows();
+        this.trigger('row_changed', coords.start_row);
+        this.trigger('rows_added', coords.start_row + 1, coords.start_row + split_text.length - 1);
+        this.trigger('changed');
 
     // Text doesn't have any new lines, just modify the
     // line and then trigger the row changed event.
@@ -217,12 +220,10 @@ DocumentModel.prototype.remove_text = function(start_row, start_char, end_row, e
     if (coords.end_row - coords.start_row > 0) {
         this._rows.splice(coords.start_row + 1, coords.end_row - coords.start_row);
         this._resized_rows();
+        this.trigger('text_changed');
+        this.trigger('changed');
     } else if (coords.end_row == coords.start_row) {
         this.trigger('row_changed', coords.start_row);
-        this.trigger('changed');
-    } else {
-        this.trigger('row_changed', coords.start_row);
-        this.trigger('row_changed', coords.end_row);
         this.trigger('changed');
     }
 };
@@ -236,6 +237,8 @@ DocumentModel.prototype.remove_row = function(row_index) {
     if (0 < row_index && row_index < this._rows.length) {
         this._rows.splice(row_index, 1);
         this._resized_rows();
+        this.trigger('text_changed');
+        this.trigger('changed');
     }
 };
 
@@ -281,6 +284,8 @@ DocumentModel.prototype.add_row = function(row_index, text) {
 
     this._rows = new_rows;
     this._resized_rows();
+    this.trigger('rows_added', row_index, row_index);
+    this.trigger('changed');
 };
 
 /**
@@ -352,6 +357,8 @@ DocumentModel.prototype._get_text = function() {
 DocumentModel.prototype._set_text = function(value) {
     this._rows = value.split('\n');
     this._resized_rows();
+    this.trigger('text_changed');
+    this.trigger('changed');
 };
 
 /**
@@ -367,10 +374,6 @@ DocumentModel.prototype._resized_rows = function() {
     if (this._row_tags.length > this._rows.length) {
         this._row_tags.splice(this._rows.length, this._row_tags.length - this._rows.length);
     }
-
-    // Trigger events
-    this.trigger('text_changed');
-    this.trigger('changed');
 };
 
 /**
