@@ -1,2 +1,2 @@
-HTML Canvas based and syntax highlighted text editor.  
+HTML5 canvas based code editor.  
 See http://jdfreder.github.io/poster/
