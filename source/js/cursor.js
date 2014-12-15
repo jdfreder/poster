@@ -130,13 +130,13 @@ Cursor.prototype.word_primary = function(direction) {
     var hit_text = false;
     var row_text = this._model._rows[this.primary_row];
     if (direction == -1) {
-        while (0 < i && !(hit_text && this._not_text(row_text[i-1]))) {
-            hit_text = hit_text || !this._not_text(row_text[i-1]);
+        while (0 < i && !(hit_text && utils.not_text(row_text[i-1]))) {
+            hit_text = hit_text || !utils.not_text(row_text[i-1]);
             i += direction;
         }
     } else {
-        while (i < row_text.length && !(hit_text && this._not_text(row_text[i]))) {
-            hit_text = hit_text || !this._not_text(row_text[i]);
+        while (i < row_text.length && !(hit_text && utils.not_text(row_text[i]))) {
+            hit_text = hit_text || !utils.not_text(row_text[i]);
             i += direction;
         }
     }
@@ -374,15 +374,6 @@ Cursor.prototype._init_properties = function() {
             return that.primary_char;
         }
     });
-};
-
-/**
- * Checks if the character isn't text.
- * @param  {char} c - character
- * @return {boolean} true if the character is not text.
- */
-Cursor.prototype._not_text = function(c) {
-    return 'abcdefghijklmnopqrstuvwxyz1234567890'.indexOf(c.toLowerCase()) == -1;
 };
 
 /**

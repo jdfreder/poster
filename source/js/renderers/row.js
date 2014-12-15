@@ -275,7 +275,7 @@ RowRenderer.prototype._handle_rows_added = function(start, end) {
     this._scrolling_canvas.scroll_height += (end - start + 1) * this.get_row_height();
     var width = this._scrolling_canvas.scroll_width;
     for (var i = start; i <= end; i++) { 
-        width = Math.max(this._measure_row_width(index), width);
+        width = Math.max(this._measure_row_width(i), width);
     }
     this._scrolling_canvas.scroll_width = width;
 };

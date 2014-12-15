@@ -85,25 +85,28 @@ SyntaxHighlighter.prototype._find_highlights = function(text, group_name, group,
         case 'keyword':
             group.keywords.forEach(function(keyword) {
                 var index;
-                while (text.indexOf(keyword, index) != -1) {
-                    index = text.indexOf(keyword, index);
-                    found_groups.push([index, index + keyword.length, group_name]);
+                while ((index = text.indexOf(keyword, index)) != -1) {
+                    var non_text_start = (index === 0) || utils.not_text(text[index-1]);
+                    var non_text_end = (index + keyword.length >= text.length) || utils.not_text(text[index + keyword.length]);
+                    if (non_text_start && non_text_end) {
+                        found_groups.push([index, index + keyword.length, group_name]);
+                    }
                     index++;
                 }
             });
             break;
         case 'match':
-            utils.findall(text, group.regex.regex).forEach(function(found) {
+            utils.findall(text, group.regex.regex, group.regex.flags).forEach(function(found) {
                 found_groups.push([found[0], found[1] + group.regex.delta, group_name]);
             });
             break;
         case 'region':
-            var starts = utils.findall(text, group.start.regex);
+            var starts = utils.findall(text, group.start.regex, group.start.flags);
             var skips = [];
             if (group.skip) {
-                skips = utils.findall(text, group.skip.regex);
+                skips = utils.findall(text, group.skip.regex, group.skip.flags);
             }
-            var ends = utils.findall(text, group.end.regex);
+            var ends = utils.findall(text, group.end.regex, group.end.flags);
 
             // Remove ends that contact skips.
             ends = ends.filter(function(end) {
@@ -167,9 +170,9 @@ SyntaxHighlighter.prototype._find_highlights = function(text, group_name, group,
                 var sub_group = that._groups[contain];
                 if (sub_group) {
                     sub_group.forEach(function(sub_group_child) {
-                        that._find_highlights(subtext, contain, sub_group_child).forEach(function(found) {
-                            sub_found.push([found[0] + left, found[1] + left, found[2]]);
-                        });
+                        // that._find_highlights(subtext, contain, sub_group_child).forEach(function(found) {
+                        //     sub_found.push([found[0] + left, found[1] + left, found[2]]);
+                        // });
                     });
                 }
             });
@@ -198,17 +201,19 @@ SyntaxHighlighter.prototype.load = function(language) {
         this._groups = language.groups;
         this._tags = language.tags;
 
-        // Find all groups where contained == false
+        // Processesing that must happen at load time.
         var that = this;
         for (var group_name in this._groups) {
             if (this._groups.hasOwnProperty(group_name)) {
                 this._groups[group_name].forEach(function(group) {
+                    
+                    // Find all groups where contained == false
                     if (!group.contained) {
                         if (that._toplevel_groups[group_name] === undefined) {
                             that._toplevel_groups[group_name] = [];
                         }
                         that._toplevel_groups[group_name].push(group);
-                    }
+                    }                     
                 });
             }
         }
