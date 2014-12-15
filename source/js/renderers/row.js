@@ -23,7 +23,7 @@ var RowRenderer = function(model, scrolling_canvas) {
     // Set some basic rendering properties.
     this._base_options = {
         font_family: 'monospace',
-        font_size: 12,
+        font_size: 14,
     };
     this._line_spacing = 2;
 

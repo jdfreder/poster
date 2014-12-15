@@ -400,10 +400,17 @@ Canvas.prototype._apply_options = function(options) {
     options.fill = options.fill_color !== undefined;
 
     // Font style.
+    var pixels = function(x) {
+        if (x !== undefined && x !== null) {
+            return x + 'px';
+        } else {
+            return null;
+        }
+    };
     var font_style = options.font_style || '';
     var font_variant = options.font_variant || '';
     var font_weight = options.font_weight || '';
-    var font_size = options.font_size || '12pt';
+    var font_size = pixels(options.font_size) || '12px';
     var font_family = options.font_family || 'Arial';
     var font = font_style + ' ' + font_variant + ' ' + font_weight + ' ' + font_size + ' ' + font_family;
     set_options.font = options.font || font;
