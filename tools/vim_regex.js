@@ -128,6 +128,10 @@ var convert_vim_regex = function(s) {
         i++;
     }
 
+    // Final touches
+    // The dotall modified (`s`) doesn't exist in Javascript, so instead
+    // use this workaround.
+    s = _replace_unescaped(s, '.', '[\\s\\S]');
 
     return {
         regex: s,
