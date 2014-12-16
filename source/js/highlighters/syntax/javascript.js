@@ -189,7 +189,7 @@ exports.language = {
         "javaScriptLineComment": [
             {
                 "regex": {
-                    "regex": "\\/\\/[\\s\\S]*", 
+                    "regex": "\\/\\/.*", 
                     "flags": "mg", 
                     "delta": 0
                 }, 
