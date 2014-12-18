@@ -76,11 +76,28 @@ HighlightedRowRenderer.prototype._get_groups = function(index) {
  */
 HighlightedRowRenderer.prototype._get_options = function(syntax) {
     var render_options = utils.shallow_copy(this._base_options);
+    
+    // Highlight if a sytax item and style are provided.
+    if (this.style) {
 
-    if (syntax && this.style && this.style[syntax]) {
-        render_options.color = this.style[syntax];
-    } else {
-        render_options.color = this.style.text || 'black';
+        // If this is a nested syntax item, use the most specific part
+        // which is defined in the active style.
+        if (syntax && syntax.indexOf(' ') != -1) {
+            var parts = syntax.split(' ');
+            for (var i = parts.length - 1; i >= 0; i--) {
+                if (this.style[parts[i]]) {
+                    syntax = parts[i];
+                    break;
+                }
+            }
+        }
+
+        // Style if the syntax item is defined in the style.
+        if (syntax && this.style[syntax]) {
+            render_options.color = this.style[syntax];
+        } else {
+            render_options.color = this.style.text || 'black';
+        }
     }
     
     return render_options;

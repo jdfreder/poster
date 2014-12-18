@@ -8,7 +8,7 @@ var highlighted_row = require('./renderers/highlighted_row.js');
 var cursors = require('./renderers/cursors.js');
 var selections = require('./renderers/selections.js');
 var color = require('./renderers/color.js');
-var syntax_highlighter = require('./highlighters/syntax.js');
+var highlighter = require('./highlighters/prism.js');
 
 /**
  * Visual representation of a DocumentModel instance
@@ -43,7 +43,7 @@ var DocumentView = function(canvas, model, cursors_model, style, config, has_foc
 
     // Create the document highlighter, which needs to know about the currently
     // rendered rows in order to know where to highlight.
-    this.highlighter = new syntax_highlighter.SyntaxHighlighter(model, row_renderer);
+    this.highlighter = new highlighter.PrismHighlighter(model, row_renderer);
 
     // Pass get_row_char into cursors.
     cursors_model.get_row_char = utils.proxy(row_renderer.get_row_char, row_renderer);
