@@ -392,11 +392,11 @@ Canvas.prototype._apply_options = function(options) {
     set_options.lineJoin = options.line_join || 'bevel';
     set_options.lineWidth = options.line_width===undefined ? 1.0 : options.line_width;
     set_options.miterLimit = options.line_miter_limit===undefined ? 10 : options.line_miter_limit;
-    set_options.strokeStyle = options.line_color || options.color || 'black'; // TODO: Support gradient
+    this.context.strokeStyle = options.line_color || options.color || 'black'; // TODO: Support gradient
     options.stroke = (options.line_color !== undefined || options.line_width !== undefined);
 
     // Fill style.
-    set_options.fillStyle = options.fill_color || options.color || 'black'; // TODO: Support gradient
+    this.context.fillStyle = options.fill_color || options.color || 'red'; // TODO: Support gradient
     options.fill = options.fill_color !== undefined;
 
     // Font style.

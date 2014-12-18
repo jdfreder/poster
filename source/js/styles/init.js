@@ -1,3 +1,3 @@
 exports.styles = {
-    "monokai": require("./monokai.js"),
+    "peacock": require("./peacock.js"),
 };
