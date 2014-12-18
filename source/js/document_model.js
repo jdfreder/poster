@@ -1,3 +1,5 @@
+// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+
 var utils = require('./utils.js');
 
 /**
@@ -14,9 +16,7 @@ var DocumentModel = function() {
 utils.inherit(DocumentModel, utils.PosterClass);
 
 /**
- // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-
-* Acquire a lock on tag events
+ * Acquire a lock on tag events
  *
  * Prevents tag events from firing.
  * @return {integer} lock count

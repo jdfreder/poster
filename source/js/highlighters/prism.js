@@ -12,7 +12,7 @@ var PrismHighlighter = function(model, row_renderer) {
 
     // Look back and forward this many rows for contextually 
     // sensitive highlighting.
-    this._row_padding = 5;
+    this._row_padding = 15;
     this._language = null;
 };
 utils.inherit(PrismHighlighter, highlighter.HighlighterBase);

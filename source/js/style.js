@@ -9,25 +9,19 @@ var styles = require('./styles/init.js');
 var Style = function() {
     utils.PosterClass.call(this, [
         'comment',
-        'todo',
-        'special',
         'string',
-        'character',
-        'conditional',
-        'repeat',
-        'operator',
-        'type',
-        'statement',
-        'function',
-        'error',
-        'boolean',
-        'identifier',
-        'label',
-        'exception',
+        'class-name',
         'keyword',
-        'debug',
+        'boolean',
+        'function',
+        'operator',
+        'number',
+        'ignore',
+        'punctuation',
 
         'cursor',
+        'cursor_width',
+        'cursor_height',
         'selection',
         'selection_unfocused',
 
@@ -36,7 +30,7 @@ var Style = function() {
     ]);
 
     // Load the default style.
-    this.load('monokai');
+    this.load('peacock');
 };
 utils.inherit(Style, utils.PosterClass);
 

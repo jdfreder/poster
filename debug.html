@@ -27,16 +27,401 @@
             poster.language = 'javascript';
 
             // Test text
-            poster.value = 'var a = 5;\n' +
-                'if (a == 2) {\n' + 
-                '    console.log(a);\n' + 
-                '}\n' + 
-                '\n' + 
-                'var b = function() {\n' + 
-                '    /* hello world */\n' + 
-                '    console.log("log");\n' + 
-                '    // test2\n' + 
-                '}';
+            poster.value = 
+"// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.\n" +
+"\n" +
+"var utils = require('./utils.js');\n" +
+"\n" +
+"/**\n" +
+" * Model containing all of the document's data (text).\n" +
+" */\n" +
+"var DocumentModel = function() {\n" +
+"    utils.PosterClass.call(this);\n" +
+"    this._rows = [];\n" +
+"    this._row_tags = [];\n" +
+"    this._tag_lock = 0;\n" +
+"    this._pending_tag_events = false;\n" +
+"    this._init_properties();\n" +
+"};\n" +
+"utils.inherit(DocumentModel, utils.PosterClass);\n" +
+"\n" +
+"/**\n" +
+" * Acquire a lock on tag events\n" +
+" *\n" +
+" * Prevents tag events from firing.\n" +
+" * @return {integer} lock count\n" +
+" */\n" +
+"DocumentModel.prototype.acquire_tag_event_lock = function() {\n" +
+"    return this._tag_lock++;\n" +
+"};\n" +
+"\n" +
+"/**\n" +
+" * Release a lock on tag events\n" +
+" * @return {integer} lock count\n" +
+" */\n" +
+"DocumentModel.prototype.release_tag_event_lock = function() {\n" +
+"    this._tag_lock--;\n" +
+"    if (this._tag_lock < 0) {\n" +
+"        this._tag_lock = 0;\n" +
+"    }\n" +
+"    if (this._tag_lock === 0 && this._pending_tag_events) {\n" +
+"        this._pending_tag_events = false;\n" +
+"        this.trigger_tag_events();\n" +
+"    }\n" +
+"    return this._tag_lock;\n" +
+"};\n" +
+"\n" +
+"/**\n" +
+" * Triggers the tag change events.\n" +
+" * @return {null}\n" +
+" */\n" +
+"DocumentModel.prototype.trigger_tag_events = function() {\n" +
+"    if (this._tag_lock === 0) {\n" +
+"        this.trigger('tags_changed');\n" +
+"        this.trigger('changed');    \n" +
+"    } else {\n" +
+"        this._pending_tag_events = true;\n" +
+"    }\n" +
+"};\n" +
+"\n" +
+"/**\n" +
+" * Sets a 'tag' on the text specified.\n" +
+" * @param {integer} start_row - row the tag starts on\n" +
+" * @param {integer} start_char - index, in the row, of the first tagged character\n" +
+" * @param {integer} end_row - row the tag ends on\n" +
+" * @param {integer} end_char - index, in the row, of the last tagged character\n" +
+" * @param {string} tag_name\n" +
+" * @param {any} tag_value - overrides any previous tags\n" +
+" */\n" +
+"DocumentModel.prototype.set_tag = function(start_row, start_char, end_row, end_char, tag_name, tag_value) {\n" +
+"    var coords = this.validate_coords.apply(this, arguments);\n" +
+"    for (var row = coords.start_row; row <= coords.end_row; row++) {\n" +
+"        var start = coords.start_char;\n" +
+"        var end = coords.end_char;\n" +
+"        if (row > coords.start_row) { start = -1; }\n" +
+"        if (row < coords.end_row) { end = -1; }\n" +
+"\n" +
+"        // Remove or modify conflicting tags.\n" +
+"        var add_tags = [];\n" +
+"        this._row_tags[row].filter(function(tag) {\n" +
+"            if (tag.name == tag_name) {\n" +
+"                // Check if tag is within\n" +
+"                if (start == -1 && end == -1) {\n" +
+"                    return false;\n" +
+"                }\n" +
+"                if (tag.start >= start && (tag.end < end || end == -1)) {\n" +
+"                    return false;\n" +
+"                }\n" +
+                "\n" +
+"                // Check if tag is outside\n" +
+"                // To the right?\n" +
+"                if (tag.start > end && end != -1) {\n" +
+"                    return true;\n" +
+"                }\n" +
+"                // To the left?\n" +
+"                if (tag.end < start && tag.end != -1) {\n" +
+"                    return true;\n" +
+"                }\n" +
+"\n" +
+"                // Check if tag encapsulates\n" +
+"                var left_intersecting = tag.start < start;\n" +
+"                var right_intersecting = end != -1 && (tag.end == -1 || tag.end > end);\n" +
+"\n" +
+"                // Check if tag is left intersecting\n" +
+"                if (left_intersecting) {\n" +
+"                    add_tags.push({name: tag_name, value: tag.value, start: tag.start, end: start-1});\n" +
+"                }\n" +
+"\n" +
+"                // Check if tag is right intersecting\n" +
+"                if (right_intersecting) {\n" +
+"                    add_tags.push({name: tag_name, value: tag.value, start: end+1, end: tag.end});\n" +
+"                }\n" +
+"                return false;\n" +
+"            }\n" +
+"        });\n" +
+        "\n" +
+"        // Add tags and corrected tags.\n" +
+"        this._row_tags[row] = this._row_tags[row].concat(add_tags);\n" +
+"        this._row_tags[row].push({name: tag_name, value: tag_value, start: start, end: end});\n" +
+"    }\n" +
+"    this.trigger_tag_events();\n" +
+"};\n" +
+"\n" +
+"/**\n" +
+" * Removed all of the tags on the document.\n" +
+" * @param  {integer} start_row\n" +
+" * @param  {integer} end_row\n" +
+" * @return {null}\n" +
+" */\n" +
+"DocumentModel.prototype.clear_tags = function(start_row, end_row) {\n" +
+"    start_row = start_row !== undefined ? start_row : 0;\n" +
+"    end_row = end_row !== undefined ? end_row : this._row_tags.length - 1;\n" +
+"    for (var i = start_row; i <= end_row; i++) {\n" +
+"        this._row_tags[i] = [];\n" +
+"    }\n" +
+"    this.trigger_tag_events();\n" +
+"};\n" +
+"\n" +
+"/**\n" +
+" * Get the tags applied to a character.\n" +
+" * @param  {integer} row_index\n" +
+" * @param  {integer} char_index\n" +
+" * @return {dictionary}\n" +
+" */\n" +
+"DocumentModel.prototype.get_tags = function(row_index, char_index) {\n" +
+"    var coords = this.validate_coords.apply(this, arguments);\n" +
+"    var tags = {};\n" +
+"    this._row_tags[coords.start_row].forEach(function(tag) {\n" +
+"        // Tag start of -1 means the tag continues to the previous line.\n" +
+"        var after_start = (coords.start_char >= tag.start || tag.start == -1);\n" +
+"        // Tag end of -1 means the tag continues to the next line.\n" +
+"        var before_end = (coords.start_char <= tag.end || tag.end == -1);\n" +
+"        if (after_start && before_end) {\n" +
+"            tags[tag.name] = tag.value;\n" +
+"        }\n" +
+"    });\n" +
+"    return tags;\n" +
+"};\n" +
+"\n" +
+"/**\n" +
+" * Adds text efficiently somewhere in the document.\n" +
+" * @param {integer} row_index  \n" +
+" * @param {integer} char_index \n" +
+" * @param {string} text\n" +
+" */\n" +
+"DocumentModel.prototype.add_text = function(row_index, char_index, text) {\n" +
+"    var coords = this.validate_coords.apply(this, Array.prototype.slice.call(arguments, 0,2));\n" +
+"    // If the text has a new line in it, just re-set\n" +
+"    // the rows list.\n" +
+"    if (text.indexOf('\n') != -1) {\n" +
+"        var new_rows = [];\n" +
+"        if (coords.start_row > 0) {\n" +
+"            new_rows = this._rows.slice(0, coords.start_row);\n" +
+"        }\n" +
+"\n" +
+"        var old_row = this._rows[coords.start_row];\n" +
+"        var old_row_start = old_row.substring(0, coords.start_char);\n" +
+"        var old_row_end = old_row.substring(coords.start_char);\n" +
+"        var split_text = text.split('\n');\n" +
+"        new_rows.push(old_row_start + split_text[0]);\n" +
+"\n" +
+"        if (split_text.length > 2) {\n" +
+"            new_rows = new_rows.concat(split_text.slice(1,split_text.length-1));\n" +
+"        }\n" +
+"\n" +
+"        new_rows.push(split_text[split_text.length-1] + old_row_end);\n" +
+"\n" +
+"        if (coords.start_row+1 < this._rows.length) {\n" +
+"            new_rows = new_rows.concat(this._rows.slice(coords.start_row+1));\n" +
+"        }\n" +
+"\n" +
+"        this._rows = new_rows;\n" +
+"        this._resized_rows();\n" +
+"        this.trigger('row_changed', coords.start_row);\n" +
+"        this.trigger('rows_added', coords.start_row + 1, coords.start_row + split_text.length - 1);\n" +
+"        this.trigger('changed');\n" +
+"\n" +
+"    // Text doesn't have any new lines, just modify the\n" +
+"    // line and then trigger the row changed event.\n" +
+"    } else {\n" +
+"        var old_text = this._rows[coords.start_row];\n" +
+"        this._rows[coords.start_row] = old_text.substring(0, coords.start_char) + text + old_text.substring(coords.start_char);\n" +
+"        this.trigger('row_changed', coords.start_row);\n" +
+"        this.trigger('changed');\n" +
+"    }\n" +
+"};\n" +
+"\n" +
+"/**\n" +
+" * Removes a block of text from the document\n" +
+" * @param  {integer} start_row\n" +
+" * @param  {integer} start_char\n" +
+" * @param  {integer} end_row\n" +
+" * @param  {integer} end_char\n" +
+" * @return {null}\n" +
+" */\n" +
+"DocumentModel.prototype.remove_text = function(start_row, start_char, end_row, end_char) {\n" +
+"    var coords = this.validate_coords.apply(this, arguments);\n" +
+"    if (coords.start_row == coords.end_row) {\n" +
+"        this._rows[coords.start_row] = this._rows[coords.start_row].substring(0, coords.start_char) + this._rows[coords.start_row].substring(coords.end_char);\n" +
+"    } else {\n" +
+"        this._rows[coords.start_row] = this._rows[coords.start_row].substring(0, coords.start_char) + this._rows[coords.end_row].substring(coords.end_char);\n" +
+"    }\n" +
+"\n" +
+"    if (coords.end_row - coords.start_row > 0) {\n" +
+"        this._rows.splice(coords.start_row + 1, coords.end_row - coords.start_row);\n" +
+"        this._resized_rows();\n" +
+"        this.trigger('text_changed');\n" +
+"        this.trigger('changed');\n" +
+"    } else if (coords.end_row == coords.start_row) {\n" +
+"        this.trigger('row_changed', coords.start_row);\n" +
+"        this.trigger('changed');\n" +
+"    }\n" +
+"};\n" +
+"\n" +
+"/**\n" +
+" * Remove a row from the document.\n" +
+" * @param  {integer} row_index\n" +
+" * @return {null}\n" +
+" */\n" +
+"DocumentModel.prototype.remove_row = function(row_index) {\n" +
+"    if (0 < row_index && row_index < this._rows.length) {\n" +
+"        this._rows.splice(row_index, 1);\n" +
+"        this._resized_rows();\n" +
+"        this.trigger('text_changed');\n" +
+"        this.trigger('changed');\n" +
+"    }\n" +
+"};\n" +
+"\n" +
+"/**\n" +
+" * Gets a chunk of text.\n" +
+" * @param  {integer} start_row\n" +
+" * @param  {integer} start_char\n" +
+" * @param  {integer} end_row\n" +
+" * @param  {integer} end_char\n" +
+" * @return {string}\n" +
+" */\n" +
+"DocumentModel.prototype.get_text = function(start_row, start_char, end_row, end_char) {\n" +
+"    var coords = this.validate_coords.apply(this, arguments);\n" +
+"    if (coords.start_row==coords.end_row) {\n" +
+"        return this._rows[coords.start_row].substring(coords.start_char, coords.end_char);\n" +
+"    } else {\n" +
+"        var text = [];\n" +
+"        text.push(this._rows[coords.start_row].substring(coords.start_char));\n" +
+"        if (coords.end_row - coords.start_row > 1) {\n" +
+"            for (var i = coords.start_row + 1; i < coords.end_row; i++) {\n" +
+"                text.push(this._rows[i]);\n" +
+"            }\n" +
+"        }\n" +
+"        text.push(this._rows[coords.end_row].substring(0, coords.end_char));\n" +
+"        return text.join('\n');\n" +
+"    }\n" +
+"};\n" +
+"\n" +
+"/**\n" +
+" * Add a row to the document\n" +
+" * @param {integer} row_index\n" +
+" * @param {string} text - new row's text\n" +
+" */\n" +
+"DocumentModel.prototype.add_row = function(row_index, text) {\n" +
+"    var new_rows = [];\n" +
+"    if (row_index > 0) {\n" +
+"        new_rows = this._rows.slice(0, row_index);\n" +
+"    }\n" +
+"    new_rows.push(text);\n" +
+"    if (row_index < this._rows.length) {\n" +
+"        new_rows = new_rows.concat(this._rows.slice(row_index));\n" +
+"    }\n" +
+"\n" +
+"    this._rows = new_rows;\n" +
+"    this._resized_rows();\n" +
+"    this.trigger('rows_added', row_index, row_index);\n" +
+"    this.trigger('changed');\n" +
+"};\n" +
+"\n" +
+"/**\n" +
+" * Validates row, character coordinates in the document.\n" +
+" * @param  {integer} start_row\n" +
+" * @param  {integer} start_char\n" +
+" * @param  {integer} (optional) end_row\n" +
+" * @param  {integer} (optional) end_char\n" +
+" * @return {dictionary} dictionary containing validated coordinates {start_row, \n" +
+" *                      start_char, end_row, end_char}\n" +
+" */\n" +
+"DocumentModel.prototype.validate_coords = function(start_row, start_char, end_row, end_char) {\n" +
+"\n" +
+"    // Make sure the values aren't undefined.\n" +
+"    if (start_row === undefined) start_row = 0;\n" +
+"    if (start_char === undefined) start_char = 0;\n" +
+"    if (end_row === undefined) end_row = start_row;\n" +
+"    if (end_char === undefined) end_char = start_char;\n" +
+"\n" +
+"    // Make sure the values are within the bounds of the contents.\n" +
+"    if (this._rows.length === 0) {\n" +
+"        start_row = 0;\n" +
+"        start_char = 0;\n" +
+"        end_row = 0;\n" +
+"        end_char = 0;\n" +
+"    } else {\n" +
+"        if (start_row >= this._rows.length) start_row = this._rows.length - 1;\n" +
+"        if (start_row < 0) start_row = 0;\n" +
+"        if (end_row >= this._rows.length) end_row = this._rows.length - 1;\n" +
+"        if (end_row < 0) end_row = 0;\n" +
+"\n" +
+"        if (start_char > this._rows[start_row].length) start_char = this._rows[start_row].length;\n" +
+"        if (start_char < 0) start_char = 0;\n" +
+"        if (end_char > this._rows[end_row].length) end_char = this._rows[end_row].length;\n" +
+"        if (end_char < 0) end_char = 0;\n" +
+"    }\n" +
+"\n" +
+"    // Make sure the start is before the end.\n" +
+"    if (start_row > end_row || (start_row == end_row && start_char > end_char)) {\n" +
+"        return {\n" +
+"            start_row: end_row,\n" +
+"            start_char: end_char,\n" +
+"            end_row: start_row,\n" +
+"            end_char: start_char,\n" +
+"        };\n" +
+"    } else {\n" +
+"        return {\n" +
+"            start_row: start_row,\n" +
+"            start_char: start_char,\n" +
+"            end_row: end_row,\n" +
+"            end_char: end_char,\n" +
+"        };\n" +
+"    }\n" +
+"};\n" +
+"\n" +
+"/**\n" +
+" * Gets the text of the document.\n" +
+" * @return {string}\n" +
+" */\n" +
+"DocumentModel.prototype._get_text = function() {\n" +
+"    return this._rows.join('\n');\n" +
+"};\n" +
+"\n" +
+"/**\n" +
+" * Sets the text of the document.\n" +
+" * Complexity O(N) for N rows\n" +
+" * @param {string} value\n" +
+" */\n" +
+"DocumentModel.prototype._set_text = function(value) {\n" +
+"    this._rows = value.split('\n');\n" +
+"    this._resized_rows();\n" +
+"    this.trigger('text_changed');\n" +
+"    this.trigger('changed');\n" +
+"};\n" +
+"\n" +
+"/**\n" +
+" * Updates _row's partner arrays.\n" +
+" * @return {null} \n" +
+" */\n" +
+"DocumentModel.prototype._resized_rows = function() {\n" +
+"\n" +
+"    // Make sure there are as many tag rows as there are text rows.\n" +
+"    while (this._row_tags.length < this._rows.length) {\n" +
+"        this._row_tags.push([]);\n" +
+"    }\n" +
+"    if (this._row_tags.length > this._rows.length) {\n" +
+"        this._row_tags.splice(this._rows.length, this._row_tags.length - this._rows.length);\n" +
+"    }\n" +
+"};\n" +
+"\n" +
+"/**\n" +
+" * Create the document's properties.\n" +
+" * @return {null}\n" +
+" */\n" +
+"DocumentModel.prototype._init_properties = function() {    \n" +
+"    var that = this;\n" +
+"    this.property('rows', function() { \n" +
+"        // Return a shallow copy of the array so it cannot be modified.\n" +
+"        return [].concat(that._rows); \n" +
+"    });\n" +
+"    this.property('text', \n" +
+"        utils.proxy(this._get_text, this), \n" +
+"        utils.proxy(this._set_text, this));\n" +
+"};\n" +
+"\n" +
+"exports.DocumentModel = DocumentModel;\n";
         </script>
     </body>
 </html>
