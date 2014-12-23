@@ -373,7 +373,7 @@ var findall = function(text, re, flags) {
  * @return {boolean} true if the character is not text.
  */
 var not_text = function(c) {
-    return 'abcdefghijklmnopqrstuvwxyz1234567890'.indexOf(c.toLowerCase()) == -1;
+    return 'abcdefghijklmnopqrstuvwxyz1234567890_'.indexOf(c.toLowerCase()) == -1;
 };
 
 // Export names.

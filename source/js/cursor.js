@@ -179,6 +179,18 @@ Cursor.prototype.primary_goto_start = function() {
 };
 
 /**
+ * Selects a word at the given location.
+ * @param {integer} row_index
+ * @param {integer} char_index
+ */
+Cursor.prototype.select_word = function(row_index, char_index) {
+    this.set_both(row_index, char_index);
+    this.word_primary(-1);
+    this._reset_secondary();
+    this.word_primary(1);
+};
+
+/**
  * Set the primary cursor position
  * @param {integer} row_index
  * @param {integer} char_index
