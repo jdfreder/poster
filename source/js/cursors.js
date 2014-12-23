@@ -23,6 +23,7 @@ var Cursors = function(model, clipboard) {
     register('cursors.set_selection', utils.proxy(this.set_selection, this));
     register('cursors.start_set_selection', utils.proxy(this.start_set_selection, this));
     register('cursors.end_selection', utils.proxy(this.end_selection, this));
+    register('cursors.select_word', utils.proxy(this.select_word, this));
 
     // Bind clipboard events.
     this._clipboard.on('cut', utils.proxy(this._handle_cut, this));
@@ -146,6 +147,20 @@ Cursors.prototype.set_selection = function(e) {
 Cursors.prototype.start_set_selection = function(e) {
     this._selecting_text = true;
     this.set_selection(e);
+};
+
+/**
+ * Selects a word at the given mouse coordinates.
+ * @param  {MouseEvent} e - mouse event containing the coordinates.
+ * @return {null}
+ */
+Cursors.prototype.select_word = function(e) {
+    var x = e.offsetX;
+    var y = e.offsetY;
+    if (this.get_row_char) {
+        var location = this.get_row_char(x, y);
+        this.cursors[this.cursors.length-1].select_word(location.row_index, location.char_index);
+    }
 };
 
 // Exports

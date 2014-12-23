@@ -41,6 +41,7 @@ exports.map['shift-leftarrow'] = 'cursor.select_left';
 exports.map['shift-rightarrow'] = 'cursor.select_right';
 exports.map['shift-uparrow'] = 'cursor.select_up';
 exports.map['shift-downarrow'] = 'cursor.select_down';
+exports.map['mouse0-dblclick'] = 'cursors.select_word';
 exports.map['mouse0-down'] = 'cursors.start_selection';
 exports.map['mouse-move'] = 'cursors.set_selection';
 exports.map['mouse0-up'] = 'cursors.end_selection';
