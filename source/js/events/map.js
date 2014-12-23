@@ -268,7 +268,6 @@ Map.prototype._handle_event = function(name, e) {
     var that = this;
     var normalized_event = this._normalize_event_name(name);
     var actions = this._map[normalized_event];
-
     if (actions) {
         actions.forEach(function(action) {
             var action_callbacks = Map.registry[action];

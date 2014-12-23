@@ -21,6 +21,7 @@ var Cursors = function(model, clipboard) {
     // Register actions.
     register('cursors.start_selection', utils.proxy(this.start_selection, this));
     register('cursors.set_selection', utils.proxy(this.set_selection, this));
+    register('cursors.start_set_selection', utils.proxy(this.start_set_selection, this));
     register('cursors.end_selection', utils.proxy(this.end_selection, this));
 
     // Bind clipboard events.
@@ -129,11 +130,22 @@ Cursors.prototype.end_selection = function() {
 Cursors.prototype.set_selection = function(e) {
     var x = e.offsetX;
     var y = e.offsetY;
-
     if (this._selecting_text && this.get_row_char) {
         var location = this.get_row_char(x, y);
         this.cursors[this.cursors.length-1].set_primary(location.row_index, location.char_index);
     }
+};
+
+/**
+ * Sets the endpoint of text selection from mouse coordinates.
+ * Different than set_selection because it doesn't need a call
+ * to start_selection to work.
+ * @param  {MouseEvent} e - mouse event containing the coordinates.
+ * @return {null}
+ */
+Cursors.prototype.start_set_selection = function(e) {
+    this._selecting_text = true;
+    this.set_selection(e);
 };
 
 // Exports
