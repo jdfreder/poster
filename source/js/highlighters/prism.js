@@ -14,6 +14,19 @@ var PrismHighlighter = function(model, row_renderer) {
     // sensitive highlighting.
     this._row_padding = 15;
     this._language = null;
+
+    // Properties
+    this.property('languages', function() {
+        var languages = [];
+        for (var l in prism.languages) {
+            if (prism.languages.hasOwnProperty(l)) {
+                if (["extend", "insertBefore", "DFS"].indexOf(l) == -1) {
+                    languages.push(l);
+                }
+            }
+        }
+        return languages;
+    });
 };
 utils.inherit(PrismHighlighter, highlighter.HighlighterBase);
 
@@ -100,6 +113,7 @@ PrismHighlighter.prototype.load = function(language) {
             throw new Error('Language does not exist!');
         }
         this._language = prism.languages[language];
+        this._queue_highlighter();
         return true;
     } catch (e) {
         console.error('Error loading language', e);

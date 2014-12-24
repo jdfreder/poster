@@ -16,6 +16,9 @@
     <body>
         <div id='test-area'></div>
 
+        <select id='language-selector'>
+        </select>
+
         <script type="text/javascript">
             var test_area = document.getElementById('test-area');
             var poster = new poster.Poster();
@@ -25,6 +28,19 @@
             poster.width = 600;
             poster.height = 400;
             poster.language = 'javascript';
+
+            // Add languages to the language selector.
+            var languages = poster.view.highlighter.languages;
+            var lang_dropdown = document.getElementById('language-selector');
+            languages.forEach(function(l) {
+                var option = document.createElement("option");
+                option.text = l;
+                lang_dropdown.add(option);
+            });
+            lang_dropdown.value = poster.language;
+            lang_dropdown.onchange = function(e) {
+                poster.language = lang_dropdown.value;
+            };
 
             // Test text
             poster.value = 
