@@ -6,6 +6,8 @@ var document_model = require('./document_model.js');
 var document_view = require('./document_view.js');
 var style = require('./style.js');
 var utils = require('./utils.js');
+var _config = require('./config.js');
+var config = _config.config;
 
 /**
  * Canvas based text editor
@@ -17,10 +19,6 @@ var Poster = function() {
     this.canvas = new scrolling_canvas.ScrollingCanvas();
     this.el = this.canvas.el; // Convenience
     this._style = new style.Style();
-    this._config = new utils.PosterClass([
-        'highlight_draw', // bool - Whether or not to highlight re-renders
-        'newline_width', // integer - Width of newline characters
-    ]);
 
     // Create model, controller, and view.
     var that = this;
@@ -31,7 +29,6 @@ var Poster = function() {
         this.model, 
         this.controller.cursors, 
         this._style,
-        this._config,
         function() { return that.controller.clipboard.hidden_input === document.activeElement || that.canvas.focused; }
     );
 
@@ -40,7 +37,7 @@ var Poster = function() {
         return that._style;
     });
     this.property('config', function() {
-        return that._config;
+        return config;
     });
     this.property('value', function() {
         return that.model.text;
