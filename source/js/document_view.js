@@ -26,6 +26,31 @@ var DocumentView = function(canvas, model, cursors_model, style, has_focus) {
     row_renderer.margin_left = 2;
     row_renderer.margin_top = 2;
     
+    // Make sure changes made to the cursor(s) are within the visible region.
+    cursors_model.on('change', function(cursor) {
+        var row_index = cursor.primary_row;
+        var char_index = cursor.primary_char;
+
+        var top = row_renderer.get_row_top(row_index);
+        var height = row_renderer.get_row_height(row_index);
+        var left = row_renderer.measure_partial_row_width(row_index, char_index) + row_renderer.margin_left;
+        var bottom = top + height;
+
+        var canvas_height = canvas.height - 20;
+        if (bottom > canvas.scroll_top + canvas_height) {
+            canvas.scroll_top = bottom - canvas_height;
+        } else if (top < canvas.scroll_top) {
+            canvas.scroll_top = top;
+        }
+
+        var canvas_width = canvas.width - 20;
+        if (left > canvas.scroll_left + canvas_width) {
+            canvas.scroll_left = left - canvas_width;
+        } else if (left < canvas.scroll_left) {
+            canvas.scroll_left = left;
+        }
+    });
+
     var cursors_renderer = new cursors.CursorsRenderer(
         cursors_model, 
         style, 
