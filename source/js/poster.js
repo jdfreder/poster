@@ -17,7 +17,10 @@ var Poster = function() {
     this.canvas = new scrolling_canvas.ScrollingCanvas();
     this.el = this.canvas.el; // Convenience
     this._style = new style.Style();
-    this._config = new utils.PosterClass(['highlight_draw']);
+    this._config = new utils.PosterClass([
+        'highlight_draw', // bool - Whether or not to highlight re-renders
+        'newline_width', // integer - Width of newline characters
+    ]);
 
     // Create model, controller, and view.
     var that = this;

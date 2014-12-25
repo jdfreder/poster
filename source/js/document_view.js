@@ -35,6 +35,7 @@ var DocumentView = function(canvas, model, cursors_model, style, config, has_foc
     var selections_renderer = new selections.SelectionsRenderer(
         cursors_model, 
         style, 
+        config,
         row_renderer,
         has_focus,
         cursors_renderer);
