@@ -5,6 +5,8 @@ if (navigator.appVersion.indexOf("Mac") != -1) {
         'alt-rightarrow' : 'cursor.word_right',
         'shift-alt-leftarrow' : 'cursor.select_word_left',
         'shift-alt-rightarrow' : 'cursor.select_word_right',
+        'alt-backspace' : 'cursor.delete_word_left',
+        'alt-delete' : 'cursor.delete_word_right',
         'meta-leftarrow' : 'cursor.line_start',
         'meta-rightarrow' : 'cursor.line_end',
         'shift-meta-leftarrow' : 'cursor.select_line_start',
@@ -17,6 +19,8 @@ if (navigator.appVersion.indexOf("Mac") != -1) {
     exports.map = {
         'ctrl-leftarrow' : 'cursor.word_left',
         'ctrl-rightarrow' : 'cursor.word_right',
+        'ctrl-backspace' : 'cursor.delete_word_left',
+        'ctrl-delete' : 'cursor.delete_word_right',
         'shift-ctrl-leftarrow' : 'cursor.select_word_left',
         'shift-ctrl-rightarrow' : 'cursor.select_word_right',
         'home' : 'cursor.line_start',

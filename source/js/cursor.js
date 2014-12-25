@@ -448,6 +448,26 @@ Cursor.prototype.delete_backward = function() {
 };
 
 /**
+ * Delete one word backwards.
+ * @return {boolean} success
+ */
+Cursor.prototype.delete_word_left = function() {
+    this.word_primary(-1); 
+    this.remove_selected();
+    return true;
+};
+
+/**
+ * Delete one word forwards.
+ * @return {boolean} success
+ */
+Cursor.prototype.delete_word_right = function() {
+    this.word_primary(1); 
+    this.remove_selected();
+    return true;
+};
+
+/**
  * Reset the secondary cursor to the value of the primary.
  * @return {[type]} [description]
  */
@@ -515,6 +535,8 @@ Cursor.prototype._register_api = function() {
     register('cursor.insert_text', utils.proxy(this.insert_text, this), this);
     register('cursor.delete_backward', utils.proxy(this.delete_backward, this), this);
     register('cursor.delete_forward', utils.proxy(this.delete_forward, this), this);
+    register('cursor.delete_word_left', utils.proxy(this.delete_word_left, this), this);
+    register('cursor.delete_word_right', utils.proxy(this.delete_word_right, this), this);
     register('cursor.select_all', utils.proxy(this.select_all, this), this);
     register('cursor.left', function() { that.move_primary(-1, 0, true); that._reset_secondary(); return true; });
     register('cursor.right', function() { that.move_primary(1, 0, true); that._reset_secondary(); return true; });
