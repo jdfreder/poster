@@ -14,6 +14,7 @@ var Cursors = function(model, clipboard) {
     this.cursors = [];
     this._selecting_text = false;
     this._clipboard = clipboard;
+    this._active_cursor = null;
 
     // Create initial cursor.
     this.create();
@@ -44,6 +45,7 @@ Cursors.prototype.create = function() {
         that.trigger('change', new_cursor);
         that._update_selection();
     });
+    that.trigger('change', new_cursor);
 
     return new_cursor;
 };
