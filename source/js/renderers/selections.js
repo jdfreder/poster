@@ -9,19 +9,25 @@ var renderer = require('./renderer.js');
  *
  * TODO: Only render visible.
  */
-var SelectionsRenderer = function(cursors, style, row_renderer, has_focus, cursors_renderer) {
+var SelectionsRenderer = function(cursors, style, config, row_renderer, has_focus, cursors_renderer) {
     renderer.RendererBase.call(this);
     this.style = style;
+    this.config = config;
     this._has_focus = has_focus;
 
     // When the cursors change, redraw the selection box(es).
     this._cursors = cursors;
     var that = this;
-    this._cursors.on('change', function() {
+    var rerender = function() {
         that.render();
         // Tell parent layer this one has changed.
         that.trigger('changed');
-    });
+    }
+    this._cursors.on('change', rerender);
+
+    // When the style is changed, redraw the selection box(es).
+    this.style.on('change', rerender);
+    this.config.on('change', rerender);
 
     this._row_renderer = row_renderer;
     // TODO: Remove the following block.
@@ -47,6 +53,12 @@ utils.inherit(SelectionsRenderer, renderer.RendererBase);
  */
 SelectionsRenderer.prototype.render = function() {
     this._canvas.clear();
+
+    // Get newline width.
+    var newline_width = this.config.newline_width;
+    if (newline_width === undefined || newline_width === null) {
+        newline_width = 2;
+    }
 
     // Only render if the canvas has focus.
     var that = this;
@@ -77,9 +89,19 @@ SelectionsRenderer.prototype.render = function() {
 
                 var right;
                 if (i !== cursor.end_row) {
-                    right = that._measure_partial_row(i) - left + that._row_renderer.margin_left;
+                    right = that._measure_partial_row(i) - left + that._row_renderer.margin_left + newline_width;
                 } else {
-                    right = that._measure_partial_row(i, cursor.end_char) - left + that._row_renderer.margin_left;
+                    right = that._measure_partial_row(i, cursor.end_char);
+
+                    // If this isn't the first selected row, make sure atleast the newline
+                    // is visibily selected at the beginning of the row by making sure that
+                    // the selection box is atleast the size of a newline character (as
+                    // defined by the user config).
+                    if (i !== cursor.start_row) {
+                        right = Math.max(newline_width, right);
+                    }
+
+                    right = right - left + that._row_renderer.margin_left;
                 }
                 
                 that._canvas.draw_rectangle(
