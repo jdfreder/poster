@@ -16,14 +16,13 @@ var highlighter = require('./highlighters/prism.js');
  * @param {DocumentModel} model instance
  * @param {Cursors} cursors_model instance
  * @param {Style} style - describes rendering style
- * @param {PosterClass} config - user config
  * @param {function} has_focus - function that checks if the text area has focus
  */
-var DocumentView = function(canvas, model, cursors_model, style, config, has_focus) {
+var DocumentView = function(canvas, model, cursors_model, style, has_focus) {
     this._model = model;
 
     // Create child renderers.
-    var row_renderer = new highlighted_row.HighlightedRowRenderer(model, canvas, style, config);
+    var row_renderer = new highlighted_row.HighlightedRowRenderer(model, canvas, style);
     row_renderer.margin_left = 2;
     row_renderer.margin_top = 2;
     
@@ -35,7 +34,6 @@ var DocumentView = function(canvas, model, cursors_model, style, config, has_foc
     var selections_renderer = new selections.SelectionsRenderer(
         cursors_model, 
         style, 
-        config,
         row_renderer,
         has_focus,
         cursors_renderer);

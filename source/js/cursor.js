@@ -3,6 +3,8 @@ var keymap = require('./events/map.js');
 var register = keymap.Map.register;
 
 var utils = require('./utils.js');
+var config = require('./config.js');
+config = config.config;
 
 /**
  * Input cursor.
@@ -251,6 +253,84 @@ Cursor.prototype.keypress = function(e) {
 };
 
 /**
+ * Indent
+ * @param  {Event} e - original key press event.
+ * @return {null}
+ */
+Cursor.prototype.indent = function(e) {
+    var indent = this._make_indents()[0];
+    if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
+        this._model.add_text(this.primary_row, this.primary_char, indent);
+    } else {
+        for (var row = this.start_row; row <= this.end_row; row++) {
+            this._model.add_text(row, 0, indent);
+        }
+    }
+
+    this.primary_char += indent.length;
+    this.secondary_char += indent.length;
+    this.trigger('change');
+    return true;
+};
+
+/**
+ * Unindent
+ * @param  {Event} e - original key press event.
+ * @return {null}
+ */
+Cursor.prototype.unindent = function(e) {
+    var indents = this._make_indents();
+    var removed_start = 0;
+    var removed_end = 0;
+
+    // If no text is selected, remove the indent preceding the
+    // cursor if it exists.
+    if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
+        for (var i = 0; i < indents.length; i++) {
+            var indent = indents[i];
+            if (this.primary_char >= indent.length) {
+                var before = this._model.get_text(this.primary_row, this.primary_char-indent.length, this.primary_row, this.primary_char);
+                if (before == indent) {
+                    this._model.remove_text(this.primary_row, this.primary_char-indent.length, this.primary_row, this.primary_char);
+                    removed_start = indent.length;
+                    removed_end = indent.length;
+                    break;
+                }
+            }
+        }
+
+    // Text is selected.  Remove the an indent from the begining
+    // of each row if it exists.
+    } else {
+        for (var row = this.start_row; row <= this.end_row; row++) {
+            for (var i = 0; i < indents.length; i++) {
+                var indent = indents[i];
+                if (this._model._rows[row].length >= indent.length) {
+                    if (this._model._rows[row].substring(0, indent.length) == indent) {
+                        this._model.remove_text(row, 0, row, indent.length);
+                        if (row == this.start_row) removed_start = indent.length;
+                        if (row == this.end_row) removed_end = indent.length;
+                        break;
+                    }
+                };
+            }
+        }
+    }
+    
+    // Move the selected characters backwards if indents were removed.
+    var start_is_primary = (this.primary_row == this.start_row && this.primary_char == this.start_char);
+    if (start_is_primary) {
+        this.primary_char -= removed_start;
+        this.secondary_char -= removed_end;
+    } else {
+        this.primary_char -= removed_end;
+        this.secondary_char -= removed_start;
+    }
+    if (removed_end || removed_start) this.trigger('change');
+    return true;
+};
+
+/**
  * Insert a newline
  * @return {null}
  */
@@ -389,6 +469,25 @@ Cursor.prototype._init_properties = function() {
 };
 
 /**
+ * Makes a list of indentation strings used to indent one level,
+ * ordered by usage preference.
+ * @return {string}
+ */
+Cursor.prototype._make_indents = function() {
+    var indents = [];
+    if (config.use_spaces) {
+        var indent = '';
+        for (var i = 0; i < config.tab_width; i++) {
+            indent += ' ';
+            indents.push(indent);
+        }
+        indents.reverse();
+    }
+    indents.push('\t');
+    return indents;
+};
+
+/**
  * Registers an action API with the map
  * @return {null}
  */
@@ -396,6 +495,8 @@ Cursor.prototype._register_api = function() {
     var that = this;
     register('cursor.remove_selected', utils.proxy(this.remove_selected, this), this);
     register('cursor.keypress', utils.proxy(this.keypress, this), this);
+    register('cursor.indent', utils.proxy(this.indent, this), this);
+    register('cursor.unindent', utils.proxy(this.unindent, this), this);
     register('cursor.newline', utils.proxy(this.newline, this), this);
     register('cursor.insert_text', utils.proxy(this.insert_text, this), this);
     register('cursor.delete_backward', utils.proxy(this.delete_backward, this), this);

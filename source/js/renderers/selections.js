@@ -3,16 +3,17 @@
 var animator = require('../animator.js');
 var utils = require('../utils.js');
 var renderer = require('./renderer.js');
+var config = require('../config.js');
+config = config.config;
 
 /**
  * Render document selection boxes
  *
  * TODO: Only render visible.
  */
-var SelectionsRenderer = function(cursors, style, config, row_renderer, has_focus, cursors_renderer) {
+var SelectionsRenderer = function(cursors, style, row_renderer, has_focus, cursors_renderer) {
     renderer.RendererBase.call(this);
     this.style = style;
-    this.config = config;
     this._has_focus = has_focus;
 
     // When the cursors change, redraw the selection box(es).
@@ -27,7 +28,7 @@ var SelectionsRenderer = function(cursors, style, config, row_renderer, has_focu
 
     // When the style is changed, redraw the selection box(es).
     this.style.on('change', rerender);
-    this.config.on('change', rerender);
+    config.on('change', rerender);
 
     this._row_renderer = row_renderer;
     // TODO: Remove the following block.
@@ -55,7 +56,7 @@ SelectionsRenderer.prototype.render = function() {
     this._canvas.clear();
 
     // Get newline width.
-    var newline_width = this.config.newline_width;
+    var newline_width = config.newline_width;
     if (newline_width === undefined || newline_width === null) {
         newline_width = 2;
     }

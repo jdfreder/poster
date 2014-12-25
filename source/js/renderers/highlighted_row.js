@@ -2,15 +2,16 @@
 
 var utils = require('../utils.js');
 var row = require('./row.js');
+var config = require('../config.js');
+config = config.config;
 
 /**
  * Render the text rows of a DocumentModel.
  * @param {DocumentModel} model instance
  */
-var HighlightedRowRenderer = function(model, scrolling_canvas, style, config) {
+var HighlightedRowRenderer = function(model, scrolling_canvas, style) {
     row.RowRenderer.call(this, model, scrolling_canvas);
     this.style = style;
-    this.config = config;
 };
 utils.inherit(HighlightedRowRenderer, row.RowRenderer);
 
@@ -29,7 +30,7 @@ HighlightedRowRenderer.prototype._render_row = function(index, x ,y) {
     for (var i=0; i<groups.length; i++) {
         var width = this._text_canvas.measure_text(groups[i].text, groups[i].options);
         
-        if (this.config.highlight_draw) {
+        if (config.highlight_draw) {
             this._text_canvas.draw_rectangle(left, y, width, this.get_row_height(i), {
                 fill_color: utils.random_color(),
             });

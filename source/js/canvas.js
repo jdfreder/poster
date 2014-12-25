@@ -1,5 +1,7 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var utils = require('./utils.js');
+var config = require('./config.js');
+config = config.config;
 
 /**
  * HTML canvas with drawing convinience functions.
@@ -207,6 +209,7 @@ Canvas.prototype.draw_polyline = function(points, options) {
 Canvas.prototype.draw_text = function(x, y, text, options) {
     x = this._tx(x);
     y = this._ty(y);
+    text = this._process_tabs(text);
     options = this._apply_options(options);
     // 'fill' the text by default when neither a stroke or fill 
     // is defined.  Otherwise only fill if a fill is defined.
@@ -285,6 +288,7 @@ Canvas.prototype.put_raw_image = function(img, x, y) {
  */
 Canvas.prototype.measure_text = function(text, options) {
     options = this._apply_options(options);
+    text = this._process_tabs(text);
 
     // Cache the size if it's not already cached.
     if (this._text_size_cache[text] === undefined) {
@@ -482,6 +486,20 @@ Canvas.prototype._tx = function(x, inverse) { return x; };
  * @return {float}
  */
 Canvas.prototype._ty = function(y, inverse) { return y; };
+
+/**
+ * Convert tab characters to the config defined number of space 
+ * characters for rendering.
+ * @param  {string} s - input string
+ * @return {string} output string
+ */
+Canvas.prototype._process_tabs = function(s) {
+    var space_tab = '';
+    for (var i = 0; i < (config.tab_width || 1); i++) {
+        space_tab += ' ';
+    }
+    return s.replace(/\t/g, space_tab);
+};
 
 // Exports
 exports.Canvas = Canvas;
