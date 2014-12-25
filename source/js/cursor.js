@@ -253,28 +253,12 @@ Cursor.prototype.keypress = function(e) {
 };
 
 /**
- * Makes an indentation string used to indent one level.
- * @return {string}
- */
-Cursor.prototype._make_indent = function() {
-    if (config.use_spaces) {
-        var indent = '';
-        for (var i = 0; i < config.tab_width; i++) {
-            indent += ' ';
-        }
-        return indent;
-    } else {
-        return '\t';
-    }
-};
-
-/**
  * Indent
  * @param  {Event} e - original key press event.
  * @return {null}
  */
 Cursor.prototype.indent = function(e) {
-    var indent = this._make_indent();
+    var indent = this._make_indents()[0];
     if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
         this._model.add_text(this.primary_row, this.primary_char, indent);
     } else {
@@ -295,19 +279,23 @@ Cursor.prototype.indent = function(e) {
  * @return {null}
  */
 Cursor.prototype.unindent = function(e) {
-    var indent = this._make_indent();
-    var removed_start = false;
-    var removed_end = false;
+    var indents = this._make_indents();
+    var removed_start = 0;
+    var removed_end = 0;
 
     // If no text is selected, remove the indent preceding the
     // cursor if it exists.
     if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
-        if (this.primary_char >= indent.length) {
-            var before = this._model.get_text(this.primary_row, this.primary_char-indent.length, this.primary_row, this.primary_char);
-            if (before == indent) {
-                this._model.remove_text(this.primary_row, this.primary_char-indent.length, this.primary_row, this.primary_char);
-                removed_start = true;
-                removed_end = true;
+        for (var i = 0; i < indents.length; i++) {
+            var indent = indents[i];
+            if (this.primary_char >= indent.length) {
+                var before = this._model.get_text(this.primary_row, this.primary_char-indent.length, this.primary_row, this.primary_char);
+                if (before == indent) {
+                    this._model.remove_text(this.primary_row, this.primary_char-indent.length, this.primary_row, this.primary_char);
+                    removed_start = indent.length;
+                    removed_end = indent.length;
+                    break;
+                }
             }
         }
 
@@ -315,24 +303,28 @@ Cursor.prototype.unindent = function(e) {
     // of each row if it exists.
     } else {
         for (var row = this.start_row; row <= this.end_row; row++) {
-            if (this._model._rows[row].length >= indent.length) {
-                if (this._model._rows[row].substring(0, indent.length) == indent) {
-                    this._model.remove_text(row, 0, row, indent.length);
-                    if (row == this.start_row) removed_start = true;
-                    if (row == this.end_row) removed_end = true;
-                }
-            };
+            for (var i = 0; i < indents.length; i++) {
+                var indent = indents[i];
+                if (this._model._rows[row].length >= indent.length) {
+                    if (this._model._rows[row].substring(0, indent.length) == indent) {
+                        this._model.remove_text(row, 0, row, indent.length);
+                        if (row == this.start_row) removed_start = indent.length;
+                        if (row == this.end_row) removed_end = indent.length;
+                        break;
+                    }
+                };
+            }
         }
     }
     
     // Move the selected characters backwards if indents were removed.
     var start_is_primary = (this.primary_row == this.start_row && this.primary_char == this.start_char);
     if (start_is_primary) {
-        if (removed_start) this.primary_char -= indent.length;
-        if (removed_end) this.secondary_char -= indent.length;
+        this.primary_char -= removed_start;
+        this.secondary_char -= removed_end;
     } else {
-        if (removed_end) this.primary_char -= indent.length;
-        if (removed_start) this.secondary_char -= indent.length;
+        this.primary_char -= removed_end;
+        this.secondary_char -= removed_start;
     }
     if (removed_end || removed_start) this.trigger('change');
     return true;
@@ -474,6 +466,25 @@ Cursor.prototype._init_properties = function() {
             return that.primary_char;
         }
     });
+};
+
+/**
+ * Makes a list of indentation strings used to indent one level,
+ * ordered by usage preference.
+ * @return {string}
+ */
+Cursor.prototype._make_indents = function() {
+    var indents = [];
+    if (config.use_spaces) {
+        var indent = '';
+        for (var i = 0; i < config.tab_width; i++) {
+            indent += ' ';
+            indents.push(indent);
+        }
+        indents.reverse();
+    }
+    indents.push('\t');
+    return indents;
 };
 
 /**
