@@ -448,6 +448,56 @@ Cursor.prototype.delete_backward = function() {
 };
 
 /**
+ * Delete one word backwards.
+ * @return {boolean} success
+ */
+Cursor.prototype.delete_word_left = function() {
+    if (!this.remove_selected()) {
+        if (this.primary_char === 0) {
+            this.word_primary(-1); 
+            this.remove_selected();
+        } else {
+            // Walk backwards until char index is 0 or
+            // a different type of character is hit.
+            var row = this._model._rows[this.primary_row];
+            var i = this.primary_char - 1;
+            var start_not_text = utils.not_text(row[i]);
+            while (i >= 0 && utils.not_text(row[i]) == start_not_text) {
+                i--;
+            }
+            this.secondary_char = i+1;
+            this.remove_selected();
+        }
+    }
+    return true;
+};
+
+/**
+ * Delete one word forwards.
+ * @return {boolean} success
+ */
+Cursor.prototype.delete_word_right = function() {
+    if (!this.remove_selected()) {
+        var row = this._model._rows[this.primary_row];
+        if (this.primary_char === row.length) {
+            this.word_primary(1); 
+            this.remove_selected();
+        } else {
+            // Walk forwards until char index is at end or
+            // a different type of character is hit.
+            var i = this.primary_char;
+            var start_not_text = utils.not_text(row[i]);
+            while (i < row.length && utils.not_text(row[i]) == start_not_text) {
+                i++;
+            }
+            this.secondary_char = i;
+            this.remove_selected();
+        }
+    }
+    return true;
+};
+
+/**
  * Reset the secondary cursor to the value of the primary.
  * @return {[type]} [description]
  */
@@ -515,6 +565,8 @@ Cursor.prototype._register_api = function() {
     register('cursor.insert_text', utils.proxy(this.insert_text, this), this);
     register('cursor.delete_backward', utils.proxy(this.delete_backward, this), this);
     register('cursor.delete_forward', utils.proxy(this.delete_forward, this), this);
+    register('cursor.delete_word_left', utils.proxy(this.delete_word_left, this), this);
+    register('cursor.delete_word_right', utils.proxy(this.delete_word_right, this), this);
     register('cursor.select_all', utils.proxy(this.select_all, this), this);
     register('cursor.left', function() { that.move_primary(-1, 0, true); that._reset_secondary(); return true; });
     register('cursor.right', function() { that.move_primary(1, 0, true); that._reset_secondary(); return true; });
