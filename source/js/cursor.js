@@ -268,6 +268,7 @@ Cursor.prototype.indent = function(e) {
     }
 
     this.primary_char += indent.length;
+    this._memory_char = this.primary_char;
     this.secondary_char += indent.length;
     this.trigger('change');
     return true;
@@ -326,6 +327,7 @@ Cursor.prototype.unindent = function(e) {
         this.primary_char -= removed_end;
         this.secondary_char -= removed_start;
     }
+    this._memory_char = this.primary_char;
     if (removed_end || removed_start) this.trigger('change');
     return true;
 };
@@ -336,8 +338,20 @@ Cursor.prototype.unindent = function(e) {
  */
 Cursor.prototype.newline = function(e) {
     this.remove_selected();
-    this._model.add_text(this.primary_row, this.primary_char, '\n');
-    this.move_primary(0, 1);
+
+    // Get the blank space at the begining of the line.
+    var line_text = this._model.get_text(this.primary_row, 0, this.primary_row, this.primary_char);
+    var spaceless = line_text.trim();
+    var left = line_text.length;
+    if (spaceless.length > 0) {
+        left = line_text.indexOf(spaceless);
+    }
+    var indent = line_text.substring(0, left);
+
+    this._model.add_text(this.primary_row, this.primary_char, '\n' + indent);
+    this.primary_row += 1;
+    this.primary_char = indent.length;
+    this._memory_char = this.primary_char;
     this._reset_secondary();
     return true;
 };
