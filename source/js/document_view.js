@@ -24,6 +24,9 @@ var DocumentView = function(canvas, model, cursors_model, style, config, has_foc
 
     // Create child renderers.
     var row_renderer = new highlighted_row.HighlightedRowRenderer(model, canvas, style, config);
+    row_renderer.margin_left = 2;
+    row_renderer.margin_top = 2;
+    
     var cursors_renderer = new cursors.CursorsRenderer(
         cursors_model, 
         style, 

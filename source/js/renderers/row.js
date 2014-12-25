@@ -49,6 +49,36 @@ var RowRenderer = function(model, scrolling_canvas) {
         that._text_canvas.height = that._visible_row_count * row_height;
         that._tmp_canvas.height = that._text_canvas.height;
     });
+    this._margin_left = 0;
+    this.property('margin_left', function() {
+        return that._margin_left;
+    }, function(value) {
+        // Update the scrollbars.
+        that._scrolling_canvas.scroll_width += value - that._margin_left;
+        
+        // Update internal value.
+        that._margin_left = value;
+
+        // Re-render with new margin.
+        that.render();
+        // Tell parent layer this one has changed.
+        that.trigger('changed');
+    })
+    this._margin_top = 0
+    this.property('margin_top', function() {
+        return that._margin_top;
+    }, function(value) {
+        // Update the scrollbars.
+        that._scrolling_canvas.scroll_height += value - that._margin_top;
+
+        // Update internal value.
+        that._margin_top = value;
+
+        // Re-render with new margin.
+        that.render();
+        // Tell parent layer this one has changed.
+        that.trigger('changed');
+    })
 
     // Set initial canvas sizes.  These lines may look redundant, but beware
     // because they actually cause an appropriate width and height to be set for
@@ -78,7 +108,7 @@ RowRenderer.prototype.render = function(scroll) {
 
     // Update the text rendering
     var visible_rows = this.get_visible_rows();
-    this._render_text_canvas(-this._scrolling_canvas.scroll_left, visible_rows.top_row, !partial_redraw);
+    this._render_text_canvas(-this._scrolling_canvas.scroll_left+this._margin_left, visible_rows.top_row, !partial_redraw);
 
     // Copy the text image to this canvas
     this._canvas.clear();
@@ -165,7 +195,7 @@ RowRenderer.prototype._render_text_canvas = function(x_offset, top_row, force_re
  * @return {dictionary} dictionary of the form {row_index, char_index}
  */
 RowRenderer.prototype.get_row_char = function(cursor_x, cursor_y) {
-    var row_index = Math.floor(cursor_y / this.get_row_height());
+    var row_index = Math.floor((cursor_y - this._margin_top) / this.get_row_height());
 
     // Find the character index.
     var widths = [0];
@@ -176,7 +206,7 @@ RowRenderer.prototype.get_row_char = function(cursor_x, cursor_y) {
     } catch (e) {
         // Nom nom nom...
     }
-    var coords = this._model.validate_coords(row_index, utils.find_closest(widths, cursor_x + this._scrolling_canvas.scroll_left));
+    var coords = this._model.validate_coords(row_index, utils.find_closest(widths, cursor_x - this._margin_left));
     return {
         row_index: coords.start_row,
         char_index: coords.start_char,
@@ -215,7 +245,7 @@ RowRenderer.prototype.get_row_height = function(index) {
  * @return {null}
  */
 RowRenderer.prototype.get_row_top = function(index) {
-    return index * this.get_row_height();
+    return index * this.get_row_height() + this._margin_top;
 };
 
 /**
@@ -228,7 +258,7 @@ RowRenderer.prototype.get_visible_rows = function() {
 
     // Find the row closest to the scroll top.  If that row is below
     // the scroll top, use the partially displayed row above it.
-    var top_row = Math.max(0, Math.floor(this._scrolling_canvas.scroll_top  / this.get_row_height()));
+    var top_row = Math.max(0, Math.floor((this._scrolling_canvas.scroll_top - this._margin_top)  / this.get_row_height()));
 
     // Find the row closest to the scroll bottom.  If that row is above
     // the scroll bottom, use the partially displayed row below it.
@@ -249,10 +279,10 @@ RowRenderer.prototype._handle_value_changed = function() {
     // Calculate the document width.
     var document_width = 0;
     for (var i=0; i<this._model._rows.length; i++) {
-        document_width = Math.max(this._measure_row_width(i), document_width);
+        document_width = Math.max(this._measure_row_width(i)+this._margin_left, document_width);
     }
     this._scrolling_canvas.scroll_width = document_width;
-    this._scrolling_canvas.scroll_height = this._model._rows.length * this.get_row_height();
+    this._scrolling_canvas.scroll_height = this._model._rows.length * this.get_row_height() + this._margin_top;
 };
 
 /**
@@ -260,7 +290,7 @@ RowRenderer.prototype._handle_value_changed = function() {
  * @return {null}
  */
 RowRenderer.prototype._handle_row_changed = function(index) {
-    this._scrolling_canvas.scroll_width = Math.max(this._measure_row_width(index), this._scrolling_canvas.scroll_width);
+    this._scrolling_canvas.scroll_width = Math.max(this._measure_row_width(index)+this._margin_left, this._scrolling_canvas.scroll_width);
 };
 
 /**
@@ -275,7 +305,7 @@ RowRenderer.prototype._handle_rows_added = function(start, end) {
     this._scrolling_canvas.scroll_height += (end - start + 1) * this.get_row_height();
     var width = this._scrolling_canvas.scroll_width;
     for (var i = start; i <= end; i++) { 
-        width = Math.max(this._measure_row_width(i), width);
+        width = Math.max(this._measure_row_width(i)+this._margin_left, width);
     }
     this._scrolling_canvas.scroll_width = width;
 };
