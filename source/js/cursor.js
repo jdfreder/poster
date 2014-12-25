@@ -452,8 +452,23 @@ Cursor.prototype.delete_backward = function() {
  * @return {boolean} success
  */
 Cursor.prototype.delete_word_left = function() {
-    this.word_primary(-1); 
-    this.remove_selected();
+    if (!this.remove_selected()) {
+        if (this.primary_char === 0) {
+            this.word_primary(-1); 
+            this.remove_selected();
+        } else {
+            // Walk backwards until char index is 0 or
+            // a different type of character is hit.
+            var row = this._model._rows[this.primary_row];
+            var i = this.primary_char - 1;
+            var start_not_text = utils.not_text(row[i]);
+            while (i >= 0 && utils.not_text(row[i]) == start_not_text) {
+                i--;
+            }
+            this.secondary_char = i+1;
+            this.remove_selected();
+        }
+    }
     return true;
 };
 
@@ -462,8 +477,23 @@ Cursor.prototype.delete_word_left = function() {
  * @return {boolean} success
  */
 Cursor.prototype.delete_word_right = function() {
-    this.word_primary(1); 
-    this.remove_selected();
+    if (!this.remove_selected()) {
+        var row = this._model._rows[this.primary_row];
+        if (this.primary_char === row.length) {
+            this.word_primary(1); 
+            this.remove_selected();
+        } else {
+            // Walk forwards until char index is at end or
+            // a different type of character is hit.
+            var i = this.primary_char;
+            var start_not_text = utils.not_text(row[i]);
+            while (i < row.length && utils.not_text(row[i]) == start_not_text) {
+                i++;
+            }
+            this.secondary_char = i;
+            this.remove_selected();
+        }
+    }
     return true;
 };
 
