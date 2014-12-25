@@ -3,8 +3,8 @@
 var animator = require('../animator.js');
 var utils = require('../utils.js');
 var renderer = require('./renderer.js');
-var _config = require('../config.js');
-var config = _config.config;
+var config = require('../config.js');
+config = config.config;
 
 /**
  * Render document selection boxes

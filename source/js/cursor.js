@@ -3,6 +3,8 @@ var keymap = require('./events/map.js');
 var register = keymap.Map.register;
 
 var utils = require('./utils.js');
+var config = require('./config.js');
+config = config.config;
 
 /**
  * Input cursor.
@@ -251,21 +253,38 @@ Cursor.prototype.keypress = function(e) {
 };
 
 /**
+ * Makes an indentation string used to indent one level.
+ * @return {string}
+ */
+Cursor.prototype._make_indent = function() {
+    if (config.use_spaces) {
+        var indent = '';
+        for (var i = 0; i < config.tab_width; i++) {
+            indent += ' ';
+        }
+        return indent;
+    } else {
+        return '\t';
+    }
+};
+
+/**
  * Indent
  * @param  {Event} e - original key press event.
  * @return {null}
  */
 Cursor.prototype.indent = function(e) {
+    var indent = this._make_indent();
     if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
-        this._model.add_text(this.primary_row, this.primary_char, '\t');
+        this._model.add_text(this.primary_row, this.primary_char, indent);
     } else {
         for (var row = this.start_row; row <= this.end_row; row++) {
-            this._model.add_text(row, 0, '\t');
+            this._model.add_text(row, 0, indent);
         }
     }
 
-    this.primary_char += 1;
-    this.secondary_char += 1;
+    this.primary_char += indent.length;
+    this.secondary_char += indent.length;
     this.trigger('change');
     return true;
 };
@@ -276,16 +295,17 @@ Cursor.prototype.indent = function(e) {
  * @return {null}
  */
 Cursor.prototype.unindent = function(e) {
+    var indent = this._make_indent();
     var removed_start = false;
     var removed_end = false;
 
     // If no text is selected, remove the indent preceding the
     // cursor if it exists.
     if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
-        if (this.primary_char > 0) {
-            var before = this._model.get_text(this.primary_row, this.primary_char-1, this.primary_row, this.primary_char);
-            if (before == '\t') {
-                this._model.remove_text(this.primary_row, this.primary_char-1, this.primary_row, this.primary_char);
+        if (this.primary_char >= indent.length) {
+            var before = this._model.get_text(this.primary_row, this.primary_char-indent.length, this.primary_row, this.primary_char);
+            if (before == indent) {
+                this._model.remove_text(this.primary_row, this.primary_char-indent.length, this.primary_row, this.primary_char);
                 removed_start = true;
                 removed_end = true;
             }
@@ -295,9 +315,9 @@ Cursor.prototype.unindent = function(e) {
     // of each row if it exists.
     } else {
         for (var row = this.start_row; row <= this.end_row; row++) {
-            if (this._model._rows[row].length > 0) {
-                if (this._model._rows[row].substring(0, 1) == '\t') {
-                    this._model.remove_text(row, 0, row, 1);
+            if (this._model._rows[row].length >= indent.length) {
+                if (this._model._rows[row].substring(0, indent.length) == indent) {
+                    this._model.remove_text(row, 0, row, indent.length);
                     if (row == this.start_row) removed_start = true;
                     if (row == this.end_row) removed_end = true;
                 }
@@ -308,11 +328,11 @@ Cursor.prototype.unindent = function(e) {
     // Move the selected characters backwards if indents were removed.
     var start_is_primary = (this.primary_row == this.start_row && this.primary_char == this.start_char);
     if (start_is_primary) {
-        if (removed_start) this.primary_char -= 1;
-        if (removed_end) this.secondary_char -= 1;
+        if (removed_start) this.primary_char -= indent.length;
+        if (removed_end) this.secondary_char -= indent.length;
     } else {
-        if (removed_end) this.primary_char -= 1;
-        if (removed_start) this.secondary_char -= 1;
+        if (removed_end) this.primary_char -= indent.length;
+        if (removed_start) this.secondary_char -= indent.length;
     }
     if (removed_end || removed_start) this.trigger('change');
     return true;

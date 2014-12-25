@@ -6,8 +6,8 @@ var document_model = require('./document_model.js');
 var document_view = require('./document_view.js');
 var style = require('./style.js');
 var utils = require('./utils.js');
-var _config = require('./config.js');
-var config = _config.config;
+var config = require('./config.js');
+config = config.config;
 
 /**
  * Canvas based text editor

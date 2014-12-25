@@ -2,8 +2,8 @@
 
 var utils = require('../utils.js');
 var row = require('./row.js');
-var _config = require('../config.js');
-var config = _config.config;
+var config = require('../config.js');
+config = config.config;
 
 /**
  * Render the text rows of a DocumentModel.

@@ -1,7 +1,7 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var utils = require('./utils.js');
-var _config = require('./config.js');
-var config = _config.config;
+var config = require('./config.js');
+config = config.config;
 
 /**
  * HTML canvas with drawing convinience functions.
