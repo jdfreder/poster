@@ -14,10 +14,14 @@ var CursorsRenderer = function(cursors, style, row_renderer, has_focus) {
     this.style = style;
     this._has_focus = has_focus;
     this._cursors = cursors;
+
+    this._row_renderer = row_renderer;
+    // TODO: Remove the following block.
     this._get_visible_rows = utils.proxy(row_renderer.get_visible_rows, row_renderer);
     this._get_row_height = utils.proxy(row_renderer.get_row_height, row_renderer);
     this._get_row_top = utils.proxy(row_renderer.get_row_top, row_renderer);
     this._measure_partial_row = utils.proxy(row_renderer.measure_partial_row_width, row_renderer);
+    
     this._blink_animator = new animator.Animator(1000);
     this._fps = 30;
 
@@ -64,7 +68,7 @@ CursorsRenderer.prototype.render = function() {
                 height *= multiplier;
                 if (visible_rows.top_row <= row_index && row_index <= visible_rows.bottom_row) {
                     that._canvas.draw_rectangle(
-                        char_index === 0 ? 0 : that._measure_partial_row(row_index, char_index), 
+                        char_index === 0 ? that._row_renderer.margin_left : that._measure_partial_row(row_index, char_index) + that._row_renderer.margin_left, 
                         that._get_row_top(row_index) + offset, 
                         that.style.cursor_width===undefined ? 1.0 : that.style.cursor_width, 
                         height, 
