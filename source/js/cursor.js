@@ -251,6 +251,74 @@ Cursor.prototype.keypress = function(e) {
 };
 
 /**
+ * Indent
+ * @param  {Event} e - original key press event.
+ * @return {null}
+ */
+Cursor.prototype.indent = function(e) {
+    if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
+        this._model.add_text(this.primary_row, this.primary_char, '\t');
+    } else {
+        for (var row = this.start_row; row <= this.end_row; row++) {
+            this._model.add_text(row, 0, '\t');
+        }
+    }
+
+    this.primary_char += 1;
+    this.secondary_char += 1;
+    this.trigger('change');
+    return true;
+};
+
+/**
+ * Unindent
+ * @param  {Event} e - original key press event.
+ * @return {null}
+ */
+Cursor.prototype.unindent = function(e) {
+    var removed_start = false;
+    var removed_end = false;
+
+    // If no text is selected, remove the indent preceding the
+    // cursor if it exists.
+    if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
+        if (this.primary_char > 0) {
+            var before = this._model.get_text(this.primary_row, this.primary_char-1, this.primary_row, this.primary_char);
+            if (before == '\t') {
+                this._model.remove_text(this.primary_row, this.primary_char-1, this.primary_row, this.primary_char);
+                removed_start = true;
+                removed_end = true;
+            }
+        }
+
+    // Text is selected.  Remove the an indent from the begining
+    // of each row if it exists.
+    } else {
+        for (var row = this.start_row; row <= this.end_row; row++) {
+            if (this._model._rows[row].length > 0) {
+                if (this._model._rows[row].substring(0, 1) == '\t') {
+                    this._model.remove_text(row, 0, row, 1);
+                    if (row == this.start_row) removed_start = true;
+                    if (row == this.end_row) removed_end = true;
+                }
+            };
+        }
+    }
+    
+    // Move the selected characters backwards if indents were removed.
+    var start_is_primary = (this.primary_row == this.start_row && this.primary_char == this.start_char);
+    if (start_is_primary) {
+        if (removed_start) this.primary_char -= 1;
+        if (removed_end) this.secondary_char -= 1;
+    } else {
+        if (removed_end) this.primary_char -= 1;
+        if (removed_start) this.secondary_char -= 1;
+    }
+    if (removed_end || removed_start) this.trigger('change');
+    return true;
+};
+
+/**
  * Insert a newline
  * @return {null}
  */
@@ -396,6 +464,8 @@ Cursor.prototype._register_api = function() {
     var that = this;
     register('cursor.remove_selected', utils.proxy(this.remove_selected, this), this);
     register('cursor.keypress', utils.proxy(this.keypress, this), this);
+    register('cursor.indent', utils.proxy(this.indent, this), this);
+    register('cursor.unindent', utils.proxy(this.unindent, this), this);
     register('cursor.newline', utils.proxy(this.newline, this), this);
     register('cursor.insert_text', utils.proxy(this.insert_text, this), this);
     register('cursor.delete_backward', utils.proxy(this.delete_backward, this), this);
