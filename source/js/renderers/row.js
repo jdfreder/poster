@@ -16,6 +16,7 @@ var RowRenderer = function(model, scrolling_canvas) {
     this._text_canvas = new canvas.Canvas();
     this._tmp_canvas = new canvas.Canvas();
     this._scrolling_canvas = scrolling_canvas;
+    this._max_width_count = 0; // Number of rows whos width is the max width.
 
     // Base
     renderer.RendererBase.call(this);
@@ -63,8 +64,8 @@ var RowRenderer = function(model, scrolling_canvas) {
         that.render();
         // Tell parent layer this one has changed.
         that.trigger('changed');
-    })
-    this._margin_top = 0
+    });
+    this._margin_top = 0;
     this.property('margin_top', function() {
         return that._margin_top;
     }, function(value) {
@@ -78,7 +79,7 @@ var RowRenderer = function(model, scrolling_canvas) {
         that.render();
         // Tell parent layer this one has changed.
         that.trigger('changed');
-    })
+    });
 
     // Set initial canvas sizes.  These lines may look redundant, but beware
     // because they actually cause an appropriate width and height to be set for
