@@ -380,6 +380,22 @@ Cursor.prototype.insert_text = function(text) {
 };
 
 /**
+ * Paste text
+ * @param  {string} text
+ * @return {null}
+ */
+Cursor.prototype.paste = function(text) {
+    if (this._copied_row === text) {
+        this._model.add_row(this.primary_row, text);
+        this.primary_row++;
+        this.secondary_row++;
+        this.trigger('change'); 
+    } else {
+        this.insert_text(text);
+    }
+};
+
+/**
  * Remove the selected text
  * @return {boolean} true if text was removed.
  */
@@ -398,10 +414,10 @@ Cursor.prototype.remove_selected = function() {
 };
 
 /**
- * Copies the selected text.
+ * Gets the selected text.
  * @return {string} selected text
  */
-Cursor.prototype.copy = function() {
+Cursor.prototype.get = function() {
     if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
         return this._model._rows[this.primary_row];
     } else {
@@ -414,11 +430,27 @@ Cursor.prototype.copy = function() {
  * @return {string} selected text
  */
 Cursor.prototype.cut = function() {
-    var text = this.copy();
+    var text = this.get();
     if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
+        this._copied_row = this._model._rows[this.primary_row];
         this._model.remove_row(this.primary_row);
     } else {
+        this._copied_row = null;
         this.remove_selected();
+    }
+    return text;
+};
+
+/**
+ * Copies the selected text.
+ * @return {string} selected text
+ */
+Cursor.prototype.copy = function() {
+    var text = this.get();
+    if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
+        this._copied_row = this._model._rows[this.primary_row];
+    } else {
+        this._copied_row = null;
     }
     return text;
 };
