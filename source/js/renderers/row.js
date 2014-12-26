@@ -88,6 +88,7 @@ var RowRenderer = function(model, scrolling_canvas) {
 
     this._model.on('text_changed', utils.proxy(this._handle_value_changed, this));
     this._model.on('rows_added', utils.proxy(this._handle_rows_added, this));
+    this._model.on('rows_removed', utils.proxy(this._handle_rows_removed, this));
     this._model.on('row_changed', utils.proxy(this._handle_row_changed, this)); // TODO: Implement my event.
 };
 utils.inherit(RowRenderer, renderer.RendererBase);
@@ -231,6 +232,17 @@ RowRenderer.prototype.measure_partial_row_width = function(index, length) {
 };
 
 /**
+ * Measures a strings width.
+ * @param  {string} text - text to measure the width of
+ * @param  {integer} [index] - row index, can be used to apply size sensitive 
+ *                             formatting to the text.
+ * @return {float} width
+ */
+RowRenderer.prototype._measure_text_width = function(text) {
+    return this._canvas.measure_text(text, this._base_options);
+};
+
+/**
  * Measures the height of a text row as if it were rendered.
  * @param  {integer} (optional) index
  * @return {float} height
@@ -289,8 +301,34 @@ RowRenderer.prototype._handle_value_changed = function() {
  * Handles when one of the model's rows change
  * @return {null}
  */
-RowRenderer.prototype._handle_row_changed = function(index) {
-    this._scrolling_canvas.scroll_width = Math.max(this._measure_row_width(index)+this._margin_left, this._scrolling_canvas.scroll_width);
+RowRenderer.prototype._handle_row_changed = function(text, index) {
+    // If the max width of the new row contents is greater than the documents
+    // max width, use it.
+    var new_width = this._measure_row_width(index) + this._margin_left;
+    var old_width = this._measure_text_width(text, index) + this._margin_left;
+    if (new_width > old_width) {
+        this._scrolling_canvas.scroll_width = Math.max(new_width, this._scrolling_canvas.scroll_width);
+        return;
+    } else if (old_width == new_width) {
+        return;
+    }
+
+    // If the old width is less than the document's max width, don't do anything.
+    if (old_width < this._scrolling_canvas.scroll_width) {
+        return;
+    }
+
+    // If the max width of the row changed is the max width of the document, 
+    // start recalculating the max width of the document, abort if/when a width
+    // equal to the removed rows max width is encountered.
+    var doc_width = 0;
+    for (var i = 0; i < this._model._rows.length; i++) {
+        doc_width = Math.max(doc_width, this._measure_row_width(i) + this._margin_left);
+        if (doc_width >= old_width) return;
+    }
+    
+    // If the max width is now less than it was before, make sure to set it.
+    this._scrolling_canvas.scroll_width = doc_width;
 };
 
 /**
@@ -308,6 +346,42 @@ RowRenderer.prototype._handle_rows_added = function(start, end) {
         width = Math.max(this._measure_row_width(i)+this._margin_left, width);
     }
     this._scrolling_canvas.scroll_width = width;
+};
+
+/**
+ * Handles when one or more rows are removed from the model
+ *
+ * Assumes constant row height.
+ * @param  {array} rows
+ * @param  {integer} [index]
+ * @return {null}
+ */
+RowRenderer.prototype._handle_rows_removed = function(rows, index) {
+    // Decrease the scrolling height based on the number of rows removed.
+    this._scrolling_canvas.scroll_height -= rows.length * this.get_row_height();
+
+    // Calculate the max width of the rows removed.
+    var max_width = 0;
+    for (var i = 0; i < rows.length; i++) {
+        max_width = Math.max(max_width, this._measure_text_width(rows[i], index+i) + this._margin_left);
+    }
+
+    // If the max width is less than the document's max width, don't do anything.
+    if (max_width < this._scrolling_canvas.scroll_width) {
+        return;
+    }
+
+    // If the max width of the row changed is the max width of the document, 
+    // start recalculating the max width of the document, abort if/when a width
+    // equal to the removed rows max width is encountered.
+    var doc_width = 0;
+    for (i = 0; i < this._model._rows.length; i++) {
+        doc_width = Math.max(doc_width, this._measure_row_width(i) + this._margin_left);
+        if (doc_width >= max_width) return;
+    }
+    
+    // If the max width is now less than it was before, make sure to set it.
+    this._scrolling_canvas.scroll_width = doc_width;
 };
 
 /**

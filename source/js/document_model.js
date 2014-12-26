@@ -161,6 +161,7 @@ DocumentModel.prototype.get_tags = function(row_index, char_index) {
  */
 DocumentModel.prototype.add_text = function(row_index, char_index, text) {
     var coords = this.validate_coords.apply(this, Array.prototype.slice.call(arguments, 0,2));
+    var old_text = this._rows[coords.start_row];
     // If the text has a new line in it, just re-set
     // the rows list.
     if (text.indexOf('\n') != -1) {
@@ -169,9 +170,8 @@ DocumentModel.prototype.add_text = function(row_index, char_index, text) {
             new_rows = this._rows.slice(0, coords.start_row);
         }
 
-        var old_row = this._rows[coords.start_row];
-        var old_row_start = old_row.substring(0, coords.start_char);
-        var old_row_end = old_row.substring(coords.start_char);
+        var old_row_start = old_text.substring(0, coords.start_char);
+        var old_row_end = old_text.substring(coords.start_char);
         var split_text = text.split('\n');
         new_rows.push(old_row_start + split_text[0]);
 
@@ -187,16 +187,15 @@ DocumentModel.prototype.add_text = function(row_index, char_index, text) {
 
         this._rows = new_rows;
         this._resized_rows();
-        this.trigger('row_changed', coords.start_row);
+        this.trigger('row_changed', old_text, coords.start_row);
         this.trigger('rows_added', coords.start_row + 1, coords.start_row + split_text.length - 1);
         this.trigger('changed');
 
     // Text doesn't have any new lines, just modify the
     // line and then trigger the row changed event.
     } else {
-        var old_text = this._rows[coords.start_row];
         this._rows[coords.start_row] = old_text.substring(0, coords.start_char) + text + old_text.substring(coords.start_char);
-        this.trigger('row_changed', coords.start_row);
+        this.trigger('row_changed', old_text, coords.start_row);
         this.trigger('changed');
     }
 };
@@ -211,6 +210,7 @@ DocumentModel.prototype.add_text = function(row_index, char_index, text) {
  */
 DocumentModel.prototype.remove_text = function(start_row, start_char, end_row, end_char) {
     var coords = this.validate_coords.apply(this, arguments);
+    var old_text = this._rows[coords.start_row];
     if (coords.start_row == coords.end_row) {
         this._rows[coords.start_row] = this._rows[coords.start_row].substring(0, coords.start_char) + this._rows[coords.start_row].substring(coords.end_char);
     } else {
@@ -218,12 +218,22 @@ DocumentModel.prototype.remove_text = function(start_row, start_char, end_row, e
     }
 
     if (coords.end_row - coords.start_row > 0) {
-        this._rows.splice(coords.start_row + 1, coords.end_row - coords.start_row);
+        var rows_removed = this._rows.splice(coords.start_row + 1, coords.end_row - coords.start_row);
         this._resized_rows();
-        this.trigger('text_changed');
-        this.trigger('changed');
+
+        // If there are more deleted rows than rows remaining, it
+        // is faster to run a calculation on the remaining rows than
+        // to run it on the rows removed.
+        if (rows_removed.length > this._rows.length) {
+            this.trigger('text_changed');
+            this.trigger('changed');
+        } else {
+            this.trigger('row_changed', old_text, coords.start_row);
+            this.trigger('rows_removed', rows_removed);
+            this.trigger('changed');
+        }
     } else if (coords.end_row == coords.start_row) {
-        this.trigger('row_changed', coords.start_row);
+        this.trigger('row_changed', old_text, coords.start_row);
         this.trigger('changed');
     }
 };
@@ -235,9 +245,9 @@ DocumentModel.prototype.remove_text = function(start_row, start_char, end_row, e
  */
 DocumentModel.prototype.remove_row = function(row_index) {
     if (0 < row_index && row_index < this._rows.length) {
-        this._rows.splice(row_index, 1);
+        var rows_removed = this._rows.splice(row_index, 1);
         this._resized_rows();
-        this.trigger('text_changed');
+        this.trigger('rows_removed', rows_removed);
         this.trigger('changed');
     }
 };
