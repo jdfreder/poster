@@ -28,6 +28,7 @@ var Cursors = function(model, clipboard) {
 
     // Bind clipboard events.
     this._clipboard.on('cut', utils.proxy(this._handle_cut, this));
+    this._clipboard.on('copy', utils.proxy(this._handle_copy, this));
     this._clipboard.on('paste', utils.proxy(this._handle_paste, this));
 };
 utils.inherit(Cursors, utils.PosterClass);
@@ -48,6 +49,17 @@ Cursors.prototype.create = function() {
     that.trigger('change', new_cursor);
 
     return new_cursor;
+};
+
+/**
+ * Handles when the selected text is copied to the clipboard.
+ * @param  {string} text - by val text that was cut
+ * @return {null}
+ */
+Cursors.prototype._handle_copy = function(text) {
+    this.cursors.forEach(function(cursor) {
+        cursor.copy();
+    });
 };
 
 /**
@@ -80,7 +92,7 @@ Cursors.prototype._handle_paste = function(text) {
         });
     } else {
         this.cursors.forEach(function(cursor) {
-            cursor.insert_text(text);
+            cursor.paste(text);
         });
     }
 };
@@ -94,7 +106,7 @@ Cursors.prototype._update_selection = function() {
     // Copy all of the selected text.
     var selections = [];
     this.cursors.forEach(function(cursor) {
-        selections.push(cursor.copy());
+        selections.push(cursor.get());
     });
 
     // Make the copied text clippable.
