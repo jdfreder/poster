@@ -54,3 +54,4 @@ exports.map['shift-mouse0-down'] = 'cursors.start_set_selection';
 exports.map['shift-mouse-move'] = 'cursors.set_selection';
 exports.map['tab'] = 'cursor.indent';
 exports.map['shift-tab'] = 'cursor.unindent';
+exports.map['escape'] = 'cursors.single';

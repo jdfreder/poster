@@ -9,9 +9,10 @@ config = config.config;
 /**
  * Input cursor.
  */
-var Cursor = function(model) {
+var Cursor = function(model, history) {
     utils.PosterClass.call(this);
     this._model = model;
+    this._history = history;
 
     this.primary_row = null;
     this.primary_char = null;
@@ -22,6 +23,48 @@ var Cursor = function(model) {
     this._register_api();
 };
 utils.inherit(Cursor, utils.PosterClass);
+
+/**
+ * Unregister the actions and event listeners of this cursor.
+ */
+Cursor.prototype.unregister = function() {
+    keymap.unregister_by_tag(this);
+};
+
+/**
+ * Gets the state of the cursor.
+ * @return {object} state
+ */
+Cursor.prototype.get_state = function() {
+    return {
+        primary_row: this.primary_row,
+        primary_char: this.primary_char,
+        secondary_row: this.secondary_row,
+        secondary_char: this.secondary_char,
+        _memory_char: this._memory_char
+    };
+};
+
+/**
+ * Sets the state of the cursor.
+ * @param {object} state
+ * @param {boolean} [historical] - Defaults to true.  Whether this should be recorded in history.
+ */
+Cursor.prototype.set_state = function(state, historical) {
+    if (state) {
+        var old_state = {};
+        for (var key in state) {
+            if (state.hasOwnProperty(key)) {
+                old_state[key] = this[key];
+                this[key] = state[key];
+            }
+        }
+
+        if (historical === undefined || historical === true) {
+            this._history.push_action('cursor.set_state', [state], 'cursor.set_state', [old_state]);
+        }
+    }
+};
 
 /**
  * Moves the primary cursor a given offset.
@@ -584,6 +627,29 @@ Cursor.prototype._init_properties = function() {
 };
 
 /**
+ * Record the starting state of the cursor for the history buffer.
+ */
+Cursor.prototype._start_historical_move = function() {
+    if (!this._historical_start) {
+        this._historical_start = this.get_state();
+    }
+};
+
+/**
+ * Record the ending state of the cursor for the history buffer, then
+ * push a reversable action describing the change of the cursor.
+ */
+Cursor.prototype._end_historical_move = function() {
+    this._history.push_action(
+        'cursor.set_state', 
+        [this.get_state()], 
+        'cursor.set_state', 
+        [this._historical_start], 
+        config.history_group_delay || 100);
+    this._historical_start = null;
+};
+
+/**
  * Makes a list of indentation strings used to indent one level,
  * ordered by usage preference.
  * @return {string}
@@ -608,6 +674,7 @@ Cursor.prototype._make_indents = function() {
  */
 Cursor.prototype._register_api = function() {
     var that = this;
+    register('cursor.set_state', utils.proxy(this.set_state, this), this);
     register('cursor.remove_selected', utils.proxy(this.remove_selected, this), this);
     register('cursor.keypress', utils.proxy(this.keypress, this), this);
     register('cursor.indent', utils.proxy(this.indent, this), this);

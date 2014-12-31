@@ -7,7 +7,7 @@ var utils = require('./utils.js');
 /**
  * Manages one or more cursors
  */
-var Cursors = function(model, clipboard) {
+var Cursors = function(model, clipboard, history) {
     utils.PosterClass.call(this);
     this._model = model;
     this.get_row_char = undefined;
@@ -15,11 +15,15 @@ var Cursors = function(model, clipboard) {
     this._selecting_text = false;
     this._clipboard = clipboard;
     this._active_cursor = null;
+    this._history = history;
 
     // Create initial cursor.
     this.create();
 
     // Register actions.
+    register('cursors.create', utils.proxy(this.create, this));
+    register('cursors.single', utils.proxy(this.single, this));
+    register('cursors.pop', utils.proxy(this.pop, this));
     register('cursors.start_selection', utils.proxy(this.start_selection, this));
     register('cursors.set_selection', utils.proxy(this.set_selection, this));
     register('cursors.start_set_selection', utils.proxy(this.start_set_selection, this));
@@ -35,12 +39,21 @@ utils.inherit(Cursors, utils.PosterClass);
 
 /**
  * Creates a cursor and manages it.
+ * @param {object} [state] state to apply to the new cursor.
  * @return {Cursor} cursor
  */
-Cursors.prototype.create = function() {
-    var new_cursor = new cursor.Cursor(this._model, this._input_dispatcher);
+Cursors.prototype.create = function(state) {
+    // Record this action in history.
+    this._history.push_action('cursors.create', arguments, 'cursors.pop', []);
+
+    // Create the cursor.
+    var new_cursor = new cursor.Cursor(this._model, this._history);
     this.cursors.push(new_cursor);
 
+    // Set the initial properties of the cursor.
+    new_cursor.set_state(state, false);
+
+    // Listen for cursor change events.
     var that = this;
     new_cursor.on('change', function() {
         that.trigger('change', new_cursor);
@@ -49,6 +62,37 @@ Cursors.prototype.create = function() {
     that.trigger('change', new_cursor);
 
     return new_cursor;
+};
+
+/**
+ * Remove every cursor except for the first one.
+ */
+Cursors.prototype.single = function() {
+    while (this.cursors.length > 1) {
+        this.pop();
+    }
+};
+
+/**
+ * Remove the last cursor.
+ * @returns {Cursor} last cursor or null
+ */
+Cursors.prototype.pop = function() {
+    if (this.cursors.length > 1) {
+
+        // Remove the last cursor and unregister it.
+        var cursor = this.cursors.pop();
+        cursor.unregister();
+        cursor.off('change');
+
+        // Record this action in history.
+        this._history.push_action('cursors.pop', [], 'cursors.create', [cursor.get_state()]);
+
+        // Alert listeners of changes.
+        this.trigger('change');
+        return cursor;
+    }
+    return null;
 };
 
 /**

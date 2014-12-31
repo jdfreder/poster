@@ -213,6 +213,34 @@ Map.prototype.get_mapping = function(event) {
 };
 
 /**
+ * Invokes the callbacks of an action by name.
+ * @param  {string} name
+ * @param  {array} [args] - arguments to pass to the action callback[s]
+ * @return {boolean} true if one or more of the actions returned true
+ */
+Map.prototype.invoke = function(name, args) {
+    var action_callbacks = Map.registry[name];
+    if (action_callbacks) {
+        if (utils.is_array(action_callbacks)) {
+            var returns = [];
+            action_callbacks.forEach(function(action_callback) {
+                returns.append(action_callback.apply(undefined, args)===true);
+            });
+
+            // If one of the action callbacks returned true, cancel bubbling.
+            if (returns.some(function(x) {return x;})) {
+                return true;
+            }
+        } else {
+            if (action_callbacks.apply(undefined, args)===true) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+/**
  * Parse the arguments to a map function.
  * @param  {arguments array} args
  * @return {dictionary} parsed results
@@ -270,25 +298,8 @@ Map.prototype._handle_event = function(name, e) {
     var actions = this._map[normalized_event];
     if (actions) {
         actions.forEach(function(action) {
-            var action_callbacks = Map.registry[action];
-            if (action_callbacks) {
-                if (utils.is_array(action_callbacks)) {
-                    var returns = [];
-                    action_callbacks.forEach(function(action_callback) {
-                        returns.append(action_callback.call(undefined, e)===true);
-                    });
-
-                    // If one of the action callbacks returned true, cancel bubbling.
-                    if (returns.some(function(x) {return x;})) {
-                        utils.cancel_bubble(e);
-                        return true;
-                    }
-                } else {
-                    if (action_callbacks.call(undefined, e)===true) {
-                        utils.cancel_bubble(e);
-                        return true;
-                    }
-                }
+            if (that.invoke(action, [e])) {
+                utils.cancel_bubble(e);
             }
         });
     }
