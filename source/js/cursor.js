@@ -165,7 +165,17 @@ Cursor.prototype.select_all = function() {
  * @return {null}
  */
 Cursor.prototype.primary_goto_end = function() {
-    this.primary_char = this._model._rows[this.primary_row].length;
+    // Get the start of the actual content, skipping the whitespace.
+    var row_text = this._model._rows[this.primary_row];
+    var trimmed = row_text.trim();
+    var start = row_text.indexOf(trimmed);
+    var target = row_text.length;
+    if (0 < start && start < row_text.length && this.primary_char !== start + trimmed.length) {
+        target = start + trimmed.length;
+    }
+
+    // Move the cursor.
+    this.primary_char = target;
     this._memory_char = this.primary_char;
     this.trigger('change'); 
 };
@@ -175,7 +185,16 @@ Cursor.prototype.primary_goto_end = function() {
  * @return {null}
  */
 Cursor.prototype.primary_goto_start = function() {
-    this.primary_char = 0;
+    // Get the start of the actual content, skipping the whitespace.
+    var row_text = this._model._rows[this.primary_row];
+    var start = row_text.indexOf(row_text.trim());
+    var target = 0;
+    if (0 < start && start < row_text.length && this.primary_char !== start) {
+        target = start;
+    }
+
+    // Move the cursor.
+    this.primary_char = target;
     this._memory_char = this.primary_char;
     this.trigger('change'); 
 };
