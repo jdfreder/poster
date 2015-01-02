@@ -12,6 +12,8 @@ if (navigator.appVersion.indexOf("Mac") != -1) {
         'shift-meta-leftarrow' : 'cursor.select_line_start',
         'shift-meta-rightarrow' : 'cursor.select_line_end',
         'meta-a' : 'cursor.select_all',
+        'meta-z' : 'history.undo',
+        'meta-y' : 'history.redo',
     };
 
 // Non OSX bindings
@@ -28,6 +30,8 @@ if (navigator.appVersion.indexOf("Mac") != -1) {
         'shift-home' : 'cursor.select_line_start',
         'shift-end' : 'cursor.select_line_end',
         'ctrl-a' : 'cursor.select_all',
+        'ctrl-z' : 'history.undo',
+        'ctrl-y' : 'history.redo',
     };
 
 }

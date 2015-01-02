@@ -1,6 +1,7 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
 var utils = require('./utils.js');
+var keymap = require('./events/map.js');
 
 /**
  * Reversible action history.
@@ -13,6 +14,9 @@ var History = function(map) {
     this._undone = [];
     this._autogroup = null;
     this._action_lock = false;
+
+    keymap.Map.register('history.undo', utils.proxy(this.undo, this));
+    keymap.Map.register('history.redo', utils.proxy(this.redo, this));
 };
 utils.inherit(History, utils.PosterClass);
 
