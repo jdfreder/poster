@@ -21,6 +21,7 @@ var Cursors = function(model, clipboard, history) {
     this.create();
 
     // Register actions.
+    register('cursors._cursor_proxy', utils.proxy(this._cursor_proxy, this));
     register('cursors.create', utils.proxy(this.create, this));
     register('cursors.single', utils.proxy(this.single, this));
     register('cursors.pop', utils.proxy(this.pop, this));
@@ -38,6 +39,19 @@ var Cursors = function(model, clipboard, history) {
 utils.inherit(Cursors, utils.PosterClass);
 
 /**
+ * Handles history proxy events for individual cursors.
+ * @param  {integer} cursor_index
+ * @param  {string} function_name
+ * @param  {array} function_params
+ */
+Cursors.prototype._cursor_proxy = function(cursor_index, function_name, function_params) {
+    if (cursor_index < this.cursors.length) {
+        var cursor = this.cursors[cursor_index];
+        cursor[function_name].apply(cursor, function_params);
+    }
+};
+
+/**
  * Creates a cursor and manages it.
  * @param {object} [state] state to apply to the new cursor.
  * @return {Cursor} cursor
@@ -46,8 +60,17 @@ Cursors.prototype.create = function(state) {
     // Record this action in history.
     this._history.push_action('cursors.create', arguments, 'cursors.pop', []);
 
+    // Create a proxying history method for the cursor itself.
+    var index = this.cursors.length;
+    var that = this;
+    var history_proxy = function(forward_name, forward_params, backward_name, backward_params) {
+        that._history.push_action(
+            'cursors._cursor_proxy', [index, forward_name, forward_params],
+            'cursors._cursor_proxy', [index, backward_name, backward_params]);
+    };
+
     // Create the cursor.
-    var new_cursor = new cursor.Cursor(this._model, this._history);
+    var new_cursor = new cursor.Cursor(this._model, history_proxy);
     this.cursors.push(new_cursor);
 
     // Set the initial properties of the cursor.
