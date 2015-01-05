@@ -9,9 +9,10 @@ config = config.config;
 /**
  * Input cursor.
  */
-var Cursor = function(model) {
+var Cursor = function(model, push_history) {
     utils.PosterClass.call(this);
     this._model = model;
+    this._push_history = push_history;
 
     this.primary_row = null;
     this.primary_char = null;
@@ -22,6 +23,48 @@ var Cursor = function(model) {
     this._register_api();
 };
 utils.inherit(Cursor, utils.PosterClass);
+
+/**
+ * Unregister the actions and event listeners of this cursor.
+ */
+Cursor.prototype.unregister = function() {
+    keymap.unregister_by_tag(this);
+};
+
+/**
+ * Gets the state of the cursor.
+ * @return {object} state
+ */
+Cursor.prototype.get_state = function() {
+    return {
+        primary_row: this.primary_row,
+        primary_char: this.primary_char,
+        secondary_row: this.secondary_row,
+        secondary_char: this.secondary_char,
+        _memory_char: this._memory_char
+    };
+};
+
+/**
+ * Sets the state of the cursor.
+ * @param {object} state
+ * @param {boolean} [historical] - Defaults to true.  Whether this should be recorded in history.
+ */
+Cursor.prototype.set_state = function(state, historical) {
+    if (state) {
+        var old_state = {};
+        for (var key in state) {
+            if (state.hasOwnProperty(key)) {
+                old_state[key] = this[key];
+                this[key] = state[key];
+            }
+        }
+
+        if (historical === undefined || historical === true) {
+            this._push_history('set_state', [state], 'set_state', [old_state]);
+        }
+    }
+};
 
 /**
  * Moves the primary cursor a given offset.
@@ -265,7 +308,9 @@ Cursor.prototype.keypress = function(e) {
     var char_code = e.which || e.keyCode;
     var char_typed = String.fromCharCode(char_code);
     this.remove_selected();
-    this._model.add_text(this.primary_row, this.primary_char, char_typed);
+    this._historical(function() {
+        this._model_add_text(this.primary_row, this.primary_char, char_typed);
+    });
     this.move_primary(1, 0);
     this._reset_secondary();
     return true;
@@ -278,14 +323,15 @@ Cursor.prototype.keypress = function(e) {
  */
 Cursor.prototype.indent = function(e) {
     var indent = this._make_indents()[0];
-    if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
-        this._model.add_text(this.primary_row, this.primary_char, indent);
-    } else {
-        for (var row = this.start_row; row <= this.end_row; row++) {
-            this._model.add_text(row, 0, indent);
+    this._historical(function() {
+        if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
+            this._model_add_text(this.primary_row, this.primary_char, indent);
+        } else {
+            for (var row = this.start_row; row <= this.end_row; row++) {
+                this._model_add_text(row, 0, indent);
+            }
         }
-    }
-
+    });
     this.primary_char += indent.length;
     this._memory_char = this.primary_char;
     this.secondary_char += indent.length;
@@ -305,37 +351,39 @@ Cursor.prototype.unindent = function(e) {
 
     // If no text is selected, remove the indent preceding the
     // cursor if it exists.
-    if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
-        for (var i = 0; i < indents.length; i++) {
-            var indent = indents[i];
-            if (this.primary_char >= indent.length) {
-                var before = this._model.get_text(this.primary_row, this.primary_char-indent.length, this.primary_row, this.primary_char);
-                if (before == indent) {
-                    this._model.remove_text(this.primary_row, this.primary_char-indent.length, this.primary_row, this.primary_char);
-                    removed_start = indent.length;
-                    removed_end = indent.length;
-                    break;
+    this._historical(function() {
+        if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
+            for (var i = 0; i < indents.length; i++) {
+                var indent = indents[i];
+                if (this.primary_char >= indent.length) {
+                    var before = this._model.get_text(this.primary_row, this.primary_char-indent.length, this.primary_row, this.primary_char);
+                    if (before == indent) {
+                        this._model_remove_text(this.primary_row, this.primary_char-indent.length, this.primary_row, this.primary_char);
+                        removed_start = indent.length;
+                        removed_end = indent.length;
+                        break;
+                    }
+                }
+            }
+
+        // Text is selected.  Remove the an indent from the begining
+        // of each row if it exists.
+        } else {
+            for (var row = this.start_row; row <= this.end_row; row++) {
+                for (var i = 0; i < indents.length; i++) {
+                    var indent = indents[i];
+                    if (this._model._rows[row].length >= indent.length) {
+                        if (this._model._rows[row].substring(0, indent.length) == indent) {
+                            this._model_remove_text(row, 0, row, indent.length);
+                            if (row == this.start_row) removed_start = indent.length;
+                            if (row == this.end_row) removed_end = indent.length;
+                            break;
+                        }
+                    };
                 }
             }
         }
-
-    // Text is selected.  Remove the an indent from the begining
-    // of each row if it exists.
-    } else {
-        for (var row = this.start_row; row <= this.end_row; row++) {
-            for (var i = 0; i < indents.length; i++) {
-                var indent = indents[i];
-                if (this._model._rows[row].length >= indent.length) {
-                    if (this._model._rows[row].substring(0, indent.length) == indent) {
-                        this._model.remove_text(row, 0, row, indent.length);
-                        if (row == this.start_row) removed_start = indent.length;
-                        if (row == this.end_row) removed_end = indent.length;
-                        break;
-                    }
-                };
-            }
-        }
-    }
+    });
     
     // Move the selected characters backwards if indents were removed.
     var start_is_primary = (this.primary_row == this.start_row && this.primary_char == this.start_char);
@@ -366,8 +414,10 @@ Cursor.prototype.newline = function(e) {
         left = line_text.indexOf(spaceless);
     }
     var indent = line_text.substring(0, left);
-
-    this._model.add_text(this.primary_row, this.primary_char, '\n' + indent);
+    
+    this._historical(function() {
+        this._model_add_text(this.primary_row, this.primary_char, '\n' + indent);
+    });
     this.primary_row += 1;
     this.primary_char = indent.length;
     this._memory_char = this.primary_char;
@@ -382,7 +432,9 @@ Cursor.prototype.newline = function(e) {
  */
 Cursor.prototype.insert_text = function(text) {
     this.remove_selected();
-    this._model.add_text(this.primary_row, this.primary_char, text);
+    this._historical(function() {
+        this._model_add_text(this.primary_row, this.primary_char, text);
+    });
     
     // Move cursor to the end.
     if (text.indexOf('\n')==-1) {
@@ -405,7 +457,9 @@ Cursor.prototype.insert_text = function(text) {
  */
 Cursor.prototype.paste = function(text) {
     if (this._copied_row === text) {
-        this._model.add_row(this.primary_row, text);
+        this._historical(function() {
+            this._model_add_row(this.primary_row, text);
+        });
         this.primary_row++;
         this.secondary_row++;
         this.trigger('change'); 
@@ -422,7 +476,9 @@ Cursor.prototype.remove_selected = function() {
     if (this.primary_row !== this.secondary_row || this.primary_char !== this.secondary_char) {
         var row_index = this.start_row;
         var char_index = this.start_char;
-        this._model.remove_text(this.start_row, this.start_char, this.end_row, this.end_char);
+        this._historical(function() {
+            this._model_remove_text(this.start_row, this.start_char, this.end_row, this.end_char);
+        });
         this.primary_row = row_index;
         this.primary_char = char_index;
         this._reset_secondary();
@@ -451,8 +507,10 @@ Cursor.prototype.get = function() {
 Cursor.prototype.cut = function() {
     var text = this.get();
     if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
-        this._copied_row = this._model._rows[this.primary_row];
-        this._model.remove_row(this.primary_row);
+        this._copied_row = this._model._rows[this.primary_row];    
+        this._historical(function() {
+            this._model_remove_row(this.primary_row);
+        });
     } else {
         this._copied_row = null;
         this.remove_selected();
@@ -545,6 +603,7 @@ Cursor.prototype.delete_word_right = function() {
             this.remove_selected();
         }
     }
+    this._end_historical_move();
     return true;
 };
 
@@ -584,6 +643,105 @@ Cursor.prototype._init_properties = function() {
 };
 
 /**
+ * Adds text to the model while keeping track of the history.
+ * @param  {integer} row_index
+ * @param  {integer} char_index
+ * @param  {string} text
+ */
+Cursor.prototype._model_add_text = function(row_index, char_index, text) {
+    var lines = text.split('\n');
+    this._push_history(
+        '_model_add_text', 
+        [row_index, char_index, text], 
+        '_model_remove_text', 
+        [row_index, char_index, row_index + lines.length - 1, lines.length > 1 ? lines[lines.length-1].length : char_index + text.length], 
+        config.history_group_delay || 100);
+    this._model.add_text(row_index, char_index, text);
+};
+
+/**
+ * Removes text from the model while keeping track of the history.
+ * @param  {integer} start_row
+ * @param  {integer} start_char
+ * @param  {integer} end_row
+ * @param  {integer} end_char
+ */
+Cursor.prototype._model_remove_text = function(start_row, start_char, end_row, end_char) {
+    var text = this._model.get_text(start_row, start_char, end_row, end_char);
+    this._push_history(
+        '_model_remove_text', 
+        [start_row, start_char, end_row, end_char], 
+        '_model_add_text', 
+        [start_row, start_char, text], 
+        config.history_group_delay || 100);
+    this._model.remove_text(start_row, start_char, end_row, end_char);
+};
+
+/**
+ * Adds a row of text while keeping track of the history.
+ * @param  {integer} row_index
+ * @param  {string} text
+ */
+Cursor.prototype._model_add_row = function(row_index, text) {
+    this._push_history(
+        '_model_add_row', 
+        [row_index, text], 
+        '_model_remove_row', 
+        [row_index], 
+        config.history_group_delay || 100);
+    this._model.add_row(row_index, text);
+
+};
+
+/**
+ * Removes a row of text while keeping track of the history.
+ * @param  {integer} row_index
+ */
+Cursor.prototype._model_remove_row = function(row_index) {
+    this._push_history(
+        '_model_remove_row', 
+        [row_index], 
+        '_model_add_row', 
+        [row_index, this._model._rows[row_index]], 
+        config.history_group_delay || 100);
+    this._model.remove_row(row_index);
+};
+
+/**
+ * Record the before and after positions of the cursor for history.
+ * @param  {function} f - executes with `this` context
+ */
+Cursor.prototype._historical = function(f) {
+    this._end_historical_move();
+    var ret = f.apply(this);
+    this._start_historical_move();
+    return ret;
+};
+
+/**
+ * Record the starting state of the cursor for the history buffer.
+ */
+Cursor.prototype._start_historical_move = function() {
+    if (!this._historical_start) {
+        this._historical_start = this.get_state();
+    }
+};
+
+/**
+ * Record the ending state of the cursor for the history buffer, then
+ * push a reversable action describing the change of the cursor.
+ */
+Cursor.prototype._end_historical_move = function() {
+    this._push_history(
+        'set_state', 
+        [this.get_state()], 
+        'set_state', 
+        [this._historical_start], 
+        config.history_group_delay || 100);
+    this._historical_start = null;
+};
+
+/**
  * Makes a list of indentation strings used to indent one level,
  * ordered by usage preference.
  * @return {string}
@@ -608,6 +766,7 @@ Cursor.prototype._make_indents = function() {
  */
 Cursor.prototype._register_api = function() {
     var that = this;
+    register('cursor.set_state', utils.proxy(this.set_state, this), this);
     register('cursor.remove_selected', utils.proxy(this.remove_selected, this), this);
     register('cursor.keypress', utils.proxy(this.keypress, this), this);
     register('cursor.indent', utils.proxy(this.indent, this), this);

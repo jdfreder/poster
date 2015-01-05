@@ -7,7 +7,7 @@ var utils = require('./utils.js');
 /**
  * Manages one or more cursors
  */
-var Cursors = function(model, clipboard) {
+var Cursors = function(model, clipboard, history) {
     utils.PosterClass.call(this);
     this._model = model;
     this.get_row_char = undefined;
@@ -15,11 +15,16 @@ var Cursors = function(model, clipboard) {
     this._selecting_text = false;
     this._clipboard = clipboard;
     this._active_cursor = null;
+    this._history = history;
 
     // Create initial cursor.
-    this.create();
+    this.create(undefined, false);
 
     // Register actions.
+    register('cursors._cursor_proxy', utils.proxy(this._cursor_proxy, this));
+    register('cursors.create', utils.proxy(this.create, this));
+    register('cursors.single', utils.proxy(this.single, this));
+    register('cursors.pop', utils.proxy(this.pop, this));
     register('cursors.start_selection', utils.proxy(this.start_selection, this));
     register('cursors.set_selection', utils.proxy(this.set_selection, this));
     register('cursors.start_set_selection', utils.proxy(this.start_set_selection, this));
@@ -34,13 +39,48 @@ var Cursors = function(model, clipboard) {
 utils.inherit(Cursors, utils.PosterClass);
 
 /**
+ * Handles history proxy events for individual cursors.
+ * @param  {integer} cursor_index
+ * @param  {string} function_name
+ * @param  {array} function_params
+ */
+Cursors.prototype._cursor_proxy = function(cursor_index, function_name, function_params) {
+    if (cursor_index < this.cursors.length) {
+        var cursor = this.cursors[cursor_index];
+        cursor[function_name].apply(cursor, function_params);
+    }
+};
+
+/**
  * Creates a cursor and manages it.
+ * @param {object} [state] state to apply to the new cursor.
+ * @param {boolean} [reversable] - defaults to true, is action reversable.
  * @return {Cursor} cursor
  */
-Cursors.prototype.create = function() {
-    var new_cursor = new cursor.Cursor(this._model, this._input_dispatcher);
+Cursors.prototype.create = function(state, reversable) {
+    // Record this action in history.
+    if (reversable === undefined || reversable === true) {
+        this._history.push_action('cursors.create', arguments, 'cursors.pop', []);
+    }
+
+    // Create a proxying history method for the cursor itself.
+    var index = this.cursors.length;
+    var that = this;
+    var history_proxy = function(forward_name, forward_params, backward_name, backward_params, autogroup_delay) {
+        that._history.push_action(
+            'cursors._cursor_proxy', [index, forward_name, forward_params],
+            'cursors._cursor_proxy', [index, backward_name, backward_params],
+            autogroup_delay);
+    };
+
+    // Create the cursor.
+    var new_cursor = new cursor.Cursor(this._model, history_proxy);
     this.cursors.push(new_cursor);
 
+    // Set the initial properties of the cursor.
+    new_cursor.set_state(state, false);
+
+    // Listen for cursor change events.
     var that = this;
     new_cursor.on('change', function() {
         that.trigger('change', new_cursor);
@@ -49,6 +89,37 @@ Cursors.prototype.create = function() {
     that.trigger('change', new_cursor);
 
     return new_cursor;
+};
+
+/**
+ * Remove every cursor except for the first one.
+ */
+Cursors.prototype.single = function() {
+    while (this.cursors.length > 1) {
+        this.pop();
+    }
+};
+
+/**
+ * Remove the last cursor.
+ * @returns {Cursor} last cursor or null
+ */
+Cursors.prototype.pop = function() {
+    if (this.cursors.length > 1) {
+
+        // Remove the last cursor and unregister it.
+        var cursor = this.cursors.pop();
+        cursor.unregister();
+        cursor.off('change');
+
+        // Record this action in history.
+        this._history.push_action('cursors.pop', [], 'cursors.create', [cursor.get_state()]);
+
+        // Alert listeners of changes.
+        this.trigger('change');
+        return cursor;
+    }
+    return null;
 };
 
 /**
