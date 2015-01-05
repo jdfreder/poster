@@ -654,7 +654,7 @@ Cursor.prototype._model_add_text = function(row_index, char_index, text) {
         '_model_add_text', 
         [row_index, char_index, text], 
         '_model_remove_text', 
-        [row_index, char_index, row_index + lines.length - 1, lines[lines.length-1].length], 
+        [row_index, char_index, row_index + lines.length - 1, lines.length > 1 ? lines[lines.length-1].length : char_index + text.length], 
         config.history_group_delay || 100);
     this._model.add_text(row_index, char_index, text);
 };
@@ -704,7 +704,7 @@ Cursor.prototype._model_remove_row = function(row_index) {
         '_model_add_row', 
         [row_index, this._model._rows[row_index]], 
         config.history_group_delay || 100);
-    this._model.remove_row(row_index, text);
+    this._model.remove_row(row_index);
 };
 
 /**
