@@ -64,6 +64,7 @@ History.prototype.push_action = function(forward_name, forward_params, backward_
  * Commit the pushed actions to one group.
  */
 History.prototype.group_actions = function() {
+    this._autogroup = null;
     if (this._action_lock) return;
     
     this._action_groups.push(this._actions);
@@ -75,14 +76,22 @@ History.prototype.group_actions = function() {
  * Undo one set of actions.
  */
 History.prototype.undo = function() {
+    // If a timeout is set, group now.
+    if (this._autogroup !== null) {
+        clearTimeout(this._autogroup);
+        this.group_actions();
+    }
+
     var undo;
     if (this._actions.length > 0) {
         undo = this._actions;
     } else if (this._action_groups.length > 0) {
         undo = this._action_groups.pop();
+        undo.reverse();
     } else {
-        return;
+        return true;
     }
+    console.log('undoing something', undo);
 
     // Undo the actions.
     if (!this._action_lock) {
@@ -99,6 +108,7 @@ History.prototype.undo = function() {
 
     // Allow the action to be redone.
     this._undone.push(undo);
+    return true;
 };
 
 /**
@@ -124,6 +134,7 @@ History.prototype.redo = function() {
         // Allow the action to be undone.
         this._action_groups.push(redo);
     }
+    return true;
 };
 
 exports.History = History;

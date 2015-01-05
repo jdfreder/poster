@@ -309,7 +309,7 @@ Cursor.prototype.keypress = function(e) {
     var char_typed = String.fromCharCode(char_code);
     this.remove_selected();
     this._historical(function() {
-        this._model.add_text(this.primary_row, this.primary_char, char_typed);
+        this._model_add_text(this.primary_row, this.primary_char, char_typed);
     });
     this.move_primary(1, 0);
     this._reset_secondary();
@@ -325,10 +325,10 @@ Cursor.prototype.indent = function(e) {
     var indent = this._make_indents()[0];
     this._historical(function() {
         if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
-            this._model.add_text(this.primary_row, this.primary_char, indent);
+            this._model_add_text(this.primary_row, this.primary_char, indent);
         } else {
             for (var row = this.start_row; row <= this.end_row; row++) {
-                this._model.add_text(row, 0, indent);
+                this._model_add_text(row, 0, indent);
             }
         }
     });
@@ -358,7 +358,7 @@ Cursor.prototype.unindent = function(e) {
                 if (this.primary_char >= indent.length) {
                     var before = this._model.get_text(this.primary_row, this.primary_char-indent.length, this.primary_row, this.primary_char);
                     if (before == indent) {
-                        this._model.remove_text(this.primary_row, this.primary_char-indent.length, this.primary_row, this.primary_char);
+                        this._model_remove_text(this.primary_row, this.primary_char-indent.length, this.primary_row, this.primary_char);
                         removed_start = indent.length;
                         removed_end = indent.length;
                         break;
@@ -374,7 +374,7 @@ Cursor.prototype.unindent = function(e) {
                     var indent = indents[i];
                     if (this._model._rows[row].length >= indent.length) {
                         if (this._model._rows[row].substring(0, indent.length) == indent) {
-                            this._model.remove_text(row, 0, row, indent.length);
+                            this._model_remove_text(row, 0, row, indent.length);
                             if (row == this.start_row) removed_start = indent.length;
                             if (row == this.end_row) removed_end = indent.length;
                             break;
@@ -416,7 +416,7 @@ Cursor.prototype.newline = function(e) {
     var indent = line_text.substring(0, left);
     
     this._historical(function() {
-        this._model.add_text(this.primary_row, this.primary_char, '\n' + indent);
+        this._model_add_text(this.primary_row, this.primary_char, '\n' + indent);
     });
     this.primary_row += 1;
     this.primary_char = indent.length;
@@ -433,7 +433,7 @@ Cursor.prototype.newline = function(e) {
 Cursor.prototype.insert_text = function(text) {
     this.remove_selected();
     this._historical(function() {
-        this._model.add_text(this.primary_row, this.primary_char, text);
+        this._model_add_text(this.primary_row, this.primary_char, text);
     });
     
     // Move cursor to the end.
@@ -458,7 +458,7 @@ Cursor.prototype.insert_text = function(text) {
 Cursor.prototype.paste = function(text) {
     if (this._copied_row === text) {
         this._historical(function() {
-            this._model.add_row(this.primary_row, text);
+            this._model_add_row(this.primary_row, text);
         });
         this.primary_row++;
         this.secondary_row++;
@@ -477,7 +477,7 @@ Cursor.prototype.remove_selected = function() {
         var row_index = this.start_row;
         var char_index = this.start_char;
         this._historical(function() {
-            this._model.remove_text(this.start_row, this.start_char, this.end_row, this.end_char);
+            this._model_remove_text(this.start_row, this.start_char, this.end_row, this.end_char);
         });
         this.primary_row = row_index;
         this.primary_char = char_index;
@@ -509,7 +509,7 @@ Cursor.prototype.cut = function() {
     if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
         this._copied_row = this._model._rows[this.primary_row];    
         this._historical(function() {
-            this._model.remove_row(this.primary_row);
+            this._model_remove_row(this.primary_row);
         });
     } else {
         this._copied_row = null;

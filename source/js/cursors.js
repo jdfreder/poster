@@ -18,7 +18,7 @@ var Cursors = function(model, clipboard, history) {
     this._history = history;
 
     // Create initial cursor.
-    this.create();
+    this.create(undefined, false);
 
     // Register actions.
     register('cursors._cursor_proxy', utils.proxy(this._cursor_proxy, this));
@@ -54,19 +54,23 @@ Cursors.prototype._cursor_proxy = function(cursor_index, function_name, function
 /**
  * Creates a cursor and manages it.
  * @param {object} [state] state to apply to the new cursor.
+ * @param {boolean} [reversable] - defaults to true, is action reversable.
  * @return {Cursor} cursor
  */
-Cursors.prototype.create = function(state) {
+Cursors.prototype.create = function(state, reversable) {
     // Record this action in history.
-    this._history.push_action('cursors.create', arguments, 'cursors.pop', []);
+    if (reversable === undefined || reversable === true) {
+        this._history.push_action('cursors.create', arguments, 'cursors.pop', []);
+    }
 
     // Create a proxying history method for the cursor itself.
     var index = this.cursors.length;
     var that = this;
-    var history_proxy = function(forward_name, forward_params, backward_name, backward_params) {
+    var history_proxy = function(forward_name, forward_params, backward_name, backward_params, autogroup_delay) {
         that._history.push_action(
             'cursors._cursor_proxy', [index, forward_name, forward_params],
-            'cursors._cursor_proxy', [index, backward_name, backward_params]);
+            'cursors._cursor_proxy', [index, backward_name, backward_params],
+            autogroup_delay);
     };
 
     // Create the cursor.
