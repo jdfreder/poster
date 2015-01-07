@@ -21,4 +21,11 @@ Animator.prototype.time = function() {
     return (elapsed % this.duration) / this.duration;
 };
 
+/**
+ * Reset the animation progress to 0.
+ */
+Animator.prototype.reset = function() {
+    this._start = Date.now();
+};
+
 exports.Animator = Animator;
