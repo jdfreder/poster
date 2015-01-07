@@ -14,10 +14,10 @@ var Cursor = function(model, push_history) {
     this._model = model;
     this._push_history = push_history;
 
-    this.primary_row = null;
-    this.primary_char = null;
-    this.secondary_row = null;
-    this.secondary_char = null;
+    this.primary_row = 0;
+    this.primary_char = 0;
+    this.secondary_row = 0;
+    this.secondary_char = 0;
 
     this._init_properties();
     this._register_api();
@@ -712,9 +712,9 @@ Cursor.prototype._model_remove_row = function(row_index) {
  * @param  {function} f - executes with `this` context
  */
 Cursor.prototype._historical = function(f) {
-    this._end_historical_move();
-    var ret = f.apply(this);
     this._start_historical_move();
+    var ret = f.apply(this);
+    this._end_historical_move();
     return ret;
 };
 
