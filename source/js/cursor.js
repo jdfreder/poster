@@ -14,10 +14,11 @@ var Cursor = function(model, push_history) {
     this._model = model;
     this._push_history = push_history;
 
-    this.primary_row = null;
-    this.primary_char = null;
-    this.secondary_row = null;
-    this.secondary_char = null;
+    this.primary_row = 0;
+    this.primary_char = 0;
+    this.secondary_row = 0;
+    this.secondary_char = 0;
+    this._start_historical_move();
 
     this._init_properties();
     this._register_api();
