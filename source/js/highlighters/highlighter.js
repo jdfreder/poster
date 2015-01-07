@@ -11,7 +11,7 @@ var HighlighterBase = function(model, row_renderer) {
     this._model = model;
     this._row_renderer = row_renderer;
     this._queued = null;
-    this.delay = 100; //ms
+    this.delay = 15; //ms
 
     // Bind events.
     this._row_renderer.on('rows_changed', utils.proxy(this._handle_scroll, this));
