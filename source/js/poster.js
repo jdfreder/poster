@@ -68,6 +68,7 @@ var Poster = function() {
     // Load plugins.
     this.plugins = new pluginmanager.PluginManager(this);
     this.plugins.load('gutter');
+    this.plugins.load('linenumbers');
 };
 utils.inherit(Poster, utils.PosterClass);
 

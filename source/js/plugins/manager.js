@@ -3,6 +3,7 @@
 var utils = require('../utils.js');
 var pluginbase = require('./plugin.js');
 var gutter = require('./gutter/gutter.js');
+var linenumbers = require('./linenumbers/linenumbers.js');
 
 /**
  * Plugin manager class
@@ -14,6 +15,7 @@ var PluginManager = function(poster) {
     // Populate built-in plugin list.
     this._internal_plugins = {};
     this._internal_plugins.gutter = gutter.Gutter;
+    this._internal_plugins.linenumbers = linenumbers.LineNumbers;
 
     // Properties
     this._plugins = [];
