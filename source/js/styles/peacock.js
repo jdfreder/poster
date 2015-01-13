@@ -18,5 +18,7 @@ exports.style = {
 
     text: '#ede0ce',
     background: '#2b2a27',
+    gutter: '#2b2a27',
+    gutter_text: '#7a7267',
 };
 

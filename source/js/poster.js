@@ -4,6 +4,9 @@ var scrolling_canvas = require('./scrolling_canvas.js');
 var document_controller = require('./document_controller.js');
 var document_model = require('./document_model.js');
 var document_view = require('./document_view.js');
+var pluginmanager = require('./plugins/manager.js');
+var plugin = require('./plugins/plugin.js');
+var renderer = require('./renderers/renderer.js');
 var style = require('./style.js');
 var utils = require('./utils.js');
 var config = require('./config.js');
@@ -48,19 +51,28 @@ var Poster = function() {
         return that.view.width;
     }, function(value) {
         that.view.width = value;
+        that.trigger('resized');
     });
     this.property('height', function() {
         return that.view.height;
     }, function(value) {
         that.view.height = value;
+        that.trigger('resized');
     });
     this.property('language', function() {
         return that.view.language;
     }, function(value) {
         that.view.language = value;
     });
+
+    // Load plugins.
+    this.plugins = new pluginmanager.PluginManager(this);
+    this.plugins.load('gutter');
 };
 utils.inherit(Poster, utils.PosterClass);
 
 // Exports
 exports.Poster = Poster;
+exports.PluginBase = plugin.PluginBase;
+exports.RendererBase = renderer.RendererBase;
+exports.utils = utils;

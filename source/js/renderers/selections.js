@@ -23,7 +23,7 @@ var SelectionsRenderer = function(cursors, style, row_renderer, has_focus, curso
         that.render();
         // Tell parent layer this one has changed.
         that.trigger('changed');
-    }
+    };
     this._cursors.on('change', rerender);
 
     // When the style is changed, redraw the selection box(es).
