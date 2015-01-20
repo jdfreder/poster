@@ -69,7 +69,6 @@ LineNumbersRenderer.prototype._render = function() {
         var last_top_row = this._top_row;
         this._top_row = top_row;
         // TODO
-        console.log('subrender');
         this._text_canvas.clear();
         for (var i = this._top_row; i < this._top_row + this._visible_row_count; i++) {
             this._text_canvas.draw_text(10, (i - this._top_row) * this._row_height, String(i+1), {
