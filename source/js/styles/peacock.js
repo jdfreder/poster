@@ -20,5 +20,9 @@ exports.style = {
     background: '#2b2a27',
     gutter: '#2b2a27',
     gutter_text: '#7a7267',
+    gutter_shadow: [
+        [0, 'black'], 
+        [1, 'transparent']
+    ],
 };
 

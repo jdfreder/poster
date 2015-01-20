@@ -1,6 +1,7 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
 var scrolling_canvas = require('./scrolling_canvas.js');
+var canvas = require('./canvas.js');
 var document_controller = require('./document_controller.js');
 var document_model = require('./document_model.js');
 var document_view = require('./document_view.js');
@@ -74,6 +75,7 @@ utils.inherit(Poster, utils.PosterClass);
 
 // Exports
 exports.Poster = Poster;
+exports.Canvas = plugin.PluginBase;
 exports.PluginBase = plugin.PluginBase;
 exports.RendererBase = renderer.RendererBase;
 exports.utils = utils;

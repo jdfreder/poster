@@ -307,6 +307,22 @@ Canvas.prototype.measure_text = function(text, options) {
 };
 
 /**
+ * Create a linear gradient
+ * @param  {float} x1
+ * @param  {float} y1
+ * @param  {float} x2
+ * @param  {float} y2
+ * @param  {array} color_stops - array of [float, color] pairs
+ */
+Canvas.prototype.gradient = function(x1, y1, x2, y2, color_stops) {
+    var gradient = this.context.createLinearGradient(x1, y1, x2, y2);
+    for (var i = 0; i < color_stops.length; i++) {
+        gradient.addColorStop(color_stops[i][0], color_stops[i][1]);
+    }
+    return gradient;
+};
+
+/**
  * Clear's the canvas.
  * @return {null}
  */

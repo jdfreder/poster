@@ -29,6 +29,7 @@ var Style = function() {
         'background',
         'gutter',
         'gutter_text',
+        'gutter_shadow'
     ]);
 
     // Load the default style.

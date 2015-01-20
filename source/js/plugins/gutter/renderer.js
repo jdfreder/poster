@@ -41,11 +41,18 @@ GutterRenderer.prototype._render = function() {
 
     // If the gutter is hovering over content, draw a drop shadow.
     if (this._hovering) {
-        this._canvas.draw_line(
-            width, 0, width, this.height, 
+        var shadow_width = 15;
+        var gradient = this._canvas.gradient(
+            width, 0, width+shadow_width, 0, this._gutter.poster.style.gutter_shadow ||
+            [
+                [0, 'black'], 
+                [1, 'transparent']
+            ]);
+        this._canvas.draw_rectangle(
+            width, 0, shadow_width, this.height, 
             {
-                color: this._gutter.poster.style.gutter_text,
-                line_width: 1,
+                fill_color: gradient,
+                alpha: 0.35,
             }
         );
 
