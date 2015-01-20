@@ -63,6 +63,7 @@ Cursor.prototype.set_state = function(state, historical) {
         if (historical === undefined || historical === true) {
             this._push_history('set_state', [state], 'set_state', [old_state]);
         }
+        this.trigger('change');
     }
 };
 

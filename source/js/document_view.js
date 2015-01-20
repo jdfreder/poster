@@ -25,6 +25,7 @@ var DocumentView = function(canvas, model, cursors_model, style, has_focus) {
     var row_renderer = new highlighted_row.HighlightedRowRenderer(model, canvas, style);
     row_renderer.margin_left = 2;
     row_renderer.margin_top = 2;
+    this.row_renderer = row_renderer;
     
     // Make sure changes made to the cursor(s) are within the visible region.
     cursors_model.on('change', function(cursor) {

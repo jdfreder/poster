@@ -24,6 +24,12 @@ var RendererBase = function(default_canvas, options) {
     }, function(value) {
         that._canvas.height = value;
     });
+    this.property('top', function() {
+        return -that._canvas._ty(0);
+    });
+    this.property('left', function() {
+        return -that._canvas._tx(0);
+    });
 };
 utils.inherit(RendererBase, utils.PosterClass);
 

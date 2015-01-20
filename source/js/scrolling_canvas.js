@@ -93,6 +93,7 @@ ScrollingCanvas.prototype._init_properties = function() {
     }, function(value) {
         // Set
         that._scroll_bars.scrollTop = value;
+        that._handle_scroll();
     });
 
     /**
@@ -104,6 +105,7 @@ ScrollingCanvas.prototype._init_properties = function() {
     }, function(value) {
         // Set
         that._scroll_bars.scrollLeft = value;
+        that._handle_scroll();
     });
 
     /**
@@ -162,17 +164,7 @@ ScrollingCanvas.prototype._bind_events = function() {
     // Trigger scroll and redraw events on scroll.
     this._scroll_bars.onscroll = function(e) {
         that.trigger('scroll', e);
-        if (that._old_scroll_top !== undefined && that._old_scroll_left !== undefined) {
-            var scroll = {
-                x: that.scroll_left - that._old_scroll_left,
-                y: that.scroll_top - that._old_scroll_top,
-            };
-            that._try_redraw(scroll);
-        } else {
-            that._try_redraw();
-        }
-        that._old_scroll_left = that.scroll_left;
-        that._old_scroll_top = that.scroll_top;
+        that._handle_scroll();
     };
 
     // Prevent scroll bar handled mouse events from bubbling.
@@ -185,6 +177,23 @@ ScrollingCanvas.prototype._bind_events = function() {
     this._scroll_bars.onmouseup = scrollbar_event;
     this._scroll_bars.onclick = scrollbar_event;
     this._scroll_bars.ondblclick = scrollbar_event;
+};
+
+/**
+ * Handles when the canvas is scrolled.
+ */
+ScrollingCanvas.prototype._handle_scroll = function() {
+    if (this._old_scroll_top !== undefined && this._old_scroll_left !== undefined) {
+        var scroll = {
+            x: this.scroll_left - this._old_scroll_left,
+            y: this.scroll_top - this._old_scroll_top,
+        };
+        this._try_redraw(scroll);
+    } else {
+        this._try_redraw();
+    }
+    this._old_scroll_left = this.scroll_left;
+    this._old_scroll_top = this.scroll_top;
 };
 
 /**
