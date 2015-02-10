@@ -89,6 +89,22 @@ Canvas.prototype._init_properties = function() {
 };
 
 /**
+ * Erases the cached rendering options.
+ * 
+ * This should be called if a font is not rendering properly.  A font may not
+ * render properly if it was was used within Poster before it was loaded by the
+ * browser. i.e. If font 'FontA' is used within Poster, but hasn't been loaded
+ * yet by the browser, Poster will use a temporary font instead of 'FontA'.
+ * Because Poster is unaware of when fonts are loaded (TODO attempt to fix this)
+ * by the browser, once 'FontA' is actually loaded, the temporary font will
+ * continue to be used.  Clearing the cache makes Poster attempt to reload that
+ * font.
+ */
+Canvas.prototype.erase_options_cache = function() {
+    this._last_set_options = {};
+};
+
+/**
  * Draws a rectangle
  * @param  {float} x
  * @param  {float} y
