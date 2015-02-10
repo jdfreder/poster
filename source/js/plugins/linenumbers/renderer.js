@@ -9,7 +9,7 @@ var canvas = require('../../canvas.js');
 var LineNumbersRenderer = function(plugin) {
     renderer.RendererBase.call(this, undefined, {parent_independent: true});
     this._plugin  = plugin;
-    this._top = 0;
+    this._top = null;
     this._top_row = null;
 
     // Find gutter plugin, listen to its change event.
@@ -41,6 +41,7 @@ var LineNumbersRenderer = function(plugin) {
         that._visible_row_count = Math.ceil(value/row_height) + 1;
         that._text_canvas.height = that._visible_row_count * row_height;
         that._tmp_canvas.height = that._text_canvas.height;
+        that.rerender();
     });
     this.height = this.height;
 };
@@ -51,9 +52,8 @@ utils.inherit(LineNumbersRenderer, renderer.RendererBase);
  * Only re-render when scrolled vertically.
  */
 LineNumbersRenderer.prototype.render = function(scroll) {
-    // Scrolled right xor hovering
     var top = this._gutter.poster.canvas.scroll_top;
-    if (this._top !== top) {
+    if (this._top === null || this._top !== top) {
         this._top = top;
         this._render();
     }
@@ -68,14 +68,32 @@ LineNumbersRenderer.prototype._render = function() {
     if (this._top_row !== top_row) {
         var last_top_row = this._top_row;
         this._top_row = top_row;
-        // TODO
-        this._text_canvas.clear();
-        for (var i = this._top_row; i < this._top_row + this._visible_row_count; i++) {
-            this._text_canvas.draw_text(10, (i - this._top_row) * this._row_height, String(i+1), {
-                font_family: 'monospace',
-                font_size: 14,
-                color: this._plugin.poster.style.gutter_text || 'black',
-            });
+
+        // Recycle rows if possible.
+        var row_scroll = this._top_row - last_top_row;
+        var row_delta = Math.abs(row_scroll);
+        if (this._top_row !== null && row_delta < this._visible_row_count) {
+
+            // Get a snapshot of the text before the scroll.
+            this._tmp_canvas.clear();
+            this._tmp_canvas.draw_image(this._text_canvas, 0, 0);
+
+            // Render the new rows.
+            this._text_canvas.clear();
+            if (this._top_row < last_top_row) {
+                // Scrolled up the document (the scrollbar moved up, page down)
+                this._render_rows(this._top_row, row_delta);
+            } else {
+                // Scrolled down the document (the scrollbar moved down, page up)
+                this._render_rows(this._top_row + this._visible_row_count - row_delta, row_delta);
+            }
+            
+            // Use the old content to fill in the rest.
+            this._text_canvas.draw_image(this._tmp_canvas, 0, -row_scroll * this._row_height);
+        } else {
+            // Draw everything.
+            this._text_canvas.clear();
+            this._render_rows(this._top_row, this._visible_row_count);
         }
     }
     
@@ -87,13 +105,51 @@ LineNumbersRenderer.prototype._render = function() {
         this._row_renderer.get_row_top(this._top_row) - this._row_renderer.top);
 };
 
+LineNumbersRenderer.prototype.rerender = function() {
+    // Draw everything.
+    this._text_canvas.erase_options_cache();
+    this._text_canvas.clear();
+    this._render_rows(this._top_row, this._visible_row_count);
+
+    // Render the buffer at the correct offset.
+    this._canvas.clear();
+    this._canvas.draw_image(
+        this._text_canvas,
+        0, 
+        this._row_renderer.get_row_top(this._top_row) - this._row_renderer.top);
+};
+
+/**
+ * Renders a set of line numbers.
+ * @param  {integer} start_row
+ * @param  {integer} num_rows
+ */
+LineNumbersRenderer.prototype._render_rows = function(start_row, num_rows) {
+    for (var i = start_row; i < start_row + num_rows; i++) {
+        var y = (i - this._top_row) * this._row_height;
+        if (this._plugin.poster.config.highlight_draw) {
+            this._text_canvas.draw_rectangle(0, y, this._text_canvas.width, this._row_height, {
+                fill_color: utils.random_color(),
+            });
+        }
+
+        this._text_canvas.draw_text(10, y, String(i+1), {
+            font_family: 'monospace',
+            font_size: 14,
+            color: this._plugin.poster.style.gutter_text || 'black',
+        });
+    }
+
+};
+
 /**
  * Handles when the gutter is resized
  */
 LineNumbersRenderer.prototype._gutter_resize = function() {
     this._text_canvas.width = this._gutter.gutter_width;
     this._tmp_canvas.width = this._gutter.gutter_width; 
-    this._render();
+    this._top_row = null;
+    this.rerender();
 };
 
 /**
