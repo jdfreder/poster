@@ -2,6 +2,8 @@
 
 var utils = require('../utils.js');
 var renderer = require('./renderer.js');
+var config = require('../config.js');
+config = config.config;
 
 /**
  * Groups multiple renderers
@@ -18,7 +20,8 @@ var BatchRenderer = function(renderers, canvas) {
     var that = this;
     this._renderers.forEach(function(renderer) {
         renderer.on('changed', function() {
-            that._copy_renderers();
+            var rendered_region = renderer._canvas.rendered_region;
+            that._copy_renderers(rendered_region);
         });
     });
     
@@ -49,7 +52,8 @@ BatchRenderer.prototype.add_renderer = function(renderer) {
     var that = this;
     this._renderers.push(renderer);
     renderer.on('changed', function() {
-        that._copy_renderers();
+        var rendered_region = renderer._canvas.rendered_region;
+        that._copy_renderers(rendered_region);
     });
 };
 
@@ -85,13 +89,38 @@ BatchRenderer.prototype.render = function(scroll) {
                 }
             });
 
+            // Tell each renderer to render and keep track of the region
+            // that has freshly rendered contents.
+            var rendered_region = null;
             this._renderers.forEach(function(renderer) {
                  // Tell the renderer to render itself.
                 renderer.render(scroll);
+
+                var new_region = renderer._canvas.rendered_region;
+                if (rendered_region===null) {
+                    rendered_region = new_region;
+                } else if (new_region !== null) {
+                    
+                    // Calculate the sum of the two dirty regions.
+                    var x1 = rendered_region.x;
+                    var x2 = rendered_region.x + rendered_region.width;
+                    var y1 = rendered_region.y;
+                    var y2 = rendered_region.y + rendered_region.height;
+                    
+                    x1 = Math.min(x1, new_region.x);
+                    x2 = Math.max(x2, new_region.x + new_region.width);
+                    y1 = Math.min(y1, new_region.y);
+                    y2 = Math.max(y2, new_region.y + new_region.height);
+                    
+                    rendered_region.x = x1;
+                    rendered_region.y = y1;
+                    rendered_region.width = x2 - x1;
+                    rendered_region.height = y2 - y1;
+                }
             });
 
             // Copy the results to self.
-            this._copy_renderers();
+            this._copy_renderers(rendered_region);
         } finally {
             this._render_lock = false;
         }
@@ -102,26 +131,43 @@ BatchRenderer.prototype.render = function(scroll) {
  * Copies all the renderer layers to the canvas.
  * @return {null}
  */
-BatchRenderer.prototype._copy_renderers = function() {
+BatchRenderer.prototype._copy_renderers = function(region) {
     var that = this;
-    this._canvas.clear();
+    this._canvas.clear(region);
     this._renderers.forEach(function(renderer) {
-        that._copy_renderer(renderer);
+        that._copy_renderer(renderer, region);
     });
+
+    // Debug, higlight blit region.
+    if (region && config.highlight_blit) {
+        this._canvas.draw_rectangle(region.x, region.y, region.width, region.height, {color: utils.random_color()});
+    }
 };
 
 /**
  * Copy a renderer to the canvas.
  * @param  {RendererBase} renderer
- * @return {null}
+ * @param  {object} (optional) region 
  */
-BatchRenderer.prototype._copy_renderer = function(renderer) {
-    this._canvas.draw_image(
-        renderer._canvas, 
-        this.left, 
-        this.top, 
-        this._canvas.width, 
-        this._canvas.height);
+BatchRenderer.prototype._copy_renderer = function(renderer, region) {
+    if (region) {
+
+        // Copy a region.
+        this._canvas.draw_image(
+            renderer._canvas, 
+            region.x, region.y, region.width, region.height,
+            region);
+
+    } else {
+
+        // Copy the entire image.
+        this._canvas.draw_image(
+            renderer._canvas, 
+            this.left, 
+            this.top, 
+            this._canvas.width, 
+            this._canvas.height);   
+    }
 };
 
 // Exports

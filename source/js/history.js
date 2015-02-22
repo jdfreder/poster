@@ -91,7 +91,6 @@ History.prototype.undo = function() {
     } else {
         return true;
     }
-    console.log('undoing something', undo);
 
     // Undo the actions.
     if (!this._action_lock) {

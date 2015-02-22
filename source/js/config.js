@@ -3,6 +3,7 @@
 var utils = require('./utils.js');
 var config = new utils.PosterClass([
     'highlight_draw', // boolean - Whether or not to highlight re-renders
+    'highlight_blit', // boolean - Whether or not to highlight blit regions
     'newline_width', // integer - Width of newline characters
     'tab_width', // integer - Tab character width measured in space characters
     'use_spaces', // boolean - Use spaces for indents instead of tabs

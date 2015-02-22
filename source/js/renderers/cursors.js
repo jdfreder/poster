@@ -14,6 +14,7 @@ var CursorsRenderer = function(cursors, style, row_renderer, has_focus) {
     this.style = style;
     this._has_focus = has_focus;
     this._cursors = cursors;
+    this._last_drawn_cursors = [];
 
     this._row_renderer = row_renderer;
     // TODO: Remove the following block.
@@ -47,12 +48,32 @@ utils.inherit(CursorsRenderer, renderer.RendererBase);
  * optimized for speed.
  * @return {null}
  */
-CursorsRenderer.prototype.render = function() {
-    this._canvas.clear();
+CursorsRenderer.prototype.render = function(scroll) {
+    var that = this;
+
+    // Remove the previously drawn cursors, if any.
+    if (scroll !== undefined) {
+        this._canvas.clear();
+        utils.clear_array(this._last_drawn_cursors);
+    } else {
+        if (this._last_drawn_cursors.length > 0) {
+            this._last_drawn_cursors.forEach(function(cursor_box) {
+
+                // Remove 1px space around the cursor box too for anti-aliasing.
+                that._canvas.clear({
+                    x: cursor_box.x - 1,
+                    y: cursor_box.y - 1,
+                    width: cursor_box.width + 2,
+                    height: cursor_box.height + 2,
+                });
+            });
+            utils.clear_array(this._last_drawn_cursors);
+        }    
+    }
+    
 
     // Only render if the canvas has focus.
     if (this._has_focus() && this._blink_animator.time() < 0.5) {
-        var that = this;
         this._cursors.cursors.forEach(function(cursor) {
             // Get the visible rows.
             var visible_rows = that._get_visible_rows();
@@ -68,11 +89,19 @@ CursorsRenderer.prototype.render = function() {
             var offset = (height - (multiplier*height)) / 2;
             height *= multiplier;
             if (visible_rows.top_row <= row_index && row_index <= visible_rows.bottom_row) {
+                var cursor_box = {
+                    x: char_index === 0 ? that._row_renderer.margin_left : that._measure_partial_row(row_index, char_index) + that._row_renderer.margin_left,
+                    y: that._get_row_top(row_index) + offset,
+                    width: that.style.cursor_width===undefined ? 1.0 : that.style.cursor_width,
+                    height: height,
+                };
+                that._last_drawn_cursors.push(cursor_box);
+
                 that._canvas.draw_rectangle(
-                    char_index === 0 ? that._row_renderer.margin_left : that._measure_partial_row(row_index, char_index) + that._row_renderer.margin_left, 
-                    that._get_row_top(row_index) + offset, 
-                    that.style.cursor_width===undefined ? 1.0 : that.style.cursor_width, 
-                    height, 
+                    cursor_box.x, 
+                    cursor_box.y, 
+                    cursor_box.width, 
+                    cursor_box.height, 
                     {
                         fill_color: that.style.cursor || 'back',
                     }
