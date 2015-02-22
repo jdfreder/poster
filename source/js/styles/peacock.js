@@ -14,7 +14,7 @@ exports.style = {
     cursor_width: 1.0,
     cursor_height: 1.1,
     selection: '#df3d18',
-    selection_unfocused: '#bf1d00',
+    selection_unfocused: '#4f1d08',
 
     text: '#ede0ce',
     background: '#2b2a27',
