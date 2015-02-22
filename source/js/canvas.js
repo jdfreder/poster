@@ -27,8 +27,6 @@ utils.inherit(Canvas, utils.PosterClass);
 /**
  * Layout the elements for the canvas.
  * Creates `this.el`
- * 
- * @return {null}
  */
 Canvas.prototype._layout = function() {
     this._canvas = document.createElement('canvas');
@@ -41,7 +39,6 @@ Canvas.prototype._layout = function() {
 
 /**
  * Make the properties of the class.
- * @return {null}
  */
 Canvas.prototype._init_properties = function() {
     var that = this;
@@ -77,15 +74,28 @@ Canvas.prototype._init_properties = function() {
     /**
      * Region of the canvas that has been rendered to
      * @return {dictionary} dictionary describing a rectangle {x,y,width,height}
+     *                      null if canvas has changed since last check
      */
     this.property('rendered_region', function() {
-        return {
-            x: this._tx(this._rendered_region[0], true),
-            y: this._ty(this._rendered_region[1], true),
-            width: this._rendered_region[2] - this._rendered_region[0],
-            height: this._rendered_region[3] - this._rendered_region[1],
-        };
+        return this.get_rendered_region(true);
     });
+};
+
+/**
+ * Gets the region of the canvas that has been rendered to.
+ * @param  {boolean} (optional) reset - resets the region.
+ */
+Canvas.prototype.get_rendered_region = function(reset) {
+    var rendered_region = this._rendered_region;
+    if (rendered_region[0] === null) return null;
+
+    if (reset) this._rendered_region = [null, null, null, null];
+    return {
+        x: this._tx(rendered_region[0], true),
+        y: this._ty(rendered_region[1], true),
+        width: (this._tx(rendered_region[2]) - this._tx(rendered_region[0])), 
+        height: (this._ty(rendered_region[3]) - this._ty(rendered_region[1])),
+    };
 };
 
 /**
@@ -111,15 +121,14 @@ Canvas.prototype.erase_options_cache = function() {
  * @param  {float} width
  * @param  {float} height
  * @param  {dictionary} options, see _apply_options() for details
- * @return {null}
  */
 Canvas.prototype.draw_rectangle = function(x, y, width, height, options) {
-    x = this._tx(x);
-    y = this._ty(y);
+    var tx = this._tx(x);
+    var ty = this._ty(y);
     this.context.beginPath();
-    this.context.rect(x, y, width, height);
+    this.context.rect(tx, ty, width, height);
     this._do_draw(options);
-    this._touch(x, y, x+width, y+height);
+    this._touch(tx, ty, tx+width, ty+height);
 };
 
 /**
@@ -128,15 +137,14 @@ Canvas.prototype.draw_rectangle = function(x, y, width, height, options) {
  * @param  {float} y
  * @param  {float} r
  * @param  {dictionary} options, see _apply_options() for details
- * @return {null}
  */
 Canvas.prototype.draw_circle = function(x, y, r, options) {
-    x = this._tx(x);
-    y = this._ty(y);
+    var tx = this._tx(x);
+    var ty = this._ty(y);
     this.context.beginPath();
-    this.context.arc(x, y, r, 0, 2 * Math.PI);
+    this.context.arc(tx, ty, r, 0, 2 * Math.PI);
     this._do_draw(options);
-    this._touch(x-r, y-r, x+r, y+r);
+    this._touch(tx-r, ty-r, tx+r, ty+r);
 };
 
 /**
@@ -146,16 +154,28 @@ Canvas.prototype.draw_circle = function(x, y, r, options) {
  * @param  {float} y
  * @param  {float} (optional) width
  * @param  {float} (optional) height
- * @return {null}
+ * @param  {object} (optional) clip_bounds - Where to clip from the source.
  */
-Canvas.prototype.draw_image = function(img, x, y, width, height) {
-    x = this._tx(x);
-    y = this._ty(y);
+Canvas.prototype.draw_image = function(img, x, y, width, height, clip_bounds) {
+    var tx = this._tx(x);
+    var ty = this._ty(y);
     width = width || img.width;
     height = height || img.height;
     img = img._canvas ? img._canvas : img;
-    this.context.drawImage(img, x, y, width, height);
-    this._touch(x, y, this.width, this.height);
+    if (clip_bounds) {
+        // Horizontally offset the image operation by one pixel along each 
+        // border to eliminate the strange white l&r border artifacts.
+        var hoffset = 1;
+        this.context.drawImage(img, 
+            (this._tx(clip_bounds.x) - hoffset) * 2, // Retina support
+            this._ty(clip_bounds.y) * 2, // Retina support
+            (clip_bounds.width + 2*hoffset) * 2, // Retina support
+            clip_bounds.height * 2, // Retina support
+            tx-hoffset, ty, width + 2*hoffset, height);
+    } else {
+        this.context.drawImage(img, tx, ty, width, height);
+    }
+    this._touch(tx, ty, tx + width, ty + height);
 };
 
 /**
@@ -165,18 +185,17 @@ Canvas.prototype.draw_image = function(img, x, y, width, height) {
  * @param  {float} x2
  * @param  {float} y2
  * @param  {dictionary} options, see _apply_options() for details
- * @return {null}
  */
 Canvas.prototype.draw_line = function(x1, y1, x2, y2, options) {
-    x1 = this._tx(x1);
-    y1 = this._ty(y1);
-    x2 = this._tx(x2);
-    y2 = this._ty(y2);
+    var tx1 = this._tx(x1);
+    var ty1 = this._ty(y1);
+    var tx2 = this._tx(x2);
+    var ty2 = this._ty(y2);
     this.context.beginPath();
-    this.context.moveTo(x1, y1);
-    this.context.lineTo(x2, y2);
+    this.context.moveTo(tx1, ty1);
+    this.context.lineTo(tx2, ty2);
     this._do_draw(options);
-    this._touch(x1, y1, x2, y2);
+    this._touch(tx1, ty1, tx2, ty2);
 };
 
 /**
@@ -186,7 +205,6 @@ Canvas.prototype.draw_line = function(x1, y1, x2, y2, options) {
  *                          where x and y are floating point
  *                          values.
  * @param  {dictionary} options, see _apply_options() for details
- * @return {null}
  */
 Canvas.prototype.draw_polyline = function(points, options) {
     if (points.length < 2) {
@@ -202,12 +220,14 @@ Canvas.prototype.draw_polyline = function(points, options) {
         var maxy = 0;
         for (var i = 1; i < points.length; i++) {
             point = points[i];
-            this.context.lineTo(this._tx(point[0]), this._ty(point[1]));
+            var tx = this._tx(point[0]);
+            var ty = this._ty(point[1]);
+            this.context.lineTo(tx, ty);
 
-            minx = Math.min(this._tx(point[0]), minx);
-            miny = Math.min(this._ty(point[1]), miny);
-            maxx = Math.max(this._tx(point[0]), maxx);
-            maxy = Math.max(this._ty(point[1]), maxy);
+            minx = Math.min(tx, minx);
+            miny = Math.min(ty, miny);
+            maxx = Math.max(tx, maxx);
+            maxy = Math.max(ty, maxy);
         }
         this._do_draw(options); 
         this._touch(minx, miny, maxx, maxy);   
@@ -220,23 +240,26 @@ Canvas.prototype.draw_polyline = function(points, options) {
  * @param  {float} y
  * @param  {string} text string or callback that resolves to a string.
  * @param  {dictionary} options, see _apply_options() for details
- * @return {null}
  */
 Canvas.prototype.draw_text = function(x, y, text, options) {
-    x = this._tx(x);
-    y = this._ty(y);
+    var tx = this._tx(x);
+    var ty = this._ty(y);
     text = this._process_tabs(text);
     options = this._apply_options(options);
     // 'fill' the text by default when neither a stroke or fill 
     // is defined.  Otherwise only fill if a fill is defined.
     if (options.fill || !options.stroke) {
-        this.context.fillText(text, x, y);
+        this.context.fillText(text, tx, ty);
     }
     // Only stroke if a stroke is defined.
     if (options.stroke) {
-        this.context.strokeText(text, x, y);       
+        this.context.strokeText(text, tx, ty);       
     }
-    this._touch(x, y, this.width, this.height);
+
+    // Mark the region as dirty.
+    var width = this.measure_text(text, options);
+    var height = this._font_height;
+    this._touch(tx, ty, tx + width, ty + height); 
 };
 
 /**
@@ -288,11 +311,11 @@ Canvas.prototype.get_raw_image = function(x, y, width, height) {
  */
 Canvas.prototype.put_raw_image = function(img, x, y) {
     console.warn('put_raw_image image is slow, use draw_image instead');
-    x = this._tx(x);
-    y = this._ty(y);
+    var tx = this._tx(x);
+    var ty = this._ty(y);
     // Multiply by two for pixel doubling.
-    ret = this.context.putImageData(img, x*2, y*2);
-    this._touch(x, y, this.width, this.height);
+    ret = this.context.putImageData(img, tx*2, ty*2);
+    this._touch(tx, ty, this.width, this.height); // Don't know size of image
     return ret;
 };
 
@@ -340,18 +363,24 @@ Canvas.prototype.gradient = function(x1, y1, x2, y2, color_stops) {
 
 /**
  * Clear's the canvas.
- * @return {null}
+ * @param  {object} (optional) region, {x,y,width,height}
  */
-Canvas.prototype.clear = function() {
-    this.context.clearRect(0, 0, this.width, this.height);
-    this._touch();
+Canvas.prototype.clear = function(region) {
+    if (region) {
+        var tx = this._tx(region.x);
+        var ty = this._ty(region.y);
+        this.context.clearRect(tx, ty, region.width, region.height);
+        this._touch(tx, ty, tx + region.width, ty + region.height);
+    } else {
+        this.context.clearRect(0, 0, this.width, this.height);
+        this._touch();
+    }
 };
 
 /**
  * Scale the current drawing.
  * @param  {float} x
- * @param  {float} y
- * @return {null}  
+ * @param  {float} y  
  */
 Canvas.prototype.scale = function(x, y) {
     this.context.scale(x, y);
@@ -362,7 +391,6 @@ Canvas.prototype.scale = function(x, y) {
  * Finishes the drawing operation using the set of provided options.
  * @param  {dictionary} (optional) dictionary that 
  *  resolves to a dictionary.
- * @return {null}
  */
 Canvas.prototype._do_draw = function(options) {
     options = this._apply_options(options);
@@ -404,7 +432,6 @@ Canvas.prototype._do_draw = function(options) {
  *      font_weight {string}
  *      font_size {string}
  *      font_family {string}
- *      font {string} Overriddes all other font properties.
  *      text_align {string} Horizontal alignment of text.  
  *          Possible values are `start`, `end`, `center`,
  *          `left`, or `right`.
@@ -420,7 +447,7 @@ Canvas.prototype._apply_options = function(options) {
 
     // Special options.
     var set_options = {};
-    set_options.globalAlpha = options.alpha===undefined ? 1.0 : options.alpha;
+    set_options.globalAlpha = (options.alpha===undefined ? 1.0 : options.alpha);
     set_options.globalCompositeOperation = options.composite_operation || 'source-over';
     
     // Line style.
@@ -450,10 +477,11 @@ Canvas.prototype._apply_options = function(options) {
     var font_style = options.font_style || '';
     var font_variant = options.font_variant || '';
     var font_weight = options.font_weight || '';
-    var font_size = pixels(options.font_size) || '12px';
+    this._font_height = options.font_size || 12;
+    var font_size = pixels(this._font_height);
     var font_family = options.font_family || 'Arial';
     var font = font_style + ' ' + font_variant + ' ' + font_weight + ' ' + font_size + ' ' + font_family;
-    set_options.font = options.font || font;
+    set_options.font = font;
 
     // Text style.
     set_options.textAlign = options.text_align || 'left';
@@ -484,10 +512,16 @@ Canvas.prototype._apply_options = function(options) {
 /**
  * Update the timestamp that the canvas was modified and
  * the region that has contents rendered to it.
- * @return {null}
  */
 Canvas.prototype._touch = function(x1, y1, x2, y2) {
     this._modified = Date.now();
+
+    var all_undefined = (x1===undefined && y1===undefined && x2===undefined && y2===undefined);
+    var one_nan = (isNaN(x1*x2*y1*y2));
+    if (one_nan || all_undefined) {
+        this._rendered_region = [0, 0, this.width, this.height];
+        return;
+    }
 
     // Set the render region.
     var comparitor = function(old_value, new_value, comparison) {
@@ -497,10 +531,11 @@ Canvas.prototype._touch = function(x1, y1, x2, y2) {
             return comparison.call(undefined, old_value, new_value);
         }
     };
-    this._rendered_region[0] = comparitor(this._rendered_region[0], x1, Math.min);
-    this._rendered_region[1] = comparitor(this._rendered_region[1], y1, Math.min);
-    this._rendered_region[2] = comparitor(this._rendered_region[2], x2, Math.max);
-    this._rendered_region[3] = comparitor(this._rendered_region[3], y2, Math.max);
+
+    this._rendered_region[0] = comparitor(this._rendered_region[0], comparitor(x1, x2, Math.min), Math.min);
+    this._rendered_region[1] = comparitor(this._rendered_region[1], comparitor(y1, y2, Math.min), Math.min);
+    this._rendered_region[2] = comparitor(this._rendered_region[2], comparitor(x1, x2, Math.max), Math.max);
+    this._rendered_region[3] = comparitor(this._rendered_region[3], comparitor(y1, y2, Math.max), Math.max);
 };
 
 /**

@@ -13,6 +13,7 @@ config = config.config;
  */
 var SelectionsRenderer = function(cursors, style, row_renderer, has_focus, cursors_renderer) {
     renderer.RendererBase.call(this);
+    this._dirty = null;
     this.style = style;
     this._has_focus = has_focus;
 
@@ -52,8 +53,21 @@ utils.inherit(SelectionsRenderer, renderer.RendererBase);
  * optimized for speed.
  * @return {null}
  */
-SelectionsRenderer.prototype.render = function() {
-    this._canvas.clear();
+SelectionsRenderer.prototype.render = function(scroll) {
+    // If old contents exist, remove them.
+    var that = this;
+    if (this._dirty === null || scroll !== undefined) {
+        that._canvas.clear();
+        this._dirty = null;
+    } else {
+        that._canvas.clear({
+            x: this._dirty.x1-1,
+            y: this._dirty.y1-1,
+            width: this._dirty.x2 - this._dirty.x1+2,
+            height: this._dirty.y2 - this._dirty.y1+2,
+        });
+        this._dirty = null;
+    }
 
     // Get newline width.
     var newline_width = config.newline_width;
@@ -62,7 +76,6 @@ SelectionsRenderer.prototype.render = function() {
     }
 
     // Only render if the canvas has focus.
-    var that = this;
     this._cursors.cursors.forEach(function(cursor) {
         // Get the visible rows.
         var visible_rows = that._get_visible_rows();
@@ -88,32 +101,49 @@ SelectionsRenderer.prototype.render = function() {
                     selection_color = that.style.selection_unfocused || 'gray';
                 }
 
-                var right;
+                var width;
                 if (i !== cursor.end_row) {
-                    right = that._measure_partial_row(i) - left + that._row_renderer.margin_left + newline_width;
+                    width = that._measure_partial_row(i) - left + that._row_renderer.margin_left + newline_width;
                 } else {
-                    right = that._measure_partial_row(i, cursor.end_char);
+                    width = that._measure_partial_row(i, cursor.end_char);
 
                     // If this isn't the first selected row, make sure atleast the newline
                     // is visibily selected at the beginning of the row by making sure that
                     // the selection box is atleast the size of a newline character (as
                     // defined by the user config).
                     if (i !== cursor.start_row) {
-                        right = Math.max(newline_width, right);
+                        width = Math.max(newline_width, width);
                     }
 
-                    right = right - left + that._row_renderer.margin_left;
+                    width = width - left + that._row_renderer.margin_left;
                 }
                 
+                var block = {
+                    left: left, 
+                    top: that._get_row_top(i), 
+                    width: width, 
+                    height: that._get_row_height(i)
+                };
+
                 that._canvas.draw_rectangle(
-                    left, 
-                    that._get_row_top(i), 
-                    right, 
-                    that._get_row_height(i), 
+                    block.left, block.top, block.width, block.height,
                     {
                         fill_color: selection_color,
                     }
                 );
+
+                if (that._dirty===null) {
+                    that._dirty = {};
+                    that._dirty.x1 = block.left;
+                    that._dirty.y1 = block.top;
+                    that._dirty.x2 = block.left + block.width;
+                    that._dirty.y2 = block.top + block.height;
+                } else {
+                    that._dirty.x1 = Math.min(block.left, that._dirty.x1);
+                    that._dirty.y1 = Math.min(block.top, that._dirty.y1);
+                    that._dirty.x2 = Math.max(block.left + block.width, that._dirty.x2);
+                    that._dirty.y2 = Math.max(block.top + block.height, that._dirty.y2);
+                }
             }
         }
     });
