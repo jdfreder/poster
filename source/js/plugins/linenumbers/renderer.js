@@ -11,6 +11,7 @@ var LineNumbersRenderer = function(plugin) {
     this._plugin  = plugin;
     this._top = null;
     this._top_row = null;
+    this._character_width = null;
 
     // Find gutter plugin, listen to its change event.
     var manager = this._plugin.poster.plugins;
@@ -44,6 +45,12 @@ var LineNumbersRenderer = function(plugin) {
         that.rerender();
     });
     this.height = this.height;
+
+    // Adjust the gutter size when the number of lines in the document changes.
+    this._plugin.poster.model.on('text_changed', utils.proxy(this._handle_text_change, this));
+    this._plugin.poster.model.on('rows_added', utils.proxy(this._handle_text_change, this));
+    this._plugin.poster.model.on('rows_removed', utils.proxy(this._handle_text_change, this));
+    this._handle_text_change();
 };
 utils.inherit(LineNumbersRenderer, renderer.RendererBase);
 
@@ -63,6 +70,15 @@ LineNumbersRenderer.prototype.render = function(scroll) {
  * Renders the line numbers
  */
 LineNumbersRenderer.prototype._render = function() {
+    // Measure the width of numerical characters if not done yet.
+    if (this._character_width===null) {
+        this._character_width = this._text_canvas.measure_text('0123456789', {
+            font_family: 'monospace',
+            font_size: 14,
+        }) / 10.0;
+        this._handle_text_change();
+    }
+
     // Update the text buffer if needed.
     var top_row = this._row_renderer.get_row_char(0, this._top).row_index;
     if (this._top_row !== top_row) {
@@ -107,6 +123,7 @@ LineNumbersRenderer.prototype._render = function() {
 
 LineNumbersRenderer.prototype.rerender = function() {
     // Draw everything.
+    this._character_width = null;
     this._text_canvas.erase_options_cache();
     this._text_canvas.clear();
     this._render_rows(this._top_row, this._visible_row_count);
@@ -125,21 +142,34 @@ LineNumbersRenderer.prototype.rerender = function() {
  * @param  {integer} num_rows
  */
 LineNumbersRenderer.prototype._render_rows = function(start_row, num_rows) {
+    var lines = this._plugin.poster.model._rows.length;
     for (var i = start_row; i < start_row + num_rows; i++) {
-        var y = (i - this._top_row) * this._row_height;
-        if (this._plugin.poster.config.highlight_draw) {
-            this._text_canvas.draw_rectangle(0, y, this._text_canvas.width, this._row_height, {
-                fill_color: utils.random_color(),
+        if (i < lines) {
+            var y = (i - this._top_row) * this._row_height;
+            if (this._plugin.poster.config.highlight_draw) {
+                this._text_canvas.draw_rectangle(0, y, this._text_canvas.width, this._row_height, {
+                    fill_color: utils.random_color(),
+                });
+            }
+
+            this._text_canvas.draw_text(10, y, String(i+1), {
+                font_family: 'monospace',
+                font_size: 14,
+                color: this._plugin.poster.style.gutter_text || 'black',
             });
         }
-
-        this._text_canvas.draw_text(10, y, String(i+1), {
-            font_family: 'monospace',
-            font_size: 14,
-            color: this._plugin.poster.style.gutter_text || 'black',
-        });
     }
 
+};
+
+/**
+ * Handles when the number of lines in the editor changes.
+ */
+LineNumbersRenderer.prototype._handle_text_change = function() {
+    var lines = this._plugin.poster.model._rows.length;
+    var digit_width = Math.max(2, Math.ceil(Math.log10(lines+1)) + 1);
+    var char_width = this._character_width || 10.0;
+    this._gutter.gutter_width = digit_width * char_width + 8.0;
 };
 
 /**
