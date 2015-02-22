@@ -13,8 +13,8 @@ exports.style = {
     cursor: '#f8f8f0',
     cursor_width: 1.0,
     cursor_height: 1.1,
-    selection: '#ff5d38',
-    selection_unfocused: '#ef4d28',
+    selection: '#df3d18',
+    selection_unfocused: '#bf1d00',
 
     text: '#ede0ce',
     background: '#2b2a27',
