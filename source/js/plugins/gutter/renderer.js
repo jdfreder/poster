@@ -8,7 +8,11 @@ var utils = require('../../utils.js');
 var GutterRenderer = function(gutter) {
     renderer.RendererBase.call(this, undefined, {parent_independent: true});
     this._gutter  = gutter;
-    this._gutter.on('changed', this._render, this);
+    var that = this;
+    this._gutter.on('changed', function() {
+        that._render();
+        that.trigger('changed');
+    });
     this._hovering = false;
 };
 utils.inherit(GutterRenderer, renderer.RendererBase);

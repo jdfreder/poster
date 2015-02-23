@@ -16,15 +16,23 @@ var Gutter = function() {
     var that = this;
     this.property('gutter_width', function() {
         return that._gutter_width;
-    }, function(value) {
-        if (that.loaded) {
-            this.poster.view.row_renderer.margin_left += value - this._gutter_width;
-        }
-        that._gutter_width = value;
-        that.trigger('changed');
-    });
+    }, utils.proxy(this._set_width, this));
 };
 utils.inherit(Gutter, plugin.PluginBase);
+
+/**
+ * Sets the gutter's width.
+ * @param {integer} value - width in pixels
+ */
+Gutter.prototype._set_width = function(value) {
+    if (this._gutter_width !== value) {
+        if (this.loaded) {
+            this.poster.view.row_renderer.margin_left += value - this._gutter_width;
+        }
+        this._gutter_width = value;
+        this.trigger('changed');
+    }
+};
 
 /**
  * Handles when the plugin is loaded.

@@ -376,6 +376,23 @@ var not_text = function(c) {
     return 'abcdefghijklmnopqrstuvwxyz1234567890_'.indexOf(c.toLowerCase()) == -1;
 };
 
+/**
+ * Merges objects
+ * @param  {array} objects
+ * @return {object} new object, result of merged objects
+ */
+var merge = function(objects) {
+    var result = {};
+    for (var i = 0; i < objects.length; i++) {
+        for (var key in objects[i]) {
+            if (objects[i].hasOwnProperty(key)) {
+                result[key] = objects[i][key];
+            }
+        }
+    }
+    return result;
+};
+
 // Export names.
 exports.PosterClass = PosterClass;
 exports.inherit = inherit;
@@ -392,3 +409,4 @@ exports.random_color = random_color;
 exports.compare_arrays = compare_arrays;
 exports.findall = findall;
 exports.not_text = not_text;
+exports.merge = merge;
