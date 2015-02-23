@@ -1,5 +1,6 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var utils = require('../utils.js');
+var superset = require('../superset.js');
 var highlighter = require('./highlighter.js');
 var prism = require('../../components/prism.js');
 
@@ -39,9 +40,6 @@ PrismHighlighter.prototype.highlight = function(start_row, end_row) {
     start_row = Math.max(0, start_row - this._row_padding);
     end_row = Math.min(this._model._rows.length - 1, end_row + this._row_padding);
 
-    // Clear the old highlighting.
-    this._model.clear_tags(start_row, end_row);
-
     // Abort if language isn't specified.
     if (!this._language) return;
     
@@ -51,7 +49,7 @@ PrismHighlighter.prototype.highlight = function(start_row, end_row) {
     // Figure out where each tag belongs.
     var highlights = this._highlight(text); // [start_index, end_index, tag]
     
-    // Apply tags
+    // Calculate Poster tags
     var that = this;
     highlights.forEach(function(highlight) {
 
@@ -59,13 +57,16 @@ PrismHighlighter.prototype.highlight = function(start_row, end_row) {
         var before_rows = text.substring(0, highlight[0]).split('\n');
         var group_start_row = start_row + before_rows.length - 1;
         var group_start_char = before_rows[before_rows.length - 1].length;
-        var after_rows = text.substring(0, highlight[1] - 1).split('\n');
+        var after_rows = text.substring(0, highlight[1]).split('\n');
         var group_end_row = start_row + after_rows.length - 1;
         var group_end_char = after_rows[after_rows.length - 1].length;
 
-        // Apply tag.
+        // Apply tag if it's not already applied.
         var tag = highlight[2].toLowerCase();
-        that._model.set_tag(group_start_row, group_start_char, group_end_row, group_end_char, 'syntax', tag);
+        var existing_tags = that._model.get_tags(group_start_row, group_start_char, group_end_row, group_end_char);
+        if (existing_tags.syntax !== tag) {
+            that._model.set_tag(group_start_row, group_start_char, group_end_row, group_end_char, 'syntax', tag);
+        }
     });
 };
 
@@ -98,7 +99,14 @@ PrismHighlighter.prototype._highlight = function(text) {
         return flat;
     };
     var tags = flatten(tokens);
-    return tags;
+
+    // Use a superset to reduce overlapping tags.
+    var set = new superset.Superset();
+    set.set(0, text.length-1, '');
+    tags.forEach(function(tag) {
+        set.set(tag[0], tag[1]-1, tag[2]);
+    });
+    return set.array;
 };
 
 /**

@@ -1,6 +1,7 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
 var utils = require('./utils.js');
+var superset = require('./superset.js');
 
 /**
  * Model containing all of the document's data (text).
@@ -45,12 +46,18 @@ DocumentModel.prototype.release_tag_event_lock = function() {
  * Triggers the tag change events.
  * @return {null}
  */
-DocumentModel.prototype.trigger_tag_events = function() {
+DocumentModel.prototype.trigger_tag_events = function(rows) {
     if (this._tag_lock === 0) {
-        this.trigger('tags_changed');
+        this.trigger('tags_changed', this._pending_tag_events_rows);
         this.trigger('changed');    
+        this._pending_tag_events_rows = undefined;
     } else {
         this._pending_tag_events = true;
+        if (this._pending_tag_events_rows) {
+            this._pending_tag_events_rows.concat(rows);
+        } else {
+            this._pending_tag_events_rows = rows;
+        }
     }
 };
 
@@ -65,56 +72,58 @@ DocumentModel.prototype.trigger_tag_events = function() {
  */
 DocumentModel.prototype.set_tag = function(start_row, start_char, end_row, end_char, tag_name, tag_value) {
     var coords = this.validate_coords.apply(this, arguments);
+    var rows = [];
     for (var row = coords.start_row; row <= coords.end_row; row++) {
-        var start = coords.start_char;
-        var end = coords.end_char;
-        if (row > coords.start_row) { start = -1; }
-        if (row < coords.end_row) { end = -1; }
 
-        // Remove or modify conflicting tags.
-        var add_tags = [];
-        this._row_tags[row].filter(function(tag) {
-            if (tag.name == tag_name) {
-                // Check if tag is within
-                if (start == -1 && end == -1) {
-                    return false;
+        // If this tag spans the whole row, replace all other tags like it.
+        if (coords.start_row < row && row < coords.end_row) {
+            for (var tag_index = 0; tag_index < row_tags.length; tag_index++) {
+                var tag = row_tags[tag_index];
+                if (tag.name === tag_name) {
+                    row_tags.splice(tag_index--, 1);
                 }
-                if (tag.start >= start && (tag.end < end || end == -1)) {
-                    return false;
-                }
-                
-                // Check if tag is outside
-                // To the right?
-                if (tag.start > end && end != -1) {
-                    return true;
-                }
-                // To the left?
-                if (tag.end < start && tag.end != -1) {
-                    return true;
-                }
-
-                // Check if tag encapsulates
-                var left_intersecting = tag.start < start;
-                var right_intersecting = end != -1 && (tag.end == -1 || tag.end > end);
-
-                // Check if tag is left intersecting
-                if (left_intersecting) {
-                    add_tags.push({name: tag_name, value: tag.value, start: tag.start, end: start-1});
-                }
-
-                // Check if tag is right intersecting
-                if (right_intersecting) {
-                    add_tags.push({name: tag_name, value: tag.value, start: end+1, end: tag.end});
-                }
-                return false;
             }
-        });
-        
-        // Add tags and corrected tags.
-        this._row_tags[row] = this._row_tags[row].concat(add_tags);
-        this._row_tags[row].push({name: tag_name, value: tag_value, start: start, end: end});
+            row_tags.push({name: tag_name, value: tag_value, start: -1, end: -1});
+        } else {
+
+            // Get and remove all of the tags with the same name on this row.
+            // Add them to a superset.
+            var set = new superset.Superset();
+            var row_tags = this._row_tags[row];
+            var row_length = this._rows[row].length - 1;
+            for (var tag_index = 0; tag_index < row_tags.length; tag_index++) {
+                var tag = row_tags[tag_index];
+                if (tag.name === tag_name) {
+                    row_tags.splice(tag_index--, 1);
+                    var s = tag.start;
+                    var e = tag.end;
+                    if (s == -1) s = 0;
+                    if (e == -1) e = row_length;
+                    set.set(s, e, tag.value);
+                }
+            }
+
+            // Set the new value on the superset.
+            var ns = coords.start_char;
+            var ne = coords.end_char;
+            if (row > coords.start_row) ns = 0;
+            if (row < coords.end_row) ne = row_length;
+            set.set(ns, ne, tag_value);
+
+            // Add the values back to the row.
+            for (var i = 0; i < set.array.length; i++) {
+                if (set.array[i][0] === 0 && row > coords.start_row) {
+                    set.array[i][0] = -1;
+                }
+                if (set.array[i][1] === row_length && row < coords.end_row) {
+                    set.array[i][1] = -1;
+                }
+                row_tags.push({name: tag_name, value: set.array[i][2], start: set.array[i][0], end: set.array[i][1]});
+            }
+        }
+        rows.push(row);
     }
-    this.trigger_tag_events();
+    this.trigger_tag_events(rows);
 };
 
 /**
@@ -134,22 +143,51 @@ DocumentModel.prototype.clear_tags = function(start_row, end_row) {
 
 /**
  * Get the tags applied to a character.
- * @param  {integer} row_index
- * @param  {integer} char_index
+ * @param  {integer} start_row
+ * @param  {integer} start_char
+ * @param  {integer} (optional) end_row
+ * @param  {integer} (optional) end_char
  * @return {dictionary}
  */
-DocumentModel.prototype.get_tags = function(row_index, char_index) {
+DocumentModel.prototype.get_tags = function(start_row, start_char, end_row, end_char) {
     var coords = this.validate_coords.apply(this, arguments);
     var tags = {};
-    this._row_tags[coords.start_row].forEach(function(tag) {
-        // Tag start of -1 means the tag continues to the previous line.
-        var after_start = (coords.start_char >= tag.start || tag.start == -1);
-        // Tag end of -1 means the tag continues to the next line.
-        var before_end = (coords.start_char <= tag.end || tag.end == -1);
-        if (after_start && before_end) {
-            tags[tag.name] = tag.value;
+    for (var row = coords.start_row; row <= coords.end_row; row++) {
+
+        // Get the adjusted start and end char indicies for this row.
+        var e = coords.end_char;
+        var s = coords.start_char;
+        if (row > coords.start_row) s = 0;
+        var last_char_index = this._rows[row].length - 1;
+        if (row < coords.end_row) e = last_char_index;
+
+        // Loop through the tags on this row.
+        var row_tags = this._row_tags[row];
+        for (var tag_index = 0; tag_index < row_tags.length; tag_index++) {
+            var tag = row_tags[tag_index];
+
+            // Get the adjusted tag start and end char indicies for this row.
+            var ne = tag.end;
+            var ns = tag.start;
+            if (ns == -1) ns = 0;
+            if (ne == -1) ne = last_char_index;
+            
+            // Check if the regions intersect.
+            if (ns <= e && ne >= s) {
+
+                // If only one tag value is found, the value will be returned.  
+                // If more than one value is found for a tag, all the values 
+                // will be returned in an array.
+                if (tags[tag.name]===undefined) {
+                    tags[tag.name] = tag.value;
+                } else if (tags[tag.name].constructor === Array && tags[tag.name].indexOf(tag.value) == -1) {
+                    tags[tag.name].push(tag.value);
+                } else if (tags[tag.name] !== tag.value) {
+                    tags[tag.name] = [tags[tag.name], tag.value];
+                }
+            }
         }
-    });
+    }
     return tags;
 };
 
