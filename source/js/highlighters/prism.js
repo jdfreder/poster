@@ -63,8 +63,8 @@ PrismHighlighter.prototype.highlight = function(start_row, end_row) {
 
         // Apply tag if it's not already applied.
         var tag = highlight[2].toLowerCase();
-        var existing_tags = that._model.get_tags(group_start_row, group_start_char, group_end_row, group_end_char);
-        if (existing_tags.syntax !== tag) {
+        var existing_tags = that._model.get_tag_values('syntax', group_start_row, group_start_char, group_end_row, group_end_char);
+        if (existing_tags.length !== 1 || existing_tags[0] !== tag) {
             that._model.set_tag(group_start_row, group_start_char, group_end_row, group_end_char, 'syntax', tag);
         }
     });

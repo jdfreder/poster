@@ -12,6 +12,26 @@ config = config.config;
 var HighlightedRowRenderer = function(model, scrolling_canvas, style) {
     row.RowRenderer.call(this, model, scrolling_canvas);
     this.style = style;
+
+    var that = this;
+    model.on('tags_changed', function(rows) {
+        var visible_rows = that.get_visible_rows();
+        var row_visible = false;
+        for (var i = 0; i < rows.length; i++) {
+            if (visible_rows.top_row <= rows[i] && rows[i] <= visible_rows.bottom_row) {
+                row_visible = true;
+                break;
+            }
+        }
+
+        // If at least one of the rows whos tags changed is visible,
+        // re-render.
+        if (row_visible) {
+            that.render();
+            that.trigger('changed');
+        } else {
+        }
+    });
 };
 utils.inherit(HighlightedRowRenderer, row.RowRenderer);
 
@@ -56,14 +76,14 @@ HighlightedRowRenderer.prototype._get_groups = function(index) {
     var char_index = 0;
     var start = 0;
     for (char_index; char_index<row_text.length; char_index++) {
-        var syntax = this._model.get_tags(index, char_index).syntax;
+        var syntax = this._model.get_tag_value('syntax', index, char_index);
         if (!this._compare_syntax(last_syntax,syntax)) {
             if (char_index !== 0) {
                 groups.push({options: this._get_options(last_syntax), text: row_text.substring(start, char_index)});
             }
             last_syntax = syntax;
             start = char_index;
-        }
+        }   
     }
     groups.push({options: this._get_options(last_syntax), text: row_text.substring(start)});
 

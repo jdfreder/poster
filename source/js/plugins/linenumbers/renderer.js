@@ -12,6 +12,7 @@ var LineNumbersRenderer = function(plugin) {
     this._top = null;
     this._top_row = null;
     this._character_width = null;
+    this._last_row_count = null;
 
     // Find gutter plugin, listen to its change event.
     var manager = this._plugin.poster.plugins;
@@ -43,6 +44,7 @@ var LineNumbersRenderer = function(plugin) {
         that._text_canvas.height = that._visible_row_count * row_height;
         that._tmp_canvas.height = that._text_canvas.height;
         that.rerender();
+        that.trigger('changed');
     });
     this.height = this.height;
 
@@ -81,7 +83,9 @@ LineNumbersRenderer.prototype._render = function() {
 
     // Update the text buffer if needed.
     var top_row = this._row_renderer.get_row_char(0, this._top).row_index;
+    var lines = this._plugin.poster.model._rows.length;
     if (this._top_row !== top_row) {
+        this._last_row_count = lines;
         var last_top_row = this._top_row;
         this._top_row = top_row;
 
@@ -170,6 +174,11 @@ LineNumbersRenderer.prototype._handle_text_change = function() {
     var digit_width = Math.max(2, Math.ceil(Math.log10(lines+1)) + 1);
     var char_width = this._character_width || 10.0;
     this._gutter.gutter_width = digit_width * char_width + 8.0;
+
+    if (lines !== this._last_row_count) {
+        this.rerender();
+        this.trigger('changed');
+    }
 };
 
 /**
@@ -180,6 +189,7 @@ LineNumbersRenderer.prototype._gutter_resize = function() {
     this._tmp_canvas.width = this._gutter.gutter_width; 
     this._top_row = null;
     this.rerender();
+    this.trigger('changed');
 };
 
 /**

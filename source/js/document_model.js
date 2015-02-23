@@ -49,7 +49,6 @@ DocumentModel.prototype.release_tag_event_lock = function() {
 DocumentModel.prototype.trigger_tag_events = function(rows) {
     if (this._tag_lock === 0) {
         this.trigger('tags_changed', this._pending_tag_events_rows);
-        this.trigger('changed');    
         this._pending_tag_events_rows = undefined;
     } else {
         this._pending_tag_events = true;
@@ -75,52 +74,20 @@ DocumentModel.prototype.set_tag = function(start_row, start_char, end_row, end_c
     var rows = [];
     for (var row = coords.start_row; row <= coords.end_row; row++) {
 
-        // If this tag spans the whole row, replace all other tags like it.
-        if (coords.start_row < row && row < coords.end_row) {
-            for (var tag_index = 0; tag_index < row_tags.length; tag_index++) {
-                var tag = row_tags[tag_index];
-                if (tag.name === tag_name) {
-                    row_tags.splice(tag_index--, 1);
-                }
-            }
-            row_tags.push({name: tag_name, value: tag_value, start: -1, end: -1});
-        } else {
-
-            // Get and remove all of the tags with the same name on this row.
-            // Add them to a superset.
-            var set = new superset.Superset();
-            var row_tags = this._row_tags[row];
-            var row_length = this._rows[row].length - 1;
-            for (var tag_index = 0; tag_index < row_tags.length; tag_index++) {
-                var tag = row_tags[tag_index];
-                if (tag.name === tag_name) {
-                    row_tags.splice(tag_index--, 1);
-                    var s = tag.start;
-                    var e = tag.end;
-                    if (s == -1) s = 0;
-                    if (e == -1) e = row_length;
-                    set.set(s, e, tag.value);
-                }
-            }
-
-            // Set the new value on the superset.
-            var ns = coords.start_char;
-            var ne = coords.end_char;
-            if (row > coords.start_row) ns = 0;
-            if (row < coords.end_row) ne = row_length;
-            set.set(ns, ne, tag_value);
-
-            // Add the values back to the row.
-            for (var i = 0; i < set.array.length; i++) {
-                if (set.array[i][0] === 0 && row > coords.start_row) {
-                    set.array[i][0] = -1;
-                }
-                if (set.array[i][1] === row_length && row < coords.end_row) {
-                    set.array[i][1] = -1;
-                }
-                row_tags.push({name: tag_name, value: set.array[i][2], start: set.array[i][0], end: set.array[i][1]});
-            }
+        // Make sure the superset is defined for the row/tag_name pair.
+        var row_tags = this._row_tags[row];
+        if (row_tags[tag_name] === undefined) {
+            row_tags[tag_name] = new superset.Superset();
         }
+
+        // Get the start and end char indicies.
+        var s = coords.start_char;
+        var e = coords.end_char;
+        if (row > coords.start_row) s = 0;
+        if (row < coords.end_row) e = this._rows[row].length - 1;
+
+        // Set the value for the range.
+        row_tags[tag_name].set(s, e, tag_value);
         rows.push(row);
     }
     this.trigger_tag_events(rows);
@@ -135,60 +102,76 @@ DocumentModel.prototype.set_tag = function(start_row, start_char, end_row, end_c
 DocumentModel.prototype.clear_tags = function(start_row, end_row) {
     start_row = start_row !== undefined ? start_row : 0;
     end_row = end_row !== undefined ? end_row : this._row_tags.length - 1;
+    var rows = [];
     for (var i = start_row; i <= end_row; i++) {
-        this._row_tags[i] = [];
+        this._row_tags[i] = {};
+        rows.push(i);
     }
-    this.trigger_tag_events();
+    this.trigger_tag_events(rows);
 };
 
 /**
- * Get the tags applied to a character.
+ * Get the tag value applied to the character.
+ * @param  {string} tag_name
+ * @param  {integer} row_index
+ * @param  {integer} char_index
+ * @return {object} value or undefined
+ */
+DocumentModel.prototype.get_tag_value = function(tag_name, row_index, char_index) {
+
+    // Loop through the tags on this row.
+    var row_tags = this._row_tags[row_index][tag_name];
+    if (row_tags !== undefined) {
+        var tag_array = row_tags.array;
+        for (var i = 0; i < tag_array.length; i++) {
+            // Check if within.
+            if (tag_array[i][0] <= char_index && char_index <= tag_array[i][1]) {
+                return tag_array[i][2];
+            }
+        }
+    }
+    return undefined;
+};
+
+/**
+ * Get the tag values applied to the specific range.
+ * @param  {string} tag_name
  * @param  {integer} start_row
  * @param  {integer} start_char
- * @param  {integer} (optional) end_row
- * @param  {integer} (optional) end_char
- * @return {dictionary}
+ * @param  {integer} end_row
+ * @param  {integer} end_char
+ * @return {array} array of values
  */
-DocumentModel.prototype.get_tags = function(start_row, start_char, end_row, end_char) {
-    var coords = this.validate_coords.apply(this, arguments);
-    var tags = {};
+DocumentModel.prototype.get_tag_values = function(tag_name, start_row, start_char, end_row, end_char) {
+    var coords = this.validate_coords.call(this, start_row, start_char, end_row, end_char);
+    var values = [];
     for (var row = coords.start_row; row <= coords.end_row; row++) {
 
-        // Get the adjusted start and end char indicies for this row.
-        var e = coords.end_char;
+        // Get the start and end char indicies.
         var s = coords.start_char;
+        var e = coords.end_char;
         if (row > coords.start_row) s = 0;
-        var last_char_index = this._rows[row].length - 1;
-        if (row < coords.end_row) e = last_char_index;
+        if (row < coords.end_row) e = this._rows[row].length - 1;
 
         // Loop through the tags on this row.
-        var row_tags = this._row_tags[row];
-        for (var tag_index = 0; tag_index < row_tags.length; tag_index++) {
-            var tag = row_tags[tag_index];
+        var row_tags = this._row_tags[row][tag_name];
+        if (row_tags !== undefined) {
+            var tag_array = row_tags.array;
+            for (var i = 0; i < tag_array.length; i++) {
+                var ns = tag_array[i][0];
+                var ne = tag_array[i][1];
 
-            // Get the adjusted tag start and end char indicies for this row.
-            var ne = tag.end;
-            var ns = tag.start;
-            if (ns == -1) ns = 0;
-            if (ne == -1) ne = last_char_index;
-            
-            // Check if the regions intersect.
-            if (ns <= e && ne >= s) {
-
-                // If only one tag value is found, the value will be returned.  
-                // If more than one value is found for a tag, all the values 
-                // will be returned in an array.
-                if (tags[tag.name]===undefined) {
-                    tags[tag.name] = tag.value;
-                } else if (tags[tag.name].constructor === Array && tags[tag.name].indexOf(tag.value) == -1) {
-                    tags[tag.name].push(tag.value);
-                } else if (tags[tag.name] !== tag.value) {
-                    tags[tag.name] = [tags[tag.name], tag.value];
+                // Check if the areas insersect.
+                if (ns <= e && ne >= s) {
+                    var tag = tag_array[i][2];
+                    if (values.indexOf(tag) == -1) {
+                        values.push(tag);
+                    }
                 }
             }
         }
     }
-    return tags;
+    return values;
 };
 
 /**
@@ -417,7 +400,7 @@ DocumentModel.prototype._resized_rows = function() {
 
     // Make sure there are as many tag rows as there are text rows.
     while (this._row_tags.length < this._rows.length) {
-        this._row_tags.push([]);
+        this._row_tags.push({});
     }
     if (this._row_tags.length > this._rows.length) {
         this._row_tags.splice(this._rows.length, this._row_tags.length - this._rows.length);
