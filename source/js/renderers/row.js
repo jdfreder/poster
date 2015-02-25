@@ -56,10 +56,20 @@ var RowRenderer = function(model, scrolling_canvas) {
     }, function(value) {
         
         // Update internal value.
+        var delta = value - that._margin_left;
         that._margin_left = value;
 
-        // Force the document to recalculate its size.
-        that._handle_value_changed();
+        // Intelligently change the document's width, without causing
+        // a complete O(N) width recalculation.
+        this._row_width_counts = {};
+        var new_counts = {};
+        for (var width in this._row_width_counts) {
+            if (this._row_width_counts.hasOwnProperty(width)) {
+                new_counts[width+delta] = this._row_width_counts[width];
+            }
+        }
+        this._row_width_counts = new_counts
+        this._scrolling_canvas.scroll_width += delta;
 
         // Re-render with new margin.
         that.render();
