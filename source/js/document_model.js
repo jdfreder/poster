@@ -53,7 +53,7 @@ DocumentModel.prototype.trigger_tag_events = function(rows) {
     } else {
         this._pending_tag_events = true;
         if (this._pending_tag_events_rows) {
-            this._pending_tag_events_rows.concat(rows);
+            this._pending_tag_events_rows = this._pending_tag_events_rows.concat(rows);
         } else {
             this._pending_tag_events_rows = rows;
         }
