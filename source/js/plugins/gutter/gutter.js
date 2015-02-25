@@ -17,6 +17,9 @@ var Gutter = function() {
     this.property('gutter_width', function() {
         return that._gutter_width;
     }, utils.proxy(this._set_width, this));
+    this.property('renderer', function() {
+        return that._renderer;
+    });
 };
 utils.inherit(Gutter, plugin.PluginBase);
 
