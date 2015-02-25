@@ -47,8 +47,8 @@ var DocumentView = function(canvas, model, cursors_model, style, has_focus) {
         var canvas_width = canvas.width - 20;
         if (left > canvas.scroll_left + canvas_width) {
             canvas.scroll_left = left - canvas_width;
-        } else if (left < canvas.scroll_left) {
-            canvas.scroll_left = left;
+        } else if (left - row_renderer.margin_left < canvas.scroll_left) {
+            canvas.scroll_left = Math.max(0, left - row_renderer.margin_left);
         }
     });
 
