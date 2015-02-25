@@ -17,7 +17,7 @@ var LineNumbersRenderer = function(plugin) {
     // Find gutter plugin, listen to its change event.
     var manager = this._plugin.poster.plugins;
     this._gutter = manager.find('gutter')[0];
-    this._gutter.on('changed', this._gutter_resize, this);
+    this._gutter.renderer.on('changed', this._gutter_resize, this);
 
     // Get row renderer.
     this._row_renderer = this._plugin.poster.view.row_renderer;
@@ -88,7 +88,7 @@ LineNumbersRenderer.prototype._render = function() {
         this._last_row_count = lines;
         var last_top_row = this._top_row;
         this._top_row = top_row;
-
+        
         // Recycle rows if possible.
         var row_scroll = this._top_row - last_top_row;
         var row_delta = Math.abs(row_scroll);
@@ -187,7 +187,6 @@ LineNumbersRenderer.prototype._handle_text_change = function() {
 LineNumbersRenderer.prototype._gutter_resize = function() {
     this._text_canvas.width = this._gutter.gutter_width;
     this._tmp_canvas.width = this._gutter.gutter_width; 
-    this._top_row = null;
     this.rerender();
     this.trigger('changed');
 };
