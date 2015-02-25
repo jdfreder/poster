@@ -25,7 +25,6 @@ var HighlightedRowRenderer = function(model, scrolling_canvas, style) {
                 }
             }    
         }
-        
 
         // If at least one of the rows whos tags changed is visible,
         // re-render.
