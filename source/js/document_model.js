@@ -134,15 +134,15 @@ DocumentModel.prototype.get_tag_value = function(tag_name, row_index, char_index
 };
 
 /**
- * Get the tag values applied to the specific range.
+ * Get the tag value ranges applied to the specific range.
  * @param  {string} tag_name
  * @param  {integer} start_row
  * @param  {integer} start_char
  * @param  {integer} end_row
  * @param  {integer} end_char
- * @return {array} array of values
+ * @return {array} array of tag value ranges ([row_index, start_char, end_char, tag_value])
  */
-DocumentModel.prototype.get_tag_values = function(tag_name, start_row, start_char, end_row, end_char) {
+DocumentModel.prototype.get_tags = function(tag_name, start_row, start_char, end_row, end_char) {
     var coords = this.validate_coords.call(this, start_row, start_char, end_row, end_char);
     var values = [];
     for (var row = coords.start_row; row <= coords.end_row; row++) {
@@ -163,10 +163,7 @@ DocumentModel.prototype.get_tag_values = function(tag_name, start_row, start_cha
 
                 // Check if the areas insersect.
                 if (ns <= e && ne >= s) {
-                    var tag = tag_array[i][2];
-                    if (values.indexOf(tag) == -1) {
-                        values.push(tag);
-                    }
+                    values.push([row, ns, ne , tag_array[i][2]]);
                 }
             }
         }

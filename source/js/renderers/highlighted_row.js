@@ -15,14 +15,17 @@ var HighlightedRowRenderer = function(model, scrolling_canvas, style) {
 
     var that = this;
     model.on('tags_changed', function(rows) {
-        var visible_rows = that.get_visible_rows();
         var row_visible = false;
-        for (var i = 0; i < rows.length; i++) {
-            if (visible_rows.top_row <= rows[i] && rows[i] <= visible_rows.bottom_row) {
-                row_visible = true;
-                break;
-            }
+        if (rows) {
+            var visible_rows = that.get_visible_rows();
+            for (var i = 0; i < rows.length; i++) {
+                if (visible_rows.top_row <= rows[i] && rows[i] <= visible_rows.bottom_row) {
+                    row_visible = true;
+                    break;
+                }
+            }    
         }
+        
 
         // If at least one of the rows whos tags changed is visible,
         // re-render.
