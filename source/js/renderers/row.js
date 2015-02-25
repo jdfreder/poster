@@ -61,7 +61,6 @@ var RowRenderer = function(model, scrolling_canvas) {
 
         // Intelligently change the document's width, without causing
         // a complete O(N) width recalculation.
-        this._row_width_counts = {};
         var new_counts = {};
         for (var width in this._row_width_counts) {
             if (this._row_width_counts.hasOwnProperty(width)) {
