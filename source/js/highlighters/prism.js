@@ -61,10 +61,64 @@ PrismHighlighter.prototype.highlight = function(start_row, end_row) {
         var group_end_row = start_row + after_rows.length - 1;
         var group_end_char = after_rows[after_rows.length - 1].length;
 
+        // New lines can't be highlighted.
+        while (group_start_char === that._model._rows[group_start_row].length) {
+            if (group_start_row < group_end_row) {
+                group_start_row++;
+                group_start_char = 0;
+            } else {
+                return;
+            }
+        }
+        while (group_end_char === 0) {
+            if (group_end_row > group_start_row) {
+                group_end_row--;
+                group_end_char = that._model._rows[group_end_row].length;
+            } else {
+                return;
+            }
+        }
+
         // Apply tag if it's not already applied.
         var tag = highlight[2].toLowerCase();
-        var existing_tags = that._model.get_tag_values('syntax', group_start_row, group_start_char, group_end_row, group_end_char);
-        if (existing_tags.length !== 1 || existing_tags[0] !== tag) {
+        var existing_tags = that._model.get_tags('syntax', group_start_row, group_start_char, group_end_row, group_end_char);
+        
+        // Make sure the number of tags = number of rows.
+        var correct_count = (existing_tags.length === group_end_row - group_start_row + 1);
+
+        // Make sure every tag value equals the new value.
+        var correct_values = true;
+        var i;
+        if (correct_count) {
+            for (i = 0; i < existing_tags.length; i++) {
+                if (existing_tags[i][3] !== tag) {
+                    correct_values = false;
+                    break;
+                }
+            }
+        }
+
+        // Check that the start and ends of tags are correct.
+        var correct_ranges = true;
+        if (correct_count&&correct_values) {
+            if (existing_tags.length==1) {
+                correct_ranges = existing_tags[0][1] === group_start_char && existing_tags[0][2] === group_end_char;
+            } else {
+                correct_ranges = existing_tags[0][1] <= group_start_char && 
+                                 existing_tags[0][2] >= that._model._rows[group_start_row].length-1;
+                correct_ranges = correct_ranges &&
+                                 existing_tags[existing_tags.length-1][1] === 0 && 
+                                 existing_tags[existing_tags.length-1][2] >= group_end_char;
+                for (i = 1; i < existing_tags.length - 1; i++) {
+                    correct_ranges = correct_ranges &&
+                                     existing_tags[i][1] === 0 && 
+                                     existing_tags[i][2] >= that._model._rows[existing_tags[i][0]].length-1;
+                    if (!correct_ranges) break;
+                }
+            }
+        }
+
+        if (!(correct_count&&correct_values&&correct_ranges)) {
             that._model.set_tag(group_start_row, group_start_char, group_end_row, group_end_char, 'syntax', tag);
         }
     });
