@@ -29,7 +29,6 @@ var HighlightedRowRenderer = function(model, scrolling_canvas, style) {
         if (row_visible) {
             that.render();
             that.trigger('changed');
-        } else {
         }
     });
 };
