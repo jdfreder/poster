@@ -1,3 +1,3 @@
-exports.styles = {
+export var styles = {
     "peacock": require("./peacock.js"),
 };

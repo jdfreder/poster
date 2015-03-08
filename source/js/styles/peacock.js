@@ -1,4 +1,4 @@
-exports.style = {
+export var style = {
     comment: '#7a7267',
     string: '#bcd42a',
     'class-name': '#ede0ce',

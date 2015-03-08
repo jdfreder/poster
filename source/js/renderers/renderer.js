@@ -7,41 +7,42 @@ var utils = require('../utils.js');
  * Renders to a canvas
  * @param {Canvas} default_canvas
  */
-var RendererBase = function(default_canvas, options) {
-    utils.PosterClass.call(this);
-    this.options = options || {};
-    this._canvas = default_canvas ? default_canvas : new canvas.Canvas();
+export class RendererBase extends utils.PosterClass {
+    constructor(default_canvas, options) {
+        super.constructor();
+        this.options = options || {};
+        this._canvas = default_canvas ? default_canvas : new canvas.Canvas();
+    }
+
+    get width() {
+        return this._canvas.width;
+    }
+    set width(value) {
+        this._canvas.width = value;
+    }
     
-    // Create properties.
-    var that = this;
-    this.property('width', function() {
-        return that._canvas.width;
-    }, function(value) {
-        that._canvas.width = value;
-    });
-    this.property('height', function() {
-        return that._canvas.height;
-    }, function(value) {
-        that._canvas.height = value;
-    });
-    this.property('top', function() {
-        return -that._canvas._ty(0);
-    });
-    this.property('left', function() {
-        return -that._canvas._tx(0);
-    });
-};
-utils.inherit(RendererBase, utils.PosterClass);
+    get height() {
+        return this._canvas.height;
+    }
+    set height(value) {
+        this._canvas.height = value;
+    }
+    
+    get top() {
+        return -this._canvas._ty(0);
+    }
 
-/**
- * Render to the canvas
- * @param {dictionary} (optional) scroll - How much the canvas was scrolled.  This
- *                     is a dictionary of the form {x: float, y: float}
- * @return {null}
- */
-RendererBase.prototype.render = function(scroll) {
-    throw new Error('Not implemented');
-};
+    get left() {
+        return -this._canvas._tx(0);
+    }
 
-// Exports
-exports.RendererBase = RendererBase;
+    /**
+     * Render to the canvas
+     * @param {dictionary} (optional) scroll - How much the canvas was scrolled.  This
+     *                     is a dictionary of the form {x: float, y: float}
+     * @return {null}
+     */
+    render(scroll) {
+        throw new Error('Not implemented');
+    }
+}
