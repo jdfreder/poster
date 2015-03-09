@@ -24,60 +24,14 @@ gulp.task('watch', function() {
 });
 
 gulp.task('components', function(callback) {
-    return gulp.src([
-        './source/components/prism/components/prism-core.js',
-        './source/components/prism/components/prism-markup.js',
-        './source/components/prism/components/prism-clike.js',
-
-        './source/components/prism/components/prism-apacheconf.js',
-        //'./source/components/prism/components/prism-css-extras.js',
-        './source/components/prism/components/prism-java.js',
-        './source/components/prism/components/prism-python.js',
-        './source/components/prism/components/prism-aspnet.js',
-        './source/components/prism/components/prism-css.js',
-        './source/components/prism/components/prism-javascript.js',
-        './source/components/prism/components/prism-rip.js',
-        './source/components/prism/components/prism-autohotkey.js',
-        './source/components/prism/components/prism-gherkin.js',
-        './source/components/prism/components/prism-latex.js',
-        './source/components/prism/components/prism-ruby.js',
-        './source/components/prism/components/prism-bash.js',
-        './source/components/prism/components/prism-git.js',
-        './source/components/prism/components/prism-markup.js',
-        './source/components/prism/components/prism-scala.js',
-        './source/components/prism/components/prism-c.js',
-        './source/components/prism/components/prism-go.js',
-        './source/components/prism/components/prism-nasm.js',
-        './source/components/prism/components/prism-scheme.js',
-        './source/components/prism/components/prism-clike.js',
-        './source/components/prism/components/prism-groovy.js',
-        './source/components/prism/components/prism-nsis.js',
-        './source/components/prism/components/prism-scss.js',
-        './source/components/prism/components/prism-coffeescript.js',
-        './source/components/prism/components/prism-handlebars.js',
-        './source/components/prism/components/prism-objectivec.js',
-        './source/components/prism/components/prism-sql.js',
-        './source/components/prism/components/prism-core.js',
-        './source/components/prism/components/prism-haskell.js',
-        './source/components/prism/components/prism-perl.js',
-        './source/components/prism/components/prism-swift.js',
-        './source/components/prism/components/prism-cpp.js',
-        './source/components/prism/components/prism-http.js',
-        './source/components/prism/components/prism-php-extras.js',
-        './source/components/prism/components/prism-twig.js',
-        './source/components/prism/components/prism-csharp.js',
-        './source/components/prism/components/prism-ini.js',
-        './source/components/prism/components/prism-php.js',
-        ]).pipe(concat('prism.js'))
-        .pipe(gulp.dest('./source/components/'));
-    // glob('./source/components/prism/components/*.js', undefined, function(error, dirs) {
-    //     dirs.splice(dirs.indexOf('./source/components/prism/components/prism-css-extras.js'), 1)
-    //     gulp
-    //         .src(dirs)
-    //         .pipe(concat('prism.js'))
-    //         .pipe(gulp.dest('./source/components/'));
-    //     callback();
-    // })
+    glob('./source/components/prism/components/*.js', undefined, function(error, dirs) {
+        dirs.splice(dirs.indexOf('./source/components/prism/components/prism-css-extras.js'), 1)
+        gulp
+            .src(dirs)
+            .pipe(concat('prism.js'))
+            .pipe(gulp.dest('./source/components/'));
+        callback();
+    })
 });
 
 gulp.task('javascript', ['components'], function() {
