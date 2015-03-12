@@ -1,7 +1,7 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var utils = require('../utils.js');
-var superset = require('../superset.js');
-var highlighter = require('./highlighter.js');
+import * as utils from '../utils.js';
+import * as superset from '../superset.js';
+import * as highlighter from './highlighter.js';
 var prism = require('../../components/prism.js');
 
 /**

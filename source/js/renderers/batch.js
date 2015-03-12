@@ -1,8 +1,8 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
-var utils = require('../utils.js');
-var renderer = require('./renderer.js');
-var config = require('../config.js');
+import * as utils from '../utils.js';
+import * as renderer from './renderer.js';
+import * as config from '../config.js';
 config = config.config;
 
 /**

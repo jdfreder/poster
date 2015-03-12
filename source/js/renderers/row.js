@@ -1,8 +1,8 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
-var canvas = require('../canvas.js');
-var utils = require('../utils.js');
-var renderer = require('./renderer.js');
+import * as canvas from '../canvas.js';
+import * as utils from '../utils.js';
+import * as renderer from './renderer.js';
 
 /**
  * Render the text rows of a DocumentModel.

@@ -1,9 +1,9 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
-var utils = require('../utils.js');
-var pluginbase = require('./plugin.js');
-var gutter = require('./gutter/gutter.js');
-var linenumbers = require('./linenumbers/linenumbers.js');
+import * as utils from '../utils.js';
+import * as pluginbase from './plugin.js';
+import * as gutter from './gutter/gutter.js';
+import * as linenumbers from './linenumbers/linenumbers.js';
 
 /**
  * Plugin manager class

@@ -39,7 +39,6 @@ gulp.task('components', function(callback) {
         })
         gulp
             .src(core.concat(dirs))
-            .pipe(debug({title: 'components:'}))
             .pipe(concat('prism.js'))
             .pipe(gulp.dest('./source/components/'))
             .on('end', function() { callback(); });
@@ -55,18 +54,12 @@ gulp.task('javascript', ['components'], function() {
     });
 
     return gulp.src('./source/js/poster.js')
-        .pipe(debug({title: 'input:'}))
         .pipe(sourcemaps.init({loadMaps: true}))
-        .pipe(debug({title: 'input(2):'}))
         .pipe(browserified)
-        .pipe(debug({title: 'sourcemapped:'}))
         // Add transformation tasks to the pipeline here.
         // .pipe(uglify())
-        .pipe(debug({title: 'uglified:'}))
         .pipe(sourcemaps.write('./'))
-        .pipe(debug({title: 'sourcemaps gone:'}))
         .pipe(gulp.dest('./build/'))
-        .pipe(debug({title: 'built:'}));
 });
 
 gulp.task('less', function() {

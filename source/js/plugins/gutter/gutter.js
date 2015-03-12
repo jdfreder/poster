@@ -1,7 +1,7 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var plugin = require('../plugin.js');
-var utils = require('../../utils.js');
-var renderer = require('./renderer.js');
+import * as plugin from '../plugin.js';
+import * as utils from '../../utils.js';
+import * as renderer from './renderer.js';
 
 /**
  * Gutter plugin.

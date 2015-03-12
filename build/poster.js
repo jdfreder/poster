@@ -1604,6 +1604,8 @@ Prism.languages.twig = {
 },{}],2:[function(require,module,exports){
 "use strict";
 
+var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { "default": obj }; };
+
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 var _get = function get(object, property, receiver) { var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc && desc.writable) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
@@ -1617,7 +1619,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
-var utils = require("./utils.js");
+var utils = _interopRequireWildcard(require("./utils.js"));
 
 /**
  * Animation helper.
@@ -1665,6 +1667,8 @@ var Animator = exports.Animator = (function (_utils$PosterClass) {
 },{"./utils.js":36}],3:[function(require,module,exports){
 "use strict";
 
+var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { "default": obj }; };
+
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 var _get = function get(object, property, receiver) { var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc && desc.writable) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
@@ -1677,8 +1681,11 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var utils = require("./utils.js");
-var config = require("./config.js");
+
+var utils = _interopRequireWildcard(require("./utils.js"));
+
+var config = _interopRequireWildcard(require("./config.js"));
+
 config = config.config;
 
 /**
@@ -2338,6 +2345,8 @@ var Canvas = exports.Canvas = (function (_utils$PosterClass) {
 },{"./config.js":5,"./utils.js":36}],4:[function(require,module,exports){
 "use strict";
 
+var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { "default": obj }; };
+
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 var _get = function get(object, property, receiver) { var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc && desc.writable) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
@@ -2351,7 +2360,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
-var utils = require("./utils.js");
+var utils = _interopRequireWildcard(require("./utils.js"));
 
 /**
  * Eventful clipboard support
@@ -2465,12 +2474,15 @@ var Clipboard = exports.Clipboard = (function (_utils$PosterClass) {
 },{"./utils.js":36}],5:[function(require,module,exports){
 "use strict";
 
+var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { "default": obj }; };
+
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
-var utils = require("./utils.js");
+var utils = _interopRequireWildcard(require("./utils.js"));
+
 var config = new utils.PosterClass(["highlight_draw", // boolean - Whether or not to highlight re-renders
 "highlight_blit", // boolean - Whether or not to highlight blit regions
 "newline_width", // integer - Width of newline characters
@@ -2490,6 +2502,8 @@ config.history_group_delay = 100;
 },{"./utils.js":36}],6:[function(require,module,exports){
 "use strict";
 
+var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { "default": obj }; };
+
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 var _get = function get(object, property, receiver) { var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc && desc.writable) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
@@ -2502,11 +2516,15 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var keymap = require("./events/map.js");
+
+var keymap = _interopRequireWildcard(require("./events/map.js"));
+
 var register = keymap.Map.register;
 
-var utils = require("./utils.js");
-var config = require("./config.js");
+var utils = _interopRequireWildcard(require("./utils.js"));
+
+var config = _interopRequireWildcard(require("./config.js"));
+
 config = config.config;
 
 /**
@@ -3442,6 +3460,8 @@ var Cursor = exports.Cursor = (function (_utils$PosterClass) {
 },{"./config.js":5,"./events/map.js":12,"./utils.js":36}],7:[function(require,module,exports){
 "use strict";
 
+var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { "default": obj }; };
+
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 var _get = function get(object, property, receiver) { var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc && desc.writable) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
@@ -3454,11 +3474,15 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var keymap = require("./events/map.js");
+
+var keymap = _interopRequireWildcard(require("./events/map.js"));
+
 var register = keymap.Map.register;
 
-var cursor = require("./cursor.js");
-var utils = require("./utils.js");
+var cursor = _interopRequireWildcard(require("./cursor.js"));
+
+var utils = _interopRequireWildcard(require("./utils.js"));
+
 /**
  * Manages one or more cursors
  */
@@ -3751,6 +3775,8 @@ var Cursors = exports.Cursors = (function (_utils$PosterClass) {
 },{"./cursor.js":6,"./events/map.js":12,"./utils.js":36}],8:[function(require,module,exports){
 "use strict";
 
+var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { "default": obj }; };
+
 var _get = function get(object, property, receiver) { var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc && desc.writable) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
 
 var _inherits = function (subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) subClass.__proto__ = superClass; };
@@ -3762,13 +3788,19 @@ Object.defineProperty(exports, "__esModule", {
 });
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
-var utils = require("./utils.js");
-var normalizer = require("./events/normalizer.js");
-var keymap = require("./events/map.js");
-var default_keymap = require("./events/default.js");
-var cursors = require("./cursors.js");
-var clipboard = require("./clipboard.js");
-var history = require("./history.js");
+var utils = _interopRequireWildcard(require("./utils.js"));
+
+var normalizer = _interopRequireWildcard(require("./events/normalizer.js"));
+
+var keymap = _interopRequireWildcard(require("./events/map.js"));
+
+var default_keymap = _interopRequireWildcard(require("./events/default.js"));
+
+var cursors = _interopRequireWildcard(require("./cursors.js"));
+
+var clipboard = _interopRequireWildcard(require("./clipboard.js"));
+
+var history = _interopRequireWildcard(require("./history.js"));
 
 /**
  * Controller for a DocumentModel.
@@ -3797,6 +3829,8 @@ var DocumentController = exports.DocumentController = (function (_utils$PosterCl
 },{"./clipboard.js":4,"./cursors.js":7,"./events/default.js":11,"./events/map.js":12,"./events/normalizer.js":13,"./history.js":16,"./utils.js":36}],9:[function(require,module,exports){
 "use strict";
 
+var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { "default": obj }; };
+
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 var _get = function get(object, property, receiver) { var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc && desc.writable) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
@@ -3810,8 +3844,9 @@ Object.defineProperty(exports, "__esModule", {
 });
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
-var utils = require("./utils.js");
-var superset = require("./superset.js");
+var utils = _interopRequireWildcard(require("./utils.js"));
+
+var superset = _interopRequireWildcard(require("./superset.js"));
 
 /**
  * Model containing all of the document's data (text).
@@ -4287,6 +4322,8 @@ var DocumentModel = exports.DocumentModel = (function (_utils$PosterClass) {
 },{"./superset.js":35,"./utils.js":36}],10:[function(require,module,exports){
 "use strict";
 
+var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { "default": obj }; };
+
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 var _get = function get(object, property, receiver) { var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc && desc.writable) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
@@ -4300,15 +4337,21 @@ Object.defineProperty(exports, "__esModule", {
 });
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
-var utils = require("./utils.js");
+var utils = _interopRequireWildcard(require("./utils.js"));
 
 // Renderers
-var batch = require("./renderers/batch.js");
-var highlighted_row = require("./renderers/highlighted_row.js");
-var cursors = require("./renderers/cursors.js");
-var selections = require("./renderers/selections.js");
-var color = require("./renderers/color.js");
-var highlighter = require("./highlighters/prism.js");
+
+var batch = _interopRequireWildcard(require("./renderers/batch.js"));
+
+var highlighted_row = _interopRequireWildcard(require("./renderers/highlighted_row.js"));
+
+var cursors = _interopRequireWildcard(require("./renderers/cursors.js"));
+
+var selections = _interopRequireWildcard(require("./renderers/selections.js"));
+
+var color = _interopRequireWildcard(require("./renderers/color.js"));
+
+var highlighter = _interopRequireWildcard(require("./highlighters/prism.js"));
 
 /**
  * Visual representation of a DocumentModel instance
@@ -4401,10 +4444,13 @@ var DocumentView = exports.DocumentView = (function (_batch$BatchRenderer) {
 },{"./highlighters/prism.js":15,"./renderers/batch.js":24,"./renderers/color.js":25,"./renderers/cursors.js":26,"./renderers/highlighted_row.js":27,"./renderers/selections.js":30,"./utils.js":36}],11:[function(require,module,exports){
 "use strict";
 
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
 // OSX bindings
-var map;
+var _map;
 if (navigator.appVersion.indexOf("Mac") != -1) {
-    map = {
+    _map = {
         "alt-leftarrow": "cursor.word_left",
         "alt-rightarrow": "cursor.word_right",
         "shift-alt-leftarrow": "cursor.select_word_left",
@@ -4421,7 +4467,7 @@ if (navigator.appVersion.indexOf("Mac") != -1) {
 
     // Non OSX bindings
 } else {
-    map = {
+    _map = {
         "ctrl-leftarrow": "cursor.word_left",
         "ctrl-rightarrow": "cursor.word_right",
         "ctrl-backspace": "cursor.delete_word_left",
@@ -4438,32 +4484,35 @@ if (navigator.appVersion.indexOf("Mac") != -1) {
 }
 
 // Common bindings
-map.keypress = "cursor.keypress";
-map.enter = "cursor.newline";
-map["delete"] = "cursor.delete_forward";
-map.backspace = "cursor.delete_backward";
-map.leftarrow = "cursor.left";
-map.rightarrow = "cursor.right";
-map.uparrow = "cursor.up";
-map.downarrow = "cursor.down";
-map["shift-leftarrow"] = "cursor.select_left";
-map["shift-rightarrow"] = "cursor.select_right";
-map["shift-uparrow"] = "cursor.select_up";
-map["shift-downarrow"] = "cursor.select_down";
-map["mouse0-dblclick"] = "cursors.select_word";
-map["mouse0-down"] = "cursors.start_selection";
-map["mouse-move"] = "cursors.set_selection";
-map["mouse0-up"] = "cursors.end_selection";
-map["shift-mouse0-up"] = "cursors.end_selection";
-map["shift-mouse0-down"] = "cursors.start_set_selection";
-map["shift-mouse-move"] = "cursors.set_selection";
-map.tab = "cursor.indent";
-map["shift-tab"] = "cursor.unindent";
-map.escape = "cursors.single";
+_map.keypress = "cursor.keypress";
+_map.enter = "cursor.newline";
+_map["delete"] = "cursor.delete_forward";
+_map.backspace = "cursor.delete_backward";
+_map.leftarrow = "cursor.left";
+_map.rightarrow = "cursor.right";
+_map.uparrow = "cursor.up";
+_map.downarrow = "cursor.down";
+_map["shift-leftarrow"] = "cursor.select_left";
+_map["shift-rightarrow"] = "cursor.select_right";
+_map["shift-uparrow"] = "cursor.select_up";
+_map["shift-downarrow"] = "cursor.select_down";
+_map["mouse0-dblclick"] = "cursors.select_word";
+_map["mouse0-down"] = "cursors.start_selection";
+_map["mouse-move"] = "cursors.set_selection";
+_map["mouse0-up"] = "cursors.end_selection";
+_map["shift-mouse0-up"] = "cursors.end_selection";
+_map["shift-mouse0-down"] = "cursors.start_set_selection";
+_map["shift-mouse-move"] = "cursors.set_selection";
+_map.tab = "cursor.indent";
+_map["shift-tab"] = "cursor.unindent";
+_map.escape = "cursors.single";
+var map = _map;
 exports.map = map;
 
 },{}],12:[function(require,module,exports){
 "use strict";
+
+var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { "default": obj }; };
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
@@ -4477,7 +4526,8 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var utils = require("../utils.js");
+
+var utils = _interopRequireWildcard(require("../utils.js"));
 
 /**
  * Event normalizer
@@ -4840,6 +4890,8 @@ Map.unregister_by_tag = function (tag) {
 },{"../utils.js":36}],13:[function(require,module,exports){
 "use strict";
 
+var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { "default": obj }; };
+
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 var _get = function get(object, property, receiver) { var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc && desc.writable) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
@@ -4852,7 +4904,8 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var utils = require("../utils.js");
+
+var utils = _interopRequireWildcard(require("../utils.js"));
 
 /**
  * Event normalizer
@@ -5077,6 +5130,8 @@ var Normalizer = exports.Normalizer = (function (_utils$PosterClass) {
 },{"../utils.js":36}],14:[function(require,module,exports){
 "use strict";
 
+var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { "default": obj }; };
+
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 var _get = function get(object, property, receiver) { var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc && desc.writable) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
@@ -5090,7 +5145,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
-var utils = require("../utils.js");
+var utils = _interopRequireWildcard(require("../utils.js"));
 
 /**
  * Listens to a model and higlights the text accordingly.
@@ -5187,6 +5242,8 @@ var HighlighterBase = exports.HighlighterBase = (function (_utils$PosterClass) {
 },{"../utils.js":36}],15:[function(require,module,exports){
 "use strict";
 
+var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { "default": obj }; };
+
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 var _get = function get(object, property, receiver) { var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc && desc.writable) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
@@ -5199,9 +5256,13 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var utils = require("../utils.js");
-var superset = require("../superset.js");
-var highlighter = require("./highlighter.js");
+
+var utils = _interopRequireWildcard(require("../utils.js"));
+
+var superset = _interopRequireWildcard(require("../superset.js"));
+
+var highlighter = _interopRequireWildcard(require("./highlighter.js"));
+
 var prism = require("../../components/prism.js");
 
 /**
@@ -5413,6 +5474,8 @@ var PrismHighlighter = exports.PrismHighlighter = (function (_highlighter$Highli
 },{"../../components/prism.js":1,"../superset.js":35,"../utils.js":36,"./highlighter.js":14}],16:[function(require,module,exports){
 "use strict";
 
+var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { "default": obj }; };
+
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 var _get = function get(object, property, receiver) { var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc && desc.writable) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
@@ -5426,8 +5489,9 @@ Object.defineProperty(exports, "__esModule", {
 });
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
-var utils = require("./utils.js");
-var keymap = require("./events/map.js");
+var utils = _interopRequireWildcard(require("./utils.js"));
+
+var keymap = _interopRequireWildcard(require("./events/map.js"));
 
 /**
  * Reversible action history.
@@ -5606,6 +5670,8 @@ var History = exports.History = (function (_utils$PosterClass) {
 },{"./events/map.js":12,"./utils.js":36}],17:[function(require,module,exports){
 "use strict";
 
+var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { "default": obj }; };
+
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 var _get = function get(object, property, receiver) { var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc && desc.writable) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
@@ -5618,9 +5684,12 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var plugin = require("../plugin.js");
-var utils = require("../../utils.js");
-var renderer = require("./renderer.js");
+
+var plugin = _interopRequireWildcard(require("../plugin.js"));
+
+var utils = _interopRequireWildcard(require("../../utils.js"));
+
+var renderer = _interopRequireWildcard(require("./renderer.js"));
 
 /**
  * Gutter plugin.
@@ -5705,6 +5774,8 @@ var Gutter = exports.Gutter = (function (_plugin$PluginBase) {
 },{"../../utils.js":36,"../plugin.js":22,"./renderer.js":18}],18:[function(require,module,exports){
 "use strict";
 
+var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { "default": obj }; };
+
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 var _get = function get(object, property, receiver) { var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc && desc.writable) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
@@ -5717,8 +5788,10 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var renderer = require("../../renderers/renderer.js");
-var utils = require("../../utils.js");
+
+var renderer = _interopRequireWildcard(require("../../renderers/renderer.js"));
+
+var utils = _interopRequireWildcard(require("../../utils.js"));
 
 /**
  * Renderers the gutter.
@@ -5800,6 +5873,8 @@ var GutterRenderer = exports.GutterRenderer = (function (_renderer$RendererBase)
 },{"../../renderers/renderer.js":28,"../../utils.js":36}],19:[function(require,module,exports){
 "use strict";
 
+var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { "default": obj }; };
+
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 var _get = function get(object, property, receiver) { var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc && desc.writable) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
@@ -5812,9 +5887,12 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var plugin = require("../plugin.js");
-var utils = require("../../utils.js");
-var renderer = require("./renderer.js");
+
+var plugin = _interopRequireWildcard(require("../plugin.js"));
+
+var utils = _interopRequireWildcard(require("../../utils.js"));
+
+var renderer = _interopRequireWildcard(require("./renderer.js"));
 
 /**
  * Line numbers plugin.
@@ -5862,6 +5940,8 @@ var LineNumbers = exports.LineNumbers = (function (_plugin$PluginBase) {
 },{"../../utils.js":36,"../plugin.js":22,"./renderer.js":20}],20:[function(require,module,exports){
 "use strict";
 
+var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { "default": obj }; };
+
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 var _get = function get(object, property, receiver) { var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc && desc.writable) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
@@ -5874,9 +5954,12 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var renderer = require("../../renderers/renderer.js");
-var utils = require("../../utils.js");
-var canvas = require("../../canvas.js");
+
+var renderer = _interopRequireWildcard(require("../../renderers/renderer.js"));
+
+var utils = _interopRequireWildcard(require("../../utils.js"));
+
+var canvas = _interopRequireWildcard(require("../../canvas.js"));
 
 /**
  * Renderers the line numbers.
@@ -6100,6 +6183,8 @@ var LineNumbersRenderer = exports.LineNumbersRenderer = (function (_renderer$Ren
 },{"../../canvas.js":3,"../../renderers/renderer.js":28,"../../utils.js":36}],21:[function(require,module,exports){
 "use strict";
 
+var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { "default": obj }; };
+
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 var _get = function get(object, property, receiver) { var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc && desc.writable) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
@@ -6113,10 +6198,13 @@ Object.defineProperty(exports, "__esModule", {
 });
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
-var utils = require("../utils.js");
-var pluginbase = require("./plugin.js");
-var gutter = require("./gutter/gutter.js");
-var linenumbers = require("./linenumbers/linenumbers.js");
+var utils = _interopRequireWildcard(require("../utils.js"));
+
+var pluginbase = _interopRequireWildcard(require("./plugin.js"));
+
+var gutter = _interopRequireWildcard(require("./gutter/gutter.js"));
+
+var linenumbers = _interopRequireWildcard(require("./linenumbers/linenumbers.js"));
 
 /**
  * Plugin manager class
@@ -6218,6 +6306,8 @@ var PluginManager = exports.PluginManager = (function (_utils$PosterClass) {
 },{"../utils.js":36,"./gutter/gutter.js":17,"./linenumbers/linenumbers.js":19,"./plugin.js":22}],22:[function(require,module,exports){
 "use strict";
 
+var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { "default": obj }; };
+
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 var _get = function get(object, property, receiver) { var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc && desc.writable) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
@@ -6231,7 +6321,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
-var utils = require("../utils.js");
+var utils = _interopRequireWildcard(require("../utils.js"));
 
 /**
  * Plugin base class
@@ -6343,6 +6433,8 @@ var PluginBase = exports.PluginBase = (function (_utils$PosterClass) {
 },{"../utils.js":36}],23:[function(require,module,exports){
 "use strict";
 
+var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { "default": obj }; };
+
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 var _get = function get(object, property, receiver) { var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc && desc.writable) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
@@ -6352,17 +6444,29 @@ var _inherits = function (subClass, superClass) { if (typeof superClass !== "fun
 var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
 
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var scrolling_canvas = require("./scrolling_canvas.js");
-var canvas = require("./canvas.js");
-var document_controller = require("./document_controller.js");
-var document_model = require("./document_model.js");
-var document_view = require("./document_view.js");
-var pluginmanager = require("./plugins/manager.js");
-var plugin = require("./plugins/plugin.js");
-var renderer = require("./renderers/renderer.js");
-var style = require("./style.js");
-var utils = require("./utils.js");
-var config = require("./config.js");
+
+var scrolling_canvas = _interopRequireWildcard(require("./scrolling_canvas.js"));
+
+var canvas = _interopRequireWildcard(require("./canvas.js"));
+
+var document_controller = _interopRequireWildcard(require("./document_controller.js"));
+
+var document_model = _interopRequireWildcard(require("./document_model.js"));
+
+var document_view = _interopRequireWildcard(require("./document_view.js"));
+
+var pluginmanager = _interopRequireWildcard(require("./plugins/manager.js"));
+
+var plugin = _interopRequireWildcard(require("./plugins/plugin.js"));
+
+var renderer = _interopRequireWildcard(require("./renderers/renderer.js"));
+
+var style = _interopRequireWildcard(require("./style.js"));
+
+var utils = _interopRequireWildcard(require("./utils.js"));
+
+var config = _interopRequireWildcard(require("./config.js"));
+
 config = config.config;
 
 /**
@@ -6459,6 +6563,8 @@ window.poster = {
 },{"./canvas.js":3,"./config.js":5,"./document_controller.js":8,"./document_model.js":9,"./document_view.js":10,"./plugins/manager.js":21,"./plugins/plugin.js":22,"./renderers/renderer.js":28,"./scrolling_canvas.js":31,"./style.js":32,"./utils.js":36}],24:[function(require,module,exports){
 "use strict";
 
+var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { "default": obj }; };
+
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 var _get = function get(object, property, receiver) { var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc && desc.writable) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
@@ -6472,9 +6578,12 @@ Object.defineProperty(exports, "__esModule", {
 });
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
-var utils = require("../utils.js");
-var renderer = require("./renderer.js");
-var config = require("../config.js");
+var utils = _interopRequireWildcard(require("../utils.js"));
+
+var renderer = _interopRequireWildcard(require("./renderer.js"));
+
+var config = _interopRequireWildcard(require("../config.js"));
+
 config = config.config;
 
 /**
@@ -6670,6 +6779,8 @@ var BatchRenderer = exports.BatchRenderer = (function (_renderer$RendererBase) {
 },{"../config.js":5,"../utils.js":36,"./renderer.js":28}],25:[function(require,module,exports){
 "use strict";
 
+var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { "default": obj }; };
+
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 var _get = function get(object, property, receiver) { var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc && desc.writable) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
@@ -6683,8 +6794,9 @@ Object.defineProperty(exports, "__esModule", {
 });
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
-var utils = require("../utils.js");
-var renderer = require("./renderer.js");
+var utils = _interopRequireWildcard(require("../utils.js"));
+
+var renderer = _interopRequireWildcard(require("./renderer.js"));
 
 /**
  * Renders to a canvas
@@ -6777,6 +6889,8 @@ var ColorRenderer = exports.ColorRenderer = (function (_renderer$RendererBase) {
 },{"../utils.js":36,"./renderer.js":28}],26:[function(require,module,exports){
 "use strict";
 
+var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { "default": obj }; };
+
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 var _get = function get(object, property, receiver) { var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc && desc.writable) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
@@ -6790,9 +6904,11 @@ Object.defineProperty(exports, "__esModule", {
 });
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
-var animator = require("../animator.js");
-var utils = require("../utils.js");
-var renderer = require("./renderer.js");
+var animator = _interopRequireWildcard(require("../animator.js"));
+
+var utils = _interopRequireWildcard(require("../utils.js"));
+
+var renderer = _interopRequireWildcard(require("./renderer.js"));
 
 /**
  * Render document cursors
@@ -6942,6 +7058,8 @@ var CursorsRenderer = exports.CursorsRenderer = (function (_renderer$RendererBas
 },{"../animator.js":2,"../utils.js":36,"./renderer.js":28}],27:[function(require,module,exports){
 "use strict";
 
+var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { "default": obj }; };
+
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 var _get = function get(object, property, receiver) { var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc && desc.writable) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
@@ -6955,9 +7073,12 @@ Object.defineProperty(exports, "__esModule", {
 });
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
-var utils = require("../utils.js");
-var row = require("./row.js");
-var config = require("../config.js");
+var utils = _interopRequireWildcard(require("../utils.js"));
+
+var row = _interopRequireWildcard(require("./row.js"));
+
+var config = _interopRequireWildcard(require("../config.js"));
+
 config = config.config;
 
 /**
@@ -7116,6 +7237,8 @@ var HighlightedRowRenderer = exports.HighlightedRowRenderer = (function (_row$Ro
 },{"../config.js":5,"../utils.js":36,"./row.js":29}],28:[function(require,module,exports){
 "use strict";
 
+var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { "default": obj }; };
+
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 var _get = function get(object, property, receiver) { var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc && desc.writable) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
@@ -7129,8 +7252,9 @@ Object.defineProperty(exports, "__esModule", {
 });
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
-var canvas = require("../canvas.js");
-var utils = require("../utils.js");
+var canvas = _interopRequireWildcard(require("../canvas.js"));
+
+var utils = _interopRequireWildcard(require("../utils.js"));
 
 /**
  * Renders to a canvas
@@ -7196,6 +7320,8 @@ var RendererBase = exports.RendererBase = (function (_utils$PosterClass) {
 },{"../canvas.js":3,"../utils.js":36}],29:[function(require,module,exports){
 "use strict";
 
+var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { "default": obj }; };
+
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 var _get = function get(object, property, receiver) { var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc && desc.writable) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
@@ -7209,9 +7335,11 @@ Object.defineProperty(exports, "__esModule", {
 });
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
-var canvas = require("../canvas.js");
-var utils = require("../utils.js");
-var renderer = require("./renderer.js");
+var canvas = _interopRequireWildcard(require("../canvas.js"));
+
+var utils = _interopRequireWildcard(require("../utils.js"));
+
+var renderer = _interopRequireWildcard(require("./renderer.js"));
 
 /**
  * Render the text rows of a DocumentModel.
@@ -7690,6 +7818,8 @@ var RowRenderer = exports.RowRenderer = (function (_renderer$RendererBase) {
 },{"../canvas.js":3,"../utils.js":36,"./renderer.js":28}],30:[function(require,module,exports){
 "use strict";
 
+var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { "default": obj }; };
+
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 var _get = function get(object, property, receiver) { var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc && desc.writable) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
@@ -7703,10 +7833,14 @@ Object.defineProperty(exports, "__esModule", {
 });
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
-var animator = require("../animator.js");
-var utils = require("../utils.js");
-var renderer = require("./renderer.js");
-var config = require("../config.js");
+var animator = _interopRequireWildcard(require("../animator.js"));
+
+var utils = _interopRequireWildcard(require("../utils.js"));
+
+var renderer = _interopRequireWildcard(require("./renderer.js"));
+
+var config = _interopRequireWildcard(require("../config.js"));
+
 config = config.config;
 
 /**
@@ -7862,6 +7996,8 @@ var SelectionsRenderer = exports.SelectionsRenderer = (function (_renderer$Rende
 },{"../animator.js":2,"../config.js":5,"../utils.js":36,"./renderer.js":28}],31:[function(require,module,exports){
 "use strict";
 
+var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { "default": obj }; };
+
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 var _get = function get(object, property, receiver) { var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc && desc.writable) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
@@ -7874,8 +8010,10 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var canvas = require("./canvas.js");
-var utils = require("./utils.js");
+
+var canvas = _interopRequireWildcard(require("./canvas.js"));
+
+var utils = _interopRequireWildcard(require("./utils.js"));
 
 /**
  * HTML canvas with drawing convinience functions.
@@ -8180,6 +8318,8 @@ var ScrollingCanvas = exports.ScrollingCanvas = (function (_canvas$Canvas) {
 },{"./canvas.js":3,"./utils.js":36}],32:[function(require,module,exports){
 "use strict";
 
+var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { "default": obj }; };
+
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 var _get = function get(object, property, receiver) { var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc && desc.writable) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
@@ -8193,8 +8333,9 @@ Object.defineProperty(exports, "__esModule", {
 });
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
-var utils = require("./utils.js");
-var styles = require("./styles/init.js");
+var utils = _interopRequireWildcard(require("./utils.js"));
+
+var styles = _interopRequireWildcard(require("./styles/init.js"));
 
 /**
  * Style
@@ -8292,6 +8433,8 @@ exports.style = style;
 },{}],35:[function(require,module,exports){
 "use strict";
 
+var _interopRequireWildcard = function (obj) { return obj && obj.__esModule ? obj : { "default": obj }; };
+
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 var _get = function get(object, property, receiver) { var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc && desc.writable) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
@@ -8305,7 +8448,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
-var utils = require("./utils.js");
+var utils = _interopRequireWildcard(require("./utils.js"));
 
 /**
  * Superset

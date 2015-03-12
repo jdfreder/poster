@@ -1,9 +1,9 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var keymap = require('./events/map.js');
+import * as keymap from './events/map.js';
 var register = keymap.Map.register;
 
-var cursor = require('./cursor.js');
-var utils = require('./utils.js');
+import * as cursor from './cursor.js';
+import * as utils from './utils.js';
 /**
  * Manages one or more cursors
  */
