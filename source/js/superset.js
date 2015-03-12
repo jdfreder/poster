@@ -1,6 +1,6 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
-var utils = require('./utils.js');
+import * as utils from './utils.js';
 
 /**
  * Superset

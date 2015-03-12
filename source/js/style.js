@@ -1,7 +1,7 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
-var utils = require('./utils.js');
-var styles = require('./styles/init.js');
+import * as utils from './utils.js';
+import * as styles from './styles/init.js';
 
 /**
  * Style

@@ -1,9 +1,9 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var keymap = require('./events/map.js');
+import * as keymap from './events/map.js';
 var register = keymap.Map.register;
 
-var utils = require('./utils.js');
-var config = require('./config.js');
+import * as utils from './utils.js';
+import * as config from './config.js';
 config = config.config;
 
 /**

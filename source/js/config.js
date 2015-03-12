@@ -1,6 +1,6 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
-var utils = require('./utils.js');
+import * as utils from './utils.js';
 export var config = new utils.PosterClass([
     'highlight_draw', // boolean - Whether or not to highlight re-renders
     'highlight_blit', // boolean - Whether or not to highlight blit regions

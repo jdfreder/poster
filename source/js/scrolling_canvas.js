@@ -1,6 +1,6 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var canvas = require('./canvas.js');
-var utils = require('./utils.js');
+import * as canvas from './canvas.js';
+import * as utils from './utils.js';
 
 /**
  * HTML canvas with drawing convinience functions.

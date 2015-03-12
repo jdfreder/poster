@@ -1,7 +1,7 @@
 // OSX bindings
-var map;
+var _map;
 if (navigator.appVersion.indexOf("Mac") != -1) {
-    map = {
+    _map = {
         'alt-leftarrow' : 'cursor.word_left',
         'alt-rightarrow' : 'cursor.word_right',
         'shift-alt-leftarrow' : 'cursor.select_word_left',
@@ -19,7 +19,7 @@ if (navigator.appVersion.indexOf("Mac") != -1) {
 
 // Non OSX bindings
 } else {
-    map = {
+    _map = {
         'ctrl-leftarrow' : 'cursor.word_left',
         'ctrl-rightarrow' : 'cursor.word_right',
         'ctrl-backspace' : 'cursor.delete_word_left',
@@ -38,26 +38,26 @@ if (navigator.appVersion.indexOf("Mac") != -1) {
 }
 
 // Common bindings
-map['keypress'] = 'cursor.keypress';
-map['enter'] = 'cursor.newline';
-map['delete'] = 'cursor.delete_forward';
-map['backspace'] = 'cursor.delete_backward';
-map['leftarrow'] = 'cursor.left';
-map['rightarrow'] = 'cursor.right';
-map['uparrow'] = 'cursor.up';
-map['downarrow'] = 'cursor.down';
-map['shift-leftarrow'] = 'cursor.select_left';
-map['shift-rightarrow'] = 'cursor.select_right';
-map['shift-uparrow'] = 'cursor.select_up';
-map['shift-downarrow'] = 'cursor.select_down';
-map['mouse0-dblclick'] = 'cursors.select_word';
-map['mouse0-down'] = 'cursors.start_selection';
-map['mouse-move'] = 'cursors.set_selection';
-map['mouse0-up'] = 'cursors.end_selection';
-map['shift-mouse0-up'] = 'cursors.end_selection';
-map['shift-mouse0-down'] = 'cursors.start_set_selection';
-map['shift-mouse-move'] = 'cursors.set_selection';
-map['tab'] = 'cursor.indent';
-map['shift-tab'] = 'cursor.unindent';
-map['escape'] = 'cursors.single';
-exports.map = map;
+_map['keypress'] = 'cursor.keypress';
+_map['enter'] = 'cursor.newline';
+_map['delete'] = 'cursor.delete_forward';
+_map['backspace'] = 'cursor.delete_backward';
+_map['leftarrow'] = 'cursor.left';
+_map['rightarrow'] = 'cursor.right';
+_map['uparrow'] = 'cursor.up';
+_map['downarrow'] = 'cursor.down';
+_map['shift-leftarrow'] = 'cursor.select_left';
+_map['shift-rightarrow'] = 'cursor.select_right';
+_map['shift-uparrow'] = 'cursor.select_up';
+_map['shift-downarrow'] = 'cursor.select_down';
+_map['mouse0-dblclick'] = 'cursors.select_word';
+_map['mouse0-down'] = 'cursors.start_selection';
+_map['mouse-move'] = 'cursors.set_selection';
+_map['mouse0-up'] = 'cursors.end_selection';
+_map['shift-mouse0-up'] = 'cursors.end_selection';
+_map['shift-mouse0-down'] = 'cursors.start_set_selection';
+_map['shift-mouse-move'] = 'cursors.set_selection';
+_map['tab'] = 'cursor.indent';
+_map['shift-tab'] = 'cursor.unindent';
+_map['escape'] = 'cursors.single';
+export var map = _map;

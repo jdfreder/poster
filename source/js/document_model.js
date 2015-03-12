@@ -1,7 +1,7 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
-var utils = require('./utils.js');
-var superset = require('./superset.js');
+import * as utils from './utils.js';
+import * as superset from './superset.js';
 
 /**
  * Model containing all of the document's data (text).

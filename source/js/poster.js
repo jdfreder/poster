@@ -1,15 +1,15 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var scrolling_canvas = require('./scrolling_canvas.js');
-var canvas = require('./canvas.js');
-var document_controller = require('./document_controller.js');
-var document_model = require('./document_model.js');
-var document_view = require('./document_view.js');
-var pluginmanager = require('./plugins/manager.js');
-var plugin = require('./plugins/plugin.js');
-var renderer = require('./renderers/renderer.js');
-var style = require('./style.js');
-var utils = require('./utils.js');
-var config = require('./config.js');
+import * as scrolling_canvas from './scrolling_canvas.js';
+import * as canvas from './canvas.js';
+import * as document_controller from './document_controller.js';
+import * as document_model from './document_model.js';
+import * as document_view from './document_view.js';
+import * as pluginmanager from './plugins/manager.js';
+import * as plugin from './plugins/plugin.js';
+import * as renderer from './renderers/renderer.js';
+import * as style from './style.js';
+import * as utils from './utils.js';
+import * as config from './config.js';
 config = config.config;
 
 /**

@@ -1,6 +1,6 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var renderer = require('../../renderers/renderer.js');
-var utils = require('../../utils.js');
+import * as renderer from '../../renderers/renderer.js';
+import * as utils from '../../utils.js';
 
 /**
  * Renderers the gutter.

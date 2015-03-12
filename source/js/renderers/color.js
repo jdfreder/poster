@@ -1,7 +1,7 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
-var utils = require('../utils.js');
-var renderer = require('./renderer.js');
+import * as utils from '../utils.js';
+import * as renderer from './renderer.js';
 
 /**
  * Renders to a canvas
