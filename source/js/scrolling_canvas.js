@@ -5,245 +5,241 @@ var utils = require('./utils.js');
 /**
  * HTML canvas with drawing convinience functions.
  */
-var ScrollingCanvas = function() {
-    canvas.Canvas.call(this);
-    this._bind_events();
-    this._old_scroll_left = 0;
-    this._old_scroll_top = 0;
+export class ScrollingCanvas extends canvas.Canvas {
+    constructor() {
+        super.constructor();
+        this._bind_events();
+        this._old_scroll_left = 0;
+        this._old_scroll_top = 0;
 
-    // Set default size.
-    this.width = 400;
-    this.height = 300;
-};
-utils.inherit(ScrollingCanvas, canvas.Canvas);
+        // Set default size.
+        this.width = 400;
+        this.height = 300;
+    }
 
-/**
- * Causes the canvas contents to be redrawn.
- * @return {null}
- */
-ScrollingCanvas.prototype.redraw = function(scroll) {
-    this.clear();
-    this.trigger('redraw', scroll);
-};
-
-/**
- * Layout the elements for the canvas.
- * Creates `this.el`
- * 
- * @return {null}
- */
-ScrollingCanvas.prototype._layout = function() {
-    canvas.Canvas.prototype._layout.call(this);
-    // Change the canvas class so it's not hidden.
-    this._canvas.setAttribute('class', 'canvas');
-
-    this.el = document.createElement('div');
-    this.el.setAttribute('class', 'poster scroll-window');
-    this.el.setAttribute('tabindex', 0);
-    this._scroll_bars = document.createElement('div');
-    this._scroll_bars.setAttribute('class', 'scroll-bars');
-    this._touch_pane = document.createElement('div');
-    this._touch_pane.setAttribute('class', 'touch-pane');
-    this._dummy = document.createElement('div');
-    this._dummy.setAttribute('class', 'scroll-dummy');
-
-    this.el.appendChild(this._canvas);
-    this.el.appendChild(this._scroll_bars);
-    this._scroll_bars.appendChild(this._dummy);
-    this._scroll_bars.appendChild(this._touch_pane);
-};
-
-/**
- * Make the properties of the class.
- * @return {null}
- */
-ScrollingCanvas.prototype._init_properties = function() {
-    var that = this;
 
     /**
      * Width of the scrollable canvas area
      */
-    this.property('scroll_width', function() {
+    get scroll_width() {
         // Get
-        return that._scroll_width || 0;
-    }, function(value) {
+        return this._scroll_width || 0;
+    }
+    set scroll_width(value) {
         // Set
-        that._scroll_width = value;
-        that._move_dummy(that._scroll_width, that._scroll_height || 0);
-    });
+        this._scroll_width = value;
+        this._move_dummy(this._scroll_width, this._scroll_height || 0);
+    }
 
     /**
      * Height of the scrollable canvas area.
      */
-    this.property('scroll_height', function() {
+    get scroll_height() {
         // Get
-        return that._scroll_height || 0;
-    }, function(value) {
+        return this._scroll_height || 0;
+    }
+    set scroll_height(value) {
         // Set
-        that._scroll_height = value;
-        that._move_dummy(that._scroll_width || 0, that._scroll_height);
-    });
+        this._scroll_height = value;
+        this._move_dummy(this._scroll_width || 0, this._scroll_height);
+    }
 
     /**
      * Top most pixel in the scrolled window.
      */
-    this.property('scroll_top', function() {
+    get scroll_top() {
         // Get
-        return that._scroll_bars.scrollTop;
-    }, function(value) {
+        return this._scroll_bars.scrollTop;
+    }
+    set scroll_top(value) {
         // Set
-        that._scroll_bars.scrollTop = value;
-        that._handle_scroll();
-    });
+        this._scroll_bars.scrollTop = value;
+        this._handle_scroll();
+    }
 
     /**
      * Left most pixel in the scrolled window.
      */
-    this.property('scroll_left', function() {
+    get scroll_left() {
         // Get
-        return that._scroll_bars.scrollLeft;
-    }, function(value) {
+        return this._scroll_bars.scrollLeft;
+    }
+    set scroll_left(value) {
         // Set
-        that._scroll_bars.scrollLeft = value;
-        that._handle_scroll();
-    });
+        this._scroll_bars.scrollLeft = value;
+        this._handle_scroll();
+    }
 
     /**
      * Height of the canvas
      * @return {float}
      */
-    this.property('height', function() { 
-        return that._canvas.height / 2; 
-    }, function(value) {
-        that._canvas.setAttribute('height', value * 2);
-        that.el.setAttribute('style', 'width: ' + that.width + 'px; height: ' + value + 'px;');
+    get height() { 
+        return this._canvas.height / 2; 
+    }
+    set height(value) {
+        this._canvas.setAttribute('height', value * 2);
+        this.el.setAttribute('style', 'width: ' + this.width + 'px; height: ' + value + 'px;');
 
-        that.trigger('resize', {height: value});
-        that._try_redraw();
+        this.trigger('resize', {height: value});
+        this._try_redraw();
         
         // Stretch the image for retina support.
         this.scale(2,2);
-    });
+    }
 
     /**
      * Width of the canvas
      * @return {float}
      */
-    this.property('width', function() { 
-        return that._canvas.width / 2; 
-    }, function(value) {
-        that._canvas.setAttribute('width', value * 2);
-        that.el.setAttribute('style', 'width: ' + value + 'px; height: ' + that.height + 'px;');
+    get width() { 
+        return this._canvas.width / 2; 
+    }
+    set width(value) {
+        this._canvas.setAttribute('width', value * 2);
+        this.el.setAttribute('style', 'width: ' + value + 'px; height: ' + this.height + 'px;');
 
-        that.trigger('resize', {width: value});
-        that._try_redraw();
+        this.trigger('resize', {width: value});
+        this._try_redraw();
         
         // Stretch the image for retina support.
         this.scale(2,2);
-    });
+    }
 
     /**
      * Is the canvas or related elements focused?
      * @return {boolean}
      */
-    this.property('focused', function() {
-        return document.activeElement === that.el ||
-            document.activeElement === that._scroll_bars ||
-            document.activeElement === that._dummy ||
-            document.activeElement === that._canvas;
-    });
-};
+    get focused() {
+        return document.activeElement === this.el ||
+            document.activeElement === this._scroll_bars ||
+            document.activeElement === this._dummy ||
+            document.activeElement === this._canvas;
+    }
 
-/**
- * Bind to the events of the canvas.
- * @return {null}
- */
-ScrollingCanvas.prototype._bind_events = function() {
-    var that = this;
+    /**
+     * Causes the canvas contents to be redrawn.
+     * @return {null}
+     */
+    redraw(scroll) {
+        this.clear();
+        this.trigger('redraw', scroll);
+    }
 
-    // Trigger scroll and redraw events on scroll.
-    this._scroll_bars.onscroll = function(e) {
-        that.trigger('scroll', e);
-        that._handle_scroll();
-    };
+    /**
+     * Layout the elements for the canvas.
+     * Creates `this.el`
+     * 
+     * @return {null}
+     */
+    _layout() {
+        canvas.Canvas.prototype._layout.call(this);
+        // Change the canvas class so it's not hidden.
+        this._canvas.setAttribute('class', 'canvas');
 
-    // Prevent scroll bar handled mouse events from bubbling.
-    var scrollbar_event = function(e) {
-        if (e.target !== that._touch_pane) {
-            utils.cancel_bubble(e);
-        }
-    };
-    this._scroll_bars.onmousedown = scrollbar_event;
-    this._scroll_bars.onmouseup = scrollbar_event;
-    this._scroll_bars.onclick = scrollbar_event;
-    this._scroll_bars.ondblclick = scrollbar_event;
-};
+        this.el = document.createElement('div');
+        this.el.setAttribute('class', 'poster scroll-window');
+        this.el.setAttribute('tabindex', 0);
+        this._scroll_bars = document.createElement('div');
+        this._scroll_bars.setAttribute('class', 'scroll-bars');
+        this._touch_pane = document.createElement('div');
+        this._touch_pane.setAttribute('class', 'touch-pane');
+        this._dummy = document.createElement('div');
+        this._dummy.setAttribute('class', 'scroll-dummy');
 
-/**
- * Handles when the canvas is scrolled.
- */
-ScrollingCanvas.prototype._handle_scroll = function() {
-    if (this._old_scroll_top !== undefined && this._old_scroll_left !== undefined) {
-        var scroll = {
-            x: this.scroll_left - this._old_scroll_left,
-            y: this.scroll_top - this._old_scroll_top,
+        this.el.appendChild(this._canvas);
+        this.el.appendChild(this._scroll_bars);
+        this._scroll_bars.appendChild(this._dummy);
+        this._scroll_bars.appendChild(this._touch_pane);
+    }
+
+    /**
+     * Bind to the events of the canvas.
+     * @return {null}
+     */
+    _bind_events() {
+
+        // Trigger scroll and redraw events on scroll.
+        this._scroll_bars.onscroll = e => {
+            this.trigger('scroll', e);
+            this._handle_scroll();
         };
-        this._try_redraw(scroll);
-    } else {
-        this._try_redraw();
+
+        // Prevent scroll bar handled mouse events from bubbling.
+        var scrollbar_event = e => {
+            if (e.target !== this._touch_pane) {
+                utils.cancel_bubble(e);
+            }
+        };
+        this._scroll_bars.onmousedown = scrollbar_event;
+        this._scroll_bars.onmouseup = scrollbar_event;
+        this._scroll_bars.onclick = scrollbar_event;
+        this._scroll_bars.ondblclick = scrollbar_event;
     }
-    this._old_scroll_left = this.scroll_left;
-    this._old_scroll_top = this.scroll_top;
-};
 
-/**
- * Queries to see if redraw is okay, and then redraws if it is.
- * @return {boolean} true if redraw happened.
- */
-ScrollingCanvas.prototype._try_redraw = function(scroll) {
-    if (this._query_redraw()) {
-        this.redraw(scroll);
-        return true;
-    }
-    return false;
-};
+    /**
+     * Handles when the canvas is scrolled.
+     */
+    _handle_scroll() {
+        if (this._old_scroll_top !== undefined && this._old_scroll_left !== undefined) {
+            var scroll = {
+                x: this.scroll_left - this._old_scroll_left,
+                y: this.scroll_top - this._old_scroll_top,
+            };
+            this._try_redraw(scroll);
+        } else {
+            this._try_redraw();
+        }
+        this._old_scroll_left = this.scroll_left;
+        this._old_scroll_top = this.scroll_top;
+    };
 
-/**
- * Trigger the 'query_redraw' event.
- * @return {boolean} true if control should redraw itself.
- */
-ScrollingCanvas.prototype._query_redraw = function() {
-    return this.trigger('query_redraw').every(function(x) { return x; }); 
-};
+    /**
+     * Queries to see if redraw is okay, and then redraws if it is.
+     * @return {boolean} true if redraw happened.
+     */
+    _try_redraw(scroll) {
+        if (this._query_redraw()) {
+            this.redraw(scroll);
+            return true;
+        }
+        return false;
+    };
 
-/**
- * Moves the dummy element that causes the scrollbar to appear.
- * @param  {float} x
- * @param  {float} y
- * @return {null}
- */
-ScrollingCanvas.prototype._move_dummy = function(x, y) {
-    this._dummy.setAttribute('style', 'left: ' + String(x) + 'px; top: ' + String(y) + 'px;');
-    this._touch_pane.setAttribute('style', 
-        'width: ' + String(Math.max(x, this._scroll_bars.clientWidth)) + 'px; ' +
-        'height: ' + String(Math.max(y, this._scroll_bars.clientHeight)) + 'px;');
-};
+    /**
+     * Trigger the 'query_redraw' event.
+     * @return {boolean} true if control should redraw itself.
+     */
+    _query_redraw() {
+        return this.trigger('query_redraw').every(x => x); 
+    };
 
-/**
- * Transform an x value based on scroll position.
- * @param  {float} x
- * @param  {boolean} inverse - perform inverse transformation
- * @return {float}
- */
-ScrollingCanvas.prototype._tx = function(x, inverse) { return x - (inverse?-1:1) * this.scroll_left; };
+    /**
+     * Moves the dummy element that causes the scrollbar to appear.
+     * @param  {float} x
+     * @param  {float} y
+     * @return {null}
+     */
+    _move_dummy(x, y) {
+        this._dummy.setAttribute('style', 'left: ' + String(x) + 'px; top: ' + String(y) + 'px;');
+        this._touch_pane.setAttribute('style', 
+            'width: ' + String(Math.max(x, this._scroll_bars.clientWidth)) + 'px; ' +
+            'height: ' + String(Math.max(y, this._scroll_bars.clientHeight)) + 'px;');
+    };
 
-/**
- * Transform a y value based on scroll position.
- * @param  {float} y
- * @param  {boolean} inverse - perform inverse transformation
- * @return {float}
- */
-ScrollingCanvas.prototype._ty = function(y, inverse) { return y - (inverse?-1:1) * this.scroll_top; };
+    /**
+     * Transform an x value based on scroll position.
+     * @param  {float} x
+     * @param  {boolean} inverse - perform inverse transformation
+     * @return {float}
+     */
+    _tx(x, inverse) { return x - (inverse?-1:1) * this.scroll_left; };
 
-// Exports
-exports.ScrollingCanvas = ScrollingCanvas;
+    /**
+     * Transform a y value based on scroll position.
+     * @param  {float} y
+     * @param  {boolean} inverse - perform inverse transformation
+     * @return {float}
+     */
+    _ty(y, inverse) { return y - (inverse?-1:1) * this.scroll_top; };
+}

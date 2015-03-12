@@ -5,141 +5,136 @@
  * @param {array} [eventful_properties] list of property names (strings)
  *                to create and wire change events to.
  */
-var PosterClass = function(eventful_properties) {
-    this._events = {};
-    this._on_all = [];
+export class PosterClass {
+    constructor(eventful_properties) {
+        this._events = {};
+        this._on_all = [];
 
-    // Construct eventful properties.
-    if (eventful_properties && eventful_properties.length>0) {
-        var that = this;
-        for (var i=0; i<eventful_properties.length; i++) {
-            (function(name) {
-                that.property(name, function() {
-                    return that['_' + name];
-                }, function(value) {
-                    that.trigger('change:' + name, value);
-                    that.trigger('change', name, value);
-                    that['_' + name] = value;
-                    that.trigger('changed:' + name);
-                    that.trigger('changed', name);
-                });
-            })(eventful_properties[i]);
+        // Construct eventful properties.
+        if (eventful_properties && eventful_properties.length>0) {
+            for (let i=0; i<eventful_properties.length; i++) {
+                (name => {
+                    this.property(name, function() {
+                        return this['_' + name];
+                    }, function(value) {
+                        this.trigger('change:' + name, value);
+                        this.trigger('change', name, value);
+                        this['_' + name] = value;
+                        this.trigger('changed:' + name);
+                        this.trigger('changed', name);
+                    });
+                })(eventful_properties[i]);
+            }
         }
     }
-};
 
-/**
- * Define a property for the class
- * @param  {string} name
- * @param  {function} getter
- * @param  {function} setter
- * @return {null}
- */
-PosterClass.prototype.property = function(name, getter, setter) {
-    Object.defineProperty(this, name, {
-        get: getter,
-        set: setter,
-        configurable: true
-    });
-};
-
-/**
- * Register an event listener
- * @param  {string} event
- * @param  {function} handler
- * @param  {object} context
- * @return {null}
- */
-PosterClass.prototype.on = function(event, handler, context) {
-    event = event.trim().toLowerCase();
-
-    // Make sure a list for the event exists.
-    if (!this._events[event]) { this._events[event] = []; }
-
-    // Push the handler and the context to the event's callback list.
-    this._events[event].push([handler, context]);
-};
-
-/**
- * Unregister one or all event listeners for a specific event
- * @param  {string} event
- * @param  {callback} (optional) handler
- * @return {null}
- */
-PosterClass.prototype.off = function(event, handler) {
-    event = event.trim().toLowerCase();
-    
-    // If a handler is specified, remove all the callbacks
-    // with that handler.  Otherwise, just remove all of
-    // the registered callbacks.
-    if (handler) {
-        this._events[event] = this._events[event].filter(function(callback) {
-            return callback[0] !== handler;
+    /**
+     * Define a property for the class
+     * @param  {string} name
+     * @param  {function} getter
+     * @param  {function} setter
+     * @return {null}
+     */
+    property(name, getter, setter) {
+        Object.defineProperty(this, name, {
+            get: getter,
+            set: setter,
+            configurable: true
         });
-    } else {
-        this._events[event] = [];
     }
-};
 
-/**
- * Register a global event handler. 
- * 
- * A global event handler fires for any event that's
- * triggered.
- * @param  {string} handler - function that accepts one
- *                            argument, the name of the
- *                            event,
- * @return {null}
- */
-PosterClass.prototype.on_all = function(handler) {
-    var index = this._on_all.indexOf(handler);
-    if (index === -1) {
-        this._on_all.push(handler);
+    /**
+     * Register an event listener
+     * @param  {string} event
+     * @param  {function} handler
+     * @param  {object} context
+     * @return {null}
+     */
+    on(event, handler, context) {
+        event = event.trim().toLowerCase();
+
+        // Make sure a list for the event exists.
+        if (!this._events[event]) { this._events[event] = []; }
+
+        // Push the handler and the context to the event's callback list.
+        this._events[event].push([handler, context]);
     }
-};
 
-/**
- * Unregister a global event handler.
- * @param  {[type]} handler
- * @return {boolean} true if a handler was removed
- */
-PosterClass.prototype.off_all = function(handler) {
-    var index = this._on_all.indexOf(handler);
-    if (index != -1) {
-        this._on_all.splice(index, 1);
-        return true;
+    /**
+     * Unregister one or all event listeners for a specific event
+     * @param  {string} event
+     * @param  {callback} (optional) handler
+     * @return {null}
+     */
+    off(event, handler) {
+        event = event.trim().toLowerCase();
+        
+        // If a handler is specified, remove all the callbacks
+        // with that handler.  Otherwise, just remove all of
+        // the registered callbacks.
+        if (handler) {
+            this._events[event] = this._events[event].filter(callback => callback[0] !== handler);
+        } else {
+            this._events[event] = [];
+        }
     }
-    return false;
-};
 
-/**
- * Triggers the callbacks of an event to fire.
- * @param  {string} event
- * @return {array} array of return values
- */
-PosterClass.prototype.trigger = function(event) {
-    event = event.trim().toLowerCase();
-
-    // Convert arguments to an array and call callbacks.
-    var args = Array.prototype.slice.call(arguments);
-    args.splice(0,1);
-
-    // Trigger global handlers first.
-    this._on_all.forEach(function(handler) {
-        handler.apply(this, [event].concat(args));
-    });
-
-    // Trigger individual handlers second.
-    var events = this._events[event];
-    if (events) {
-        var returns = [];
-        events.forEach(function(callback) {
-            returns.push(callback[0].apply(callback[1], args));
-        });
-        return returns;
+    /**
+     * Register a global event handler. 
+     * 
+     * A global event handler fires for any event that's
+     * triggered.
+     * @param  {string} handler - function that accepts one
+     *                            argument, the name of the
+     *                            event,
+     * @return {null}
+     */
+    on_all(handler) {
+        var index = this._on_all.indexOf(handler);
+        if (index === -1) {
+            this._on_all.push(handler);
+        }
     }
-    return [];
-};
+
+    /**
+     * Unregister a global event handler.
+     * @param  {[type]} handler
+     * @return {boolean} true if a handler was removed
+     */
+    off_all(handler) {
+        var index = this._on_all.indexOf(handler);
+        if (index != -1) {
+            this._on_all.splice(index, 1);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Triggers the callbacks of an event to fire.
+     * @param  {string} event
+     * @return {array} array of return values
+     */
+    trigger(event) {
+        event = event.trim().toLowerCase();
+
+        // Convert arguments to an array and call callbacks.
+        var args = Array.prototype.slice.call(arguments);
+        args.splice(0,1);
+
+        // Trigger global handlers first.
+        this._on_all.forEach(handler => handler.apply(this, [event].concat(args)));
+
+        // Trigger individual handlers second.
+        var events = this._events[event];
+        if (events) {
+            var returns = [];
+            events.forEach(callback => returns.push(callback[0].apply(callback[1], args)));
+            return returns;
+        }
+        return [];
+    }
+}
 
 /**
  * Cause one class to inherit from another
@@ -147,7 +142,7 @@ PosterClass.prototype.trigger = function(event) {
  * @param  {type} parent
  * @return {null}
  */
-var inherit = function(child, parent) {
+export var inherit = function(child, parent) {
     child.prototype = Object.create(parent.prototype, {});
 };
 
@@ -156,7 +151,7 @@ var inherit = function(child, parent) {
  * @param  {any} value
  * @return {boolean}
  */
-var callable = function(value) {
+export var callable = function(value) {
     return typeof value == 'function';
 };
 
@@ -166,7 +161,7 @@ var callable = function(value) {
  * @param  {any} value
  * @return {any}
  */
-var resolve_callable = function(value) {
+export var resolve_callable = function(value) {
     if (callable(value)) {
         return value.call(this);
     } else {
@@ -178,7 +173,7 @@ var resolve_callable = function(value) {
  * Creates a proxy to a function so it is called in the correct context.
  * @return {function} proxied function.
  */
-var proxy = function(f, context) {
+export var proxy = function(f, context) {
     if (f===undefined) { throw new Error('f cannot be undefined'); }
     return function() { return f.apply(context, arguments); };
 };
@@ -193,7 +188,7 @@ var proxy = function(f, context) {
  * @param  {array} array
  * @return {null}
  */
-var clear_array = function(array) {
+export var clear_array = function(array) {
     while (array.length > 0) {
         array.pop();
     }
@@ -204,7 +199,7 @@ var clear_array = function(array) {
  * @param  {any} x
  * @return {boolean} true if value is an array
  */
-var is_array = function(x) {
+export var is_array = function(x) {
     return x instanceof Array;
 };
 
@@ -217,7 +212,7 @@ var is_array = function(x) {
  * @param  {float} x - number to try to find
  * @return {integer} index of the value that's closest to x
  */
-var find_closest = function(sorted, x) {
+export var find_closest = function(sorted, x) {
     var min = sorted[0];
     var max = sorted[sorted.length-1];
     if (x < min) return 0;
@@ -250,7 +245,7 @@ var find_closest = function(sorted, x) {
  * @param  {dictionary} x
  * @return {dictionary}
  */
-var shallow_copy = function(x) {
+export var shallow_copy = function(x) {
     var y = {};
     for (var key in x) {
         if (x.hasOwnProperty(key)) {
@@ -267,7 +262,7 @@ var shallow_copy = function(x) {
  * @param  {function} hook - function to call before the original
  * @return {object} hook reference, object with an `unhook` method
  */
-var hook = function(obj, method, hook) {
+export var hook = function(obj, method, hook) {
 
     // If the original has already been hooked, add this hook to the list 
     // of hooks.
@@ -317,7 +312,7 @@ var hook = function(obj, method, hook) {
  * @param  {event} e
  * @return {null}
  */
-var cancel_bubble = function(e) {
+export var cancel_bubble = function(e) {
     if (e.stopPropagation) e.stopPropagation();
     if (e.cancelBubble !== null) e.cancelBubble = true;
     if (e.preventDefault) e.preventDefault();
@@ -327,7 +322,7 @@ var cancel_bubble = function(e) {
  * Generates a random color string
  * @return {string} hexadecimal color string
  */
-var random_color = function() {
+export var random_color = function() {
     var random_byte = function() { 
         var b = Math.round(Math.random() * 255).toString(16);
         return b.length == 1 ? '0' + b : b;
@@ -341,9 +336,9 @@ var random_color = function() {
  * @param  {array} y
  * @return {boolean}
  */
-var compare_arrays = function(x, y) {
+export var compare_arrays = function(x, y) {
     if (x.length != y.length) return false;
-    for (i=0; i<x.length; i++) {
+    for (let i=0; i<x.length; i++) {
         if (x[i]!==y[i]) return false;
     }
     return true;
@@ -355,7 +350,7 @@ var compare_arrays = function(x, y) {
  * @param  {string} re - regular expression to find
  * @return {array} array of [start_index, end_index] pairs
  */
-var findall = function(text, re, flags) {
+export var findall = function(text, re, flags) {
     re = new RegExp(re, flags || 'gm');
     var results;
     var found = [];
@@ -372,7 +367,7 @@ var findall = function(text, re, flags) {
  * @param  {char} c - character
  * @return {boolean} true if the character is not text.
  */
-var not_text = function(c) {
+export var not_text = function(c) {
     return 'abcdefghijklmnopqrstuvwxyz1234567890_'.indexOf(c.toLowerCase()) == -1;
 };
 
@@ -381,7 +376,7 @@ var not_text = function(c) {
  * @param  {array} objects
  * @return {object} new object, result of merged objects
  */
-var merge = function(objects) {
+export var merge = function(objects) {
     var result = {};
     for (var i = 0; i < objects.length; i++) {
         for (var key in objects[i]) {
@@ -392,21 +387,3 @@ var merge = function(objects) {
     }
     return result;
 };
-
-// Export names.
-exports.PosterClass = PosterClass;
-exports.inherit = inherit;
-exports.callable = callable;
-exports.resolve_callable = resolve_callable;
-exports.proxy = proxy;
-exports.clear_array = clear_array;
-exports.is_array = is_array;
-exports.find_closest = find_closest;
-exports.shallow_copy = shallow_copy;
-exports.hook = hook;
-exports.cancel_bubble = cancel_bubble;
-exports.random_color = random_color;
-exports.compare_arrays = compare_arrays;
-exports.findall = findall;
-exports.not_text = not_text;
-exports.merge = merge;

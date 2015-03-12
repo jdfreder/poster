@@ -18,85 +18,84 @@ var highlighter = require('./highlighters/prism.js');
  * @param {Style} style - describes rendering style
  * @param {function} has_focus - function that checks if the text area has focus
  */
-var DocumentView = function(canvas, model, cursors_model, style, has_focus) {
-    this._model = model;
+export class DocumentView extends batch.BatchRenderer {
+    constructor(canvas, model, cursors_model, style, has_focus) {
+        this._model = model;
 
-    // Create child renderers.
-    var row_renderer = new highlighted_row.HighlightedRowRenderer(model, canvas, style);
-    row_renderer.margin_left = 2;
-    row_renderer.margin_top = 2;
-    this.row_renderer = row_renderer;
-    
-    // Make sure changes made to the cursor(s) are within the visible region.
-    cursors_model.on('change', function(cursor) {
-        var row_index = cursor.primary_row;
-        var char_index = cursor.primary_char;
+        // Create child renderers.
+        var row_renderer = new highlighted_row.HighlightedRowRenderer(model, canvas, style);
+        row_renderer.margin_left = 2;
+        row_renderer.margin_top = 2;
+        this.row_renderer = row_renderer;
+        
+        // Make sure changes made to the cursor(s) are within the visible region.
+        cursors_model.on('change', cursor => {
+            var row_index = cursor.primary_row;
+            var char_index = cursor.primary_char;
 
-        var top = row_renderer.get_row_top(row_index);
-        var height = row_renderer.get_row_height(row_index);
-        var left = row_renderer.measure_partial_row_width(row_index, char_index) + row_renderer.margin_left;
-        var bottom = top + height;
+            var top = row_renderer.get_row_top(row_index);
+            var height = row_renderer.get_row_height(row_index);
+            var left = row_renderer.measure_partial_row_width(row_index, char_index) + row_renderer.margin_left;
+            var bottom = top + height;
 
-        var canvas_height = canvas.height - 20;
-        if (bottom > canvas.scroll_top + canvas_height) {
-            canvas.scroll_top = bottom - canvas_height;
-        } else if (top < canvas.scroll_top) {
-            canvas.scroll_top = top;
-        }
+            var canvas_height = canvas.height - 20;
+            if (bottom > canvas.scroll_top + canvas_height) {
+                canvas.scroll_top = bottom - canvas_height;
+            } else if (top < canvas.scroll_top) {
+                canvas.scroll_top = top;
+            }
 
-        var canvas_width = canvas.width - 20;
-        if (left > canvas.scroll_left + canvas_width) {
-            canvas.scroll_left = left - canvas_width;
-        } else if (left - row_renderer.margin_left < canvas.scroll_left) {
-            canvas.scroll_left = Math.max(0, left - row_renderer.margin_left);
-        }
-    });
+            var canvas_width = canvas.width - 20;
+            if (left > canvas.scroll_left + canvas_width) {
+                canvas.scroll_left = left - canvas_width;
+            } else if (left - row_renderer.margin_left < canvas.scroll_left) {
+                canvas.scroll_left = Math.max(0, left - row_renderer.margin_left);
+            }
+        });
 
-    var cursors_renderer = new cursors.CursorsRenderer(
-        cursors_model, 
-        style, 
-        row_renderer,
-        has_focus);
-    var selections_renderer = new selections.SelectionsRenderer(
-        cursors_model, 
-        style, 
-        row_renderer,
-        has_focus,
-        cursors_renderer);
+        var cursors_renderer = new cursors.CursorsRenderer(
+            cursors_model, 
+            style, 
+            row_renderer,
+            has_focus);
+        var selections_renderer = new selections.SelectionsRenderer(
+            cursors_model, 
+            style, 
+            row_renderer,
+            has_focus,
+            cursors_renderer);
 
-    // Create the background renderer
-    var color_renderer = new color.ColorRenderer();
-    color_renderer.color = style.background || 'white';
-    style.on('changed:style', function() { color_renderer.color = style.background; });
+        // Create the background renderer
+        var color_renderer = new color.ColorRenderer();
+        color_renderer.color = style.background || 'white';
+        style.on('changed:style', function() { color_renderer.color = style.background; });
 
-    // Create the document highlighter, which needs to know about the currently
-    // rendered rows in order to know where to highlight.
-    this.highlighter = new highlighter.PrismHighlighter(model, row_renderer);
+        // Create the document highlighter, which needs to know about the currently
+        // rendered rows in order to know where to highlight.
+        this.highlighter = new highlighter.PrismHighlighter(model, row_renderer);
 
-    // Pass get_row_char into cursors.
-    cursors_model.get_row_char = utils.proxy(row_renderer.get_row_char, row_renderer);
+        // Pass get_row_char into cursors.
+        cursors_model.get_row_char = utils.proxy(row_renderer.get_row_char, row_renderer);
 
-    // Call base constructor.
-    batch.BatchRenderer.call(this, [
-        color_renderer,
-        selections_renderer,
-        row_renderer,
-        cursors_renderer,
-    ], canvas);
+        // Call base constructor.
+        super.constructor([
+            color_renderer,
+            selections_renderer,
+            row_renderer,
+            cursors_renderer,
+        ], canvas);
 
-    // Hookup render events.
-    this._canvas.on('redraw', utils.proxy(this.render, this));
-    this._model.on('changed', utils.proxy(canvas.redraw, canvas));
+        // Hookup render events.
+        this._canvas.on('redraw', utils.proxy(this.render, this));
+        this._model.on('changed', utils.proxy(canvas.redraw, canvas));
+    }
 
-    // Create properties
-    var that = this;
-    this.property('language', function() {
-        return that._language;
-    }, function(value) {
-        that.highlighter.load(value);
-        that._language = value;
-    });
-};
-utils.inherit(DocumentView, batch.BatchRenderer);
+    get language() {
+        return this._language;
+    }
 
-exports.DocumentView = DocumentView;
+    set language(value) {
+        this.highlighter.load(value);
+        this._language = value;
+    }
+}

@@ -11,81 +11,80 @@ var utils = require('./utils.js');
  * what will be copied when the user hits keys corresponding to a copy 
  * operation.  Events `copy`, `cut`, and `paste` are raised by this class.
  */
-var Clipboard = function(el) {
-    utils.PosterClass.call(this);
-    this._el = el;
+export class Clipboard extends utils.PosterClass {
 
-    // Create a textbox that's hidden.
-    this.hidden_input = document.createElement('textarea');
-    this.hidden_input.setAttribute('class', 'poster hidden-clipboard');
-    el.appendChild(this.hidden_input);
+    constructor(el) {
+        super.constructor();
+        this._el = el;
 
-    this._bind_events();
-};
-utils.inherit(Clipboard, utils.PosterClass);
+        // Create a textbox that's hidden.
+        this.hidden_input = document.createElement('textarea');
+        this.hidden_input.setAttribute('class', 'poster hidden-clipboard');
+        el.appendChild(this.hidden_input);
 
-/**
- * Set what will be copied when the user copies.
- * @param {string} text
- */
-Clipboard.prototype.set_clippable = function(text) {
-    this._clippable = text;
-    this.hidden_input.value = this._clippable;
-    this._focus();
-}; 
+        this._bind_events();
+    };
 
-/**
- * Focus the hidden text area.
- * @return {null}
- */
-Clipboard.prototype._focus = function() {
-    this.hidden_input.focus();
-    this.hidden_input.select();
-};
+    /**
+     * Set what will be copied when the user copies.
+     * @param {string} text
+     */
+    set_clippable(text) {
+        this._clippable = text;
+        this.hidden_input.value = this._clippable;
+        this._focus();
+    }; 
 
-/**
- * Handle when the user pastes into the textbox.
- * @return {null}
- */
-Clipboard.prototype._handle_paste = function(e) {
-    var pasted = e.clipboardData.getData(e.clipboardData.types[0]);
-    utils.cancel_bubble(e);
-    this.trigger('paste', pasted);
-};
+    /**
+     * Focus the hidden text area.
+     * @return {null}
+     */
+    _focus() {
+        this.hidden_input.focus();
+        this.hidden_input.select();
+    };
 
-/**
- * Bind events of the hidden textbox.
- * @return {null}
- */
-Clipboard.prototype._bind_events = function() {
-    var that = this;
+    /**
+     * Handle when the user pastes into the textbox.
+     * @return {null}
+     */
+    _handle_paste(e) {
+        var pasted = e.clipboardData.getData(e.clipboardData.types[0]);
+        utils.cancel_bubble(e);
+        this.trigger('paste', pasted);
+    };
 
-    // Listen to el's focus event.  If el is focused, focus the hidden input
-    // instead.
-    utils.hook(this._el, 'onfocus', utils.proxy(this._focus, this));
+    /**
+     * Bind events of the hidden textbox.
+     * @return {null}
+     */
+    _bind_events() {
 
-    utils.hook(this.hidden_input, 'onpaste', utils.proxy(this._handle_paste, this));
-    utils.hook(this.hidden_input, 'oncut', function(e) {
-        // Trigger the event in a timeout so it fires after the system event.
-        setTimeout(function(){
-            that.trigger('cut', that._clippable);
-        }, 0);
-    });
-    utils.hook(this.hidden_input, 'oncopy', function(e) {
-        that.trigger('copy', that._clippable);
-    });
-    utils.hook(this.hidden_input, 'onkeypress', function() {
-        setTimeout(function() {
-            that.hidden_input.value = that._clippable;
-            that._focus();
-        }, 0);
-    });
-    utils.hook(this.hidden_input, 'onkeyup', function() {
-        setTimeout(function() {
-            that.hidden_input.value = that._clippable;
-            that._focus();
-        }, 0);
-    });
-};
+        // Listen to el's focus event.  If el is focused, focus the hidden input
+        // instead.
+        utils.hook(this._el, 'onfocus', utils.proxy(this._focus, this));
 
-exports.Clipboard = Clipboard;
+        utils.hook(this.hidden_input, 'onpaste', utils.proxy(this._handle_paste, this));
+        utils.hook(this.hidden_input, 'oncut', () => {
+            // Trigger the event in a timeout so it fires after the system event.
+            setTimeout(() => {
+                this.trigger('cut', this._clippable);
+            }, 0);
+        });
+        utils.hook(this.hidden_input, 'oncopy', () => {
+            this.trigger('copy', this._clippable);
+        });
+        utils.hook(this.hidden_input, 'onkeypress', () => {
+            setTimeout(() => {
+                this.hidden_input.value = this._clippable;
+                this._focus();
+            }, 0);
+        });
+        utils.hook(this.hidden_input, 'onkeyup', () => {
+            setTimeout(() => {
+                this.hidden_input.value = this._clippable;
+                this._focus();
+            }, 0);
+        });
+    };
+}
