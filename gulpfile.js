@@ -24,20 +24,32 @@ gulp.task('watch', function() {
 });
 
 gulp.task('components', function(callback) {
+    var core = [
+        './source/components/prism/components/prism-core.js',
+        './source/components/prism/components/prism-markup.js',
+        './source/components/prism/components/prism-css.js',
+        './source/components/prism/components/prism-clike.js',
+        './source/components/prism/components/prism-javascript.js'
+    ];
     glob('./source/components/prism/components/*.js', undefined, function(error, dirs) {
-        dirs.splice(dirs.indexOf('./source/components/prism/components/prism-css-extras.js'), 1)
+        dirs.splice(dirs.indexOf(), 1)
+        dirs = dirs.filter(function(x) {
+            return x.slice(-7) !== '.min.js' &&
+                core.indexOf(x) === -1;
+        })
         gulp
-            .src(dirs)
+            .src(core.concat(dirs))
+            .pipe(debug({title: 'components:'}))
             .pipe(concat('prism.js'))
-            .pipe(gulp.dest('./source/components/'));
-        callback();
+            .pipe(gulp.dest('./source/components/'))
+            .on('end', function() { callback(); });
     })
 });
 
 gulp.task('javascript', ['components'], function() {
     var browserified = transform(function(filename) {
         return browserify(filename)
-            // .plugin('tsify', { noImplicitAny: false })
+            // .plugin('tsify', { noImplicitAny: false, target: 'ES5' })
             .transform(babelify)
             .bundle();
     });
