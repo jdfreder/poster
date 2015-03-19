@@ -118,10 +118,11 @@ export class PosterClass {
      * @param  {string} event
      * @return {array} array of return values
      */
-    trigger(event, ...args) {
+    trigger(event, ...pargs) {
         event = event.trim().toLowerCase();
 
         // Convert arguments to an array and call callbacks.
+        var args = Array.prototype.slice.call(arguments);
         args.splice(0,1);
 
         // Trigger global handlers first.
