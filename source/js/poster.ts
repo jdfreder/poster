@@ -45,7 +45,8 @@ class Poster extends utils.PosterClass {
             () => { 
                 return this.controller.clipboard.hidden_input === document.activeElement 
                     || this.canvas.focused; 
-            }
+            },
+            (x, y) => this.controller.clipboard.set_position(x, y)
         );
 
         // Load plugins.

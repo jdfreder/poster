@@ -17,6 +17,7 @@ import highlighter = require('./highlighters/prism');
  * @param {Cursors} cursors_model instance
  * @param {Style} style - describes rendering style
  * @param {function} has_focus - function that checks if the text area has focus
+ * @param {function} move_focal_point - function that moves the focal point
  */
 export class DocumentView extends batch.BatchRenderer {
     public row_renderer;
@@ -25,7 +26,7 @@ export class DocumentView extends batch.BatchRenderer {
     private _model;
     private _language;
 
-    constructor(canvas, model, cursors_model, style, has_focus) {
+    constructor(canvas, model, cursors_model, style, has_focus, move_focal_point) {
         this._model = model;
 
         // Create child renderers.
@@ -57,6 +58,8 @@ export class DocumentView extends batch.BatchRenderer {
             } else if (left - row_renderer.margin_left < canvas.scroll_left) {
                 canvas.scroll_left = Math.max(0, left - row_renderer.margin_left);
             }
+
+            move_focal_point(left - canvas.scroll_left, top - canvas.scroll_top - canvas.height);
         });
 
         var cursors_renderer = new cursors.CursorsRenderer(
