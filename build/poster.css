@@ -38,5 +38,5 @@
   position: relative;
   width: 1px;
   height: 1px;
-  visibility: hidden;
+  opacity: 0.0;
 }
