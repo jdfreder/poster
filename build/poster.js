@@ -5025,7 +5025,7 @@ window.poster = {
 // Expose prism so the user can load custom language files.
 window.Prism = prism;
 
-}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/fake_cb881747.js","/")
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/fake_787abcdc.js","/")
 },{"./config":9,"./document_controller":12,"./document_model":13,"./document_view":14,"./plugins/manager":26,"./plugins/plugin":27,"./renderers/renderer":32,"./scrolling_canvas":35,"./style":36,"./utils":40,"buffer":1,"oMfpAn":4,"prismjs":5}],19:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
@@ -7695,12 +7695,13 @@ var PosterClass = (function () {
      */
     PosterClass.prototype.trigger = function (event) {
         var _this = this;
-        var args = [];
+        var pargs = [];
         for (var _i = 1; _i < arguments.length; _i++) {
-            args[_i - 1] = arguments[_i];
+            pargs[_i - 1] = arguments[_i];
         }
         event = event.trim().toLowerCase();
         // Convert arguments to an array and call callbacks.
+        var args = Array.prototype.slice.call(arguments);
         args.splice(0, 1);
         // Trigger global handlers first.
         this._on_all.forEach(function (handler) { return handler.apply(_this, [event].concat(args)); });
