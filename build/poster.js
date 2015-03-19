@@ -2670,6 +2670,11 @@ var Clipboard = (function (_super) {
         // Create a textbox that's hidden.
         this.hidden_input = document.createElement('textarea');
         this.hidden_input.setAttribute('class', 'poster hidden-clipboard');
+        this.hidden_input.setAttribute('x-palm-disable-auto-cap', true);
+        this.hidden_input.setAttribute('wrap', 'off');
+        this.hidden_input.setAttribute('autocorrect', 'off');
+        this.hidden_input.setAttribute('autocapitalize', 'off');
+        this.hidden_input.setAttribute('spellcheck', false);
         el.appendChild(this.hidden_input);
         this._bind_events();
     }
@@ -2681,6 +2686,14 @@ var Clipboard = (function (_super) {
         this._clippable = text;
         this.hidden_input.value = this._clippable;
         this._focus();
+    };
+    /**
+     * Move the textarea to a point.
+     * @param {number} x
+     * @param {number} y
+     */
+    Clipboard.prototype.set_position = function (x, y) {
+        this.hidden_input.setAttribute('style', 'left: ' + String(x) + 'px; top: ' + String(y) + 'px;');
     };
     /**
      * Focus the hidden text area.
@@ -4266,10 +4279,11 @@ var highlighter = require('./highlighters/prism');
  * @param {Cursors} cursors_model instance
  * @param {Style} style - describes rendering style
  * @param {function} has_focus - function that checks if the text area has focus
+ * @param {function} move_focal_point - function that moves the focal point
  */
 var DocumentView = (function (_super) {
     __extends(DocumentView, _super);
-    function DocumentView(canvas, model, cursors_model, style, has_focus) {
+    function DocumentView(canvas, model, cursors_model, style, has_focus, move_focal_point) {
         this._model = model;
         // Create child renderers.
         var row_renderer = new highlighted_row.HighlightedRowRenderer(model, canvas, style);
@@ -4298,6 +4312,7 @@ var DocumentView = (function (_super) {
             else if (left - row_renderer.margin_left < canvas.scroll_left) {
                 canvas.scroll_left = Math.max(0, left - row_renderer.margin_left);
             }
+            move_focal_point(left - canvas.scroll_left, top - canvas.scroll_top - canvas.height);
         });
         var cursors_renderer = new cursors.CursorsRenderer(cursors_model, style, row_renderer, has_focus);
         var selections_renderer = new selections.SelectionsRenderer(cursors_model, style, row_renderer, has_focus, cursors_renderer);
@@ -4951,7 +4966,7 @@ var Poster = (function (_super) {
         this.controller = new document_controller.DocumentController(this.canvas.el, this.model);
         this.view = new document_view.DocumentView(this.canvas, this.model, this.controller.cursors, this._style, function () {
             return _this.controller.clipboard.hidden_input === document.activeElement || _this.canvas.focused;
-        });
+        }, function (x, y) { return _this.controller.clipboard.set_position(x, y); });
         // Load plugins.
         this.plugins = new pluginmanager.PluginManager(this);
         this.plugins.load('gutter');
@@ -5025,7 +5040,7 @@ window.poster = {
 // Expose prism so the user can load custom language files.
 window.Prism = prism;
 
-}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/fake_787abcdc.js","/")
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/fake_9e9c038b.js","/")
 },{"./config":9,"./document_controller":12,"./document_model":13,"./document_view":14,"./plugins/manager":26,"./plugins/plugin":27,"./renderers/renderer":32,"./scrolling_canvas":35,"./style":36,"./utils":40,"buffer":1,"oMfpAn":4,"prismjs":5}],19:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
