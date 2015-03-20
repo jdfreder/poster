@@ -24,6 +24,12 @@ export class Clipboard extends utils.PosterClass {
         // Create a textbox that's hidden.
         this.hidden_input = document.createElement('textarea');
         this.hidden_input.setAttribute('class', 'poster hidden-clipboard');
+        this.hidden_input.setAttribute('x-palm-disable-auto-cap', true);
+        this.hidden_input.setAttribute('wrap', 'off');
+        this.hidden_input.setAttribute('autocorrect', 'off');
+        this.hidden_input.setAttribute('autocapitalize', 'off');
+        this.hidden_input.setAttribute('spellcheck', false);
+
         el.appendChild(this.hidden_input);
 
         this._bind_events();
@@ -37,6 +43,15 @@ export class Clipboard extends utils.PosterClass {
         this._clippable = text;
         this.hidden_input.value = this._clippable;
         this._focus();
+    }
+
+    /**
+     * Move the textarea to a point.
+     * @param {number} x
+     * @param {number} y
+     */
+    set_position(x, y) {
+        this.hidden_input.setAttribute('style', 'left: ' + String(x) + 'px; top: ' + String(y) + 'px;');
     }
 
     /**
