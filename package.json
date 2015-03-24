@@ -1,0 +1,22 @@
+{
+    "name": "posterjs",
+    "description": "HTML5 Canvas powered code editor.",
+    "version": "0.1.1",
+    "devDependencies": {
+        "typescript": "~1.4",
+        "gulp": "~3.8",
+        "gulp-less": "^3.0",
+        "gulp-typescript": "~2.5",
+        "gulp-browserify": "~0.5",
+        "merge2": "~0.3",
+        "prismjs": "git+https://github.com/PrismJS/prism.git#gh-pages"
+    },
+    "repository": { 
+        "type": "git",
+        "url": "https://github.com/jdfreder/poster.git"
+    },
+    "scripts": {
+        "prepublish": "gulp"
+    },
+    "main": "build/poster.js"
+}
