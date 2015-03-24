@@ -45,7 +45,7 @@ gulp.task('javascript', ['typescript'], function() {
         .pipe(browserify({
             insertGlobals : true,
         }))
-        .pipe(gulp.dest('./build'))
+        .pipe(gulp.dest('./build'));
 });
 
 /*
