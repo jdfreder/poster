@@ -1,5 +1,5 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-///<reference path="../../components/prism.d.ts"/>
+///<reference path="../../interfaces/prism.d.ts"/>
 import utils = require('../utils');
 import superset = require('../superset');
 import highlighter = require('./highlighter');
