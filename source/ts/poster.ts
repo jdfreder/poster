@@ -1,15 +1,15 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-import scrolling_canvas = require('./scrolling_canvas');
-import canvas = require('./canvas');
+import scrolling_canvas = require('./draw/scrolling_canvas');
+import canvas = require('./draw/canvas');
 import document_controller = require('./document_controller');
 import document_model = require('./document_model');
 import document_view = require('./document_view');
 import pluginmanager = require('./plugins/manager');
 import plugin = require('./plugins/plugin');
-import renderer = require('./renderers/renderer');
-import style = require('./style');
-import utils = require('./utils');
-import config_mod = require('./config');
+import renderer = require('./draw/renderers/renderer');
+import style = require('./styles/style');
+import utils = require('./utils/utils');
+import config_mod = require('./utils/config');
 import prism = require('prismjs');
 var config = config_mod.config;
 

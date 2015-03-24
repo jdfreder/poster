@@ -1,6 +1,6 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
-import utils = require('../utils');
+import utils = require('../utils/utils');
 
 /**
  * Listens to a model and higlights the text accordingly.

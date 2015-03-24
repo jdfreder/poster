@@ -1,6 +1,6 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-import renderer = require('../../renderers/renderer');
-import utils = require('../../utils');
+import renderer = require('../../draw/renderers/renderer');
+import utils = require('../../utils/utils');
 
 /**
  * Renderers the gutter.

@@ -1,12 +1,12 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
-import utils = require('./utils');
-import normalizer = require('./events/normalizer');
-import keymap = require('./events/map');
-import default_keymap = require('./events/default');
-import cursors = require('./cursors');
-import clipboard = require('./clipboard');
-import history = require('./history');
+import utils = require('./utils/utils');
+import normalizer = require('./control/normalizer');
+import keymap = require('./control/map');
+import default_keymap = require('./control/default');
+import cursors = require('./control/cursors');
+import clipboard = require('./control/clipboard');
+import history = require('./control/history');
 
 /**
  * Controller for a DocumentModel.

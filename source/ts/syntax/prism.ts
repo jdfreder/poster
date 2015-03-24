@@ -1,7 +1,7 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-///<reference path="../../interfaces/prism.d.ts"/>
-import utils = require('../utils');
-import superset = require('../superset');
+///<reference path="./prism.d.ts"/>
+import utils = require('../utils/utils');
+import superset = require('../utils/superset');
 import highlighter = require('./highlighter');
 import prism = require('prismjs');
 

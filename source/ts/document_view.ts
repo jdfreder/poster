@@ -1,14 +1,14 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
-import utils = require('./utils');
+import utils = require('./utils/utils');
 
 // Renderers
-import batch = require('./renderers/batch');
-import highlighted_row = require('./renderers/highlighted_row');
-import cursors = require('./renderers/cursors');
-import selections = require('./renderers/selections');
-import color = require('./renderers/color');
-import highlighter = require('./highlighters/prism');
+import batch = require('./draw/renderers/batch');
+import highlighted_row = require('./draw/renderers/highlighted_row');
+import cursors = require('./draw/renderers/cursors');
+import selections = require('./draw/renderers/selections');
+import color = require('./draw/renderers/color');
+import highlighter = require('./syntax/prism');
 
 /**
  * Visual representation of a DocumentModel instance

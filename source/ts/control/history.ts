@@ -1,7 +1,7 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
-import utils = require('./utils');
-import keymap = require('./events/map');
+import utils = require('../utils/utils');
+import keymap = require('./map');
 
 /**
  * Reversible action history.

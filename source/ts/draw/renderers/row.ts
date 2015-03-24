@@ -1,7 +1,7 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
 import canvas = require('../canvas');
-import utils = require('../utils');
+import utils = require('../../utils/utils');
 import renderer = require('./renderer');
 
 /**

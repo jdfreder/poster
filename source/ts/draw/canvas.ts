@@ -1,6 +1,6 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-import utils = require('./utils');
-import config_mod = require('./config');
+import utils = require('../utils/utils');
+import config_mod = require('../utils/config');
 var config = config_mod.config;
 
 /**

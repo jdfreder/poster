@@ -1,6 +1,6 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
-import utils = require('../utils');
+import utils = require('../utils/utils');
 import pluginbase = require('./plugin');
 import gutter = require('./gutter/gutter');
 import linenumbers = require('./linenumbers/linenumbers');

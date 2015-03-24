@@ -1,7 +1,7 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-import renderer = require('../../renderers/renderer');
-import utils = require('../../utils');
-import canvas = require('../../canvas');
+import renderer = require('../../draw/renderers/renderer');
+import utils = require('../../utils/utils');
+import canvas = require('../../draw/canvas');
 
 /**
  * Renderers the line numbers.

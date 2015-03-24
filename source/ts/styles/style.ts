@@ -1,7 +1,7 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
-import utils = require('./utils');
-import styles = require('./styles/init');
+import utils = require('../utils/utils');
+import styles = require('./init');
 
 /**
  * Style
