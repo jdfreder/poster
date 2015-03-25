@@ -12,23 +12,23 @@ import utils = require('../utils/utils');
  * operation.  Events `copy`, `cut`, and `paste` are raised by this class.
  */
 export class Clipboard extends utils.PosterClass {
-    public hidden_input;
+    public hidden_input: HTMLTextAreaElement;
 
-    private _el;
-    private _clippable;
+    private _el: HTMLElement;
+    private _clippable: string;
 
-    constructor(el) {
+    constructor(el: HTMLElement) {
         super();
         this._el = el;
 
         // Create a textbox that's hidden.
         this.hidden_input = document.createElement('textarea');
         this.hidden_input.setAttribute('class', 'poster hidden-clipboard');
-        this.hidden_input.setAttribute('x-palm-disable-auto-cap', true);
+        this.hidden_input.setAttribute('x-palm-disable-auto-cap', 'true');
         this.hidden_input.setAttribute('wrap', 'off');
         this.hidden_input.setAttribute('autocorrect', 'off');
         this.hidden_input.setAttribute('autocapitalize', 'off');
-        this.hidden_input.setAttribute('spellcheck', false);
+        this.hidden_input.setAttribute('spellcheck', 'false');
 
         el.appendChild(this.hidden_input);
 
@@ -37,9 +37,9 @@ export class Clipboard extends utils.PosterClass {
 
     /**
      * Set what will be copied when the user copies.
-     * @param {string} text
+     * @param text
      */
-    set_clippable(text) {
+    set_clippable(text: string): void {
         this._clippable = text;
         this.hidden_input.value = this._clippable;
         this._focus();
@@ -47,37 +47,34 @@ export class Clipboard extends utils.PosterClass {
 
     /**
      * Move the textarea to a point.
-     * @param {number} x
-     * @param {number} y
+     * @param x
+     * @param y
      */
-    set_position(x, y) {
+    set_position(x: number, y: number): void {
         this.hidden_input.setAttribute('style', 'left: ' + String(x) + 'px; top: ' + String(y) + 'px;');
     }
 
     /**
      * Focus the hidden text area.
-     * @return {null}
      */
-    _focus() {
+    _focus(): void {
         this.hidden_input.focus();
         this.hidden_input.select();
     }
 
     /**
      * Handle when the user pastes into the textbox.
-     * @return {null}
      */
-    _handle_paste(e) {
-        var pasted = e.clipboardData.getData(e.clipboardData.types[0]);
+    _handle_paste(e): void {
+        var pasted: string = e.clipboardData.getData(e.clipboardData.types[0]);
         utils.cancel_bubble(e);
         this.trigger('paste', pasted);
     }
 
     /**
      * Bind events of the hidden textbox.
-     * @return {null}
      */
-    _bind_events() {
+    _bind_events(): void {
 
         // Listen to el's focus event.  If el is focused, focus the hidden input
         // instead.

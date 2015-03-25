@@ -3,10 +3,24 @@
 import utils = require('../utils/utils');
 import keymap = require('./map');
 
+export interface IHistoryPush { 
+    (
+        forward_name: string, 
+        forward_params: [any], 
+        backward_name: string,
+        backward_params: [any],
+        autogroup_delay?: number
+    ): void; 
+}
+
+export interface IHistory {
+    push_action: IHistoryPush;
+}
+
 /**
  * Reversible action history.
  */
-export class History extends utils.PosterClass {
+export class History extends utils.PosterClass implements IHistory {
     private _map;
     private _actions;
     private _action_groups;
@@ -29,14 +43,14 @@ export class History extends utils.PosterClass {
 
     /**
      * Push a reversible action to the history.
-     * @param  {string} forward_name - name of the forward action
-     * @param  {array} forward_params - parameters to use when invoking the forward action
-     * @param  {string} backward_name - name of the backward action
-     * @param  {array} backward_params - parameters to use when invoking the backward action
-     * @param  {float} [autogroup_delay] - time to wait to automatically group the actions.
-     *                                     If this is undefined, autogrouping will not occur.
+     * @param forward_name - name of the forward action
+     * @param forward_params - parameters to use when invoking the forward action
+     * @param backward_name - name of the backward action
+     * @param backward_params - parameters to use when invoking the backward action
+     * @param [autogroup_delay] - time to wait to automatically group the actions.
+     *                            If this is undefined, autogrouping will not occur.
      */
-    push_action(forward_name, forward_params, backward_name, backward_params, autogroup_delay) {
+    push_action(forward_name: string, forward_params: [any], backward_name: string, backward_params: [any], autogroup_delay?: number): void {
         if (this._action_lock) return;
 
         this._actions.push({

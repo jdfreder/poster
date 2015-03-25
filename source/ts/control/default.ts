@@ -1,5 +1,6 @@
 // OSX bindings
-var _map;
+import generics = require("../utils/generics");
+var _map: generics.IDictionary<string>;
 if (navigator.appVersion.indexOf("Mac") != -1) {
     _map = {
         'alt-leftarrow' : 'cursor.word_left',

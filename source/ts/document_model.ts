@@ -7,7 +7,8 @@ import superset = require('./utils/superset');
  * Model containing all of the document's data (text).
  */
 export class DocumentModel extends utils.PosterClass {
-    private _rows;
+    public _rows; // TODO: Rename without prefix underscore.
+
     private _row_tags;
     private _tag_lock;
     private _pending_tag_events;

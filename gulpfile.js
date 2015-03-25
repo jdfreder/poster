@@ -14,7 +14,7 @@ gulp.task('default', ['javascript', 'less']);
  * Watch for changes.
  */
 gulp.task('watch', function() {
-    gulp.watch('source/js/**/*.ts', ['javascript']);
+    gulp.watch('source/ts/**/*.ts', ['javascript']);
     gulp.watch('source/less/*.less', ['less']);
 });
 
@@ -22,7 +22,7 @@ gulp.task('watch', function() {
  * Transpile typescript to javascript.
  */
 gulp.task('typescript', [], function() {
-    var tsResult = gulp.src('./source/js/**/*.ts')
+    var tsResult = gulp.src('./source/ts/**/*.ts')
        .pipe(ts({
             declarationFiles: true,
             noExternalResolve: false,
