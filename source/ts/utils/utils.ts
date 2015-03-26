@@ -1,5 +1,9 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
+export interface IHook {
+    unhook: () => void;
+}
+
 /**
  * Base class with helpful utilities
  * @param {array} [eventful_properties] list of property names (strings)
@@ -69,7 +73,7 @@ export class PosterClass {
      * @param  {callback} (optional) handler
      * @return {null}
      */
-    off(event, handler) {
+    off(event, handler?) {
         event = event.trim().toLowerCase();
         
         // If a handler is specified, remove all the callbacks
@@ -263,9 +267,9 @@ export var shallow_copy = function(x) {
  * @param  {object} obj - object to hook
  * @param  {string} method - name of the function to hook
  * @param  {function} hook - function to call before the original
- * @return {object} hook reference, object with an `unhook` method
+ * @return hook reference, object with an `unhook` method
  */
-export var hook = function(obj, method, hook) {
+export var hook = function(obj, method, hook): IHook {
 
     // If the original has already been hooked, add this hook to the list 
     // of hooks.
@@ -389,4 +393,19 @@ export var merge = function(objects) {
         }
     }
     return result;
+};
+
+/**
+ * Convert arguments object to an array of arguments.
+ * @param  {IArguments} arguments_obj - `arguments`
+ */
+export var args = function(arguments_obj: IArguments): any[] {
+    return <any[]>Array.prototype.slice.call(arguments_obj);
+};
+
+/**
+ * Generic callback interface.
+ */
+export interface ICallback{
+    (...params: any[]): any;
 };

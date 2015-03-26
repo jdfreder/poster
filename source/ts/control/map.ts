@@ -1,23 +1,82 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 import utils = require('../utils/utils');
+import generics = require('../utils/generics');
+import normalizer = require('./normalizer');
+
+export interface IRegistryTag {
+    name: string;
+    f: utils.ICallback;
+}
+
 /**
  * Event normalizer
  *
  * Listens to DOM events and emits 'cleaned' versions of those events.
  */
 export class Map extends utils.PosterClass {
-    static registry;
-    static register;
-    static unregister;
-    static unregister_by_tag;
-    static map;
-    static _registry_tags;
+    public static registry: generics.IDictionary<utils.ICallback[]> = {};
+    
+    private static _registry_tags: generics.IDictionary<IRegistryTag[]> = {};
 
-    private _map;
-    private _normalizer;
-    private _proxy_handle_event;
+    private _map: generics.IDictionary<string[]>;
+    private _normalizer: normalizer.Normalizer;
+    private _proxy_handle_event: utils.ICallback;
 
-    constructor(normalizer) {
+    /**
+     * Registers an action.
+     * @param name - name of the action
+     * @param f
+     * @param (optional) tag - allows you to specify a tag
+     *                  which can be used with the `unregister_by_tag`
+     *                  method to quickly unregister actions with
+     *                  the tag specified.
+     */
+    public static register = function(name: string, f: utils.ICallback, tag?: any): void {
+        if (utils.is_array(Map.registry[name])) {
+            Map.registry[name].push(f);
+        } else {
+            Map.registry[name] = [f];
+        }
+
+        if (tag) {
+            if (Map._registry_tags[tag] === undefined) {
+                Map._registry_tags[tag] = [];
+            }
+            Map._registry_tags[tag].push({name: name, f: f});
+        }
+    }
+
+    /**
+     * Unregister an action.
+     * @param name - name of the action
+     * @param f
+     * @return true if action was found and unregistered
+     */
+    public static unregister = function(name: string, f: utils.ICallback): boolean {
+        var index: number = Map.registry[name].indexOf(f);
+        if (index != -1) {
+            Map.registry[name].splice(index, 1);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Unregisters all of the actions registered with a given tag.
+     * @param tag - specified in Map.register.
+     * @return true if the tag was found and deleted.
+     */
+    public static unregister_by_tag = function(tag: any): boolean {
+        if (Map._registry_tags[tag]) {
+            Map._registry_tags[tag].forEach(registration => {
+                Map.unregister(registration.name, registration.f);
+            });
+            delete Map._registry_tags[tag];
+            return true;
+        }
+    }
+
+    public constructor(normalizer) {
         super();
         this._map = {};
 
@@ -29,10 +88,10 @@ export class Map extends utils.PosterClass {
         if (normalizer) this.normalizer = normalizer;
     }
 
-    get normalizer() {
+    public get normalizer(): normalizer.Normalizer {
         return this._normalizer;
     }
-    set normalizer(value) {
+    public set normalizer(value: normalizer.Normalizer) {
         // Remove event handler.
         if (this._normalizer) this._normalizer.off_all(this._proxy_handle_event);
         // Set, and add event handler.
@@ -42,12 +101,6 @@ export class Map extends utils.PosterClass {
 
     /**
      * Append event actions to the map.
-     *
-     * This method has two signatures.  If a single argument
-     * is passed to it, that argument is treated like a
-     * dictionary.  If more than one argument is passed to it,
-     * each argument is treated as alternating key, value
-     * pairs of a dictionary.
      *
      * The map allows you to register actions for keys.
      * Example:
@@ -81,11 +134,9 @@ export class Map extends utils.PosterClass {
      *     map.map({
      *         'alt-v': ['action_a', 'action_b'],
      *     });
-     * 
-     * @return {null}
      */
-    map() {
-        var parsed = this._parse_map_arguments(arguments);
+    public map(keyactions: generics.IDictionary<string|string[]>): void {
+        var parsed: generics.IDictionary<string[]> = this._parse_map_arguments(keyactions);
         Object.keys(parsed).forEach(key => {
             if (this._map[key] === undefined) {
                 this._map[key] = parsed[key];
@@ -100,10 +151,9 @@ export class Map extends utils.PosterClass {
      *
      * See the doc for `map` for a detailed description of
      * possible input values.
-     * @return {null}
      */
-    prepend_map() {
-        var parsed = this._parse_map_arguments(arguments);
+    public prepend_map(keyactions: generics.IDictionary<string|string[]>): void {
+        var parsed: generics.IDictionary<string[]> = this._parse_map_arguments(keyactions);
         Object.keys(parsed).forEach(key => {
             if (this._map[key] === undefined) {
                 this._map[key] = parsed[key];
@@ -118,14 +168,13 @@ export class Map extends utils.PosterClass {
      *
      * See the doc for `map` for a detailed description of
      * possible input values.
-     * @return {null}
      */
-    unmap() {
-        var parsed = this._parse_map_arguments(arguments);
+    public unmap(keyactions: generics.IDictionary<string|string[]>): void {
+        var parsed: generics.IDictionary<string[]> = this._parse_map_arguments(keyactions);
         Object.keys(parsed).forEach(key => {
             if (this._map[key] !== undefined) {
-                parsed[key].forEach(function(value) {
-                    var index = this._map[key].indexOf(value);
+                parsed[key].forEach(value => {
+                    var index: number = this._map[key].indexOf(value);
                     if (index != -1) {
                         this._map[key].splice(index, 1);
                     }
@@ -136,36 +185,29 @@ export class Map extends utils.PosterClass {
 
     /**
      * Get a modifiable array of the actions for a particular event.
-     * @param  {string} event
-     * @return {array} by ref copy of the actions registered to an event.
+     * @return by ref copy of the actions registered to an event.
      */
-    get_mapping(event) {
+    public get_mapping(event: string): string[] {
         return this._map[this._normalize_event_name(event)];
     }
 
     /**
      * Invokes the callbacks of an action by name.
-     * @param  {string} name
-     * @param  {array} [args] - arguments to pass to the action callback[s]
-     * @return {boolean} true if one or more of the actions returned true
+     * @param name
+     * @param [args] - arguments to pass to the action callback[s]
+     * @return true if one or more of the actions returned true
      */
-    invoke(name, args) {
-        var action_callbacks = Map.registry[name];
+    public invoke(name: string, args: any[]): boolean {
+        var action_callbacks: utils.ICallback[] = Map.registry[name];
         if (action_callbacks) {
-            if (utils.is_array(action_callbacks)) {
-                var returns = [];
-                action_callbacks.forEach(function(action_callback) {
-                    returns.push(action_callback.apply(undefined, args)===true);
-                });
+            var returns = [];
+            action_callbacks.forEach(action_callback => {
+                returns.push(action_callback.apply(undefined, args)===true);
+            });
 
-                // If one of the action callbacks returned true, cancel bubbling.
-                if (returns.some(function(x) {return x;})) {
-                    return true;
-                }
-            } else {
-                if (action_callbacks.apply(undefined, args)===true) {
-                    return true;
-                }
+            // If one of the action callbacks returned true, cancel bubbling.
+            if (returns.some(function(x) {return x;})) {
+                return true;
             }
         }
         return false;
@@ -173,145 +215,53 @@ export class Map extends utils.PosterClass {
 
     /**
      * Parse the arguments to a map function.
-     * @param  {arguments array} args
-     * @return {dictionary} parsed results
      */
-    _parse_map_arguments(args) {
-        var parsed = {};
+    private _parse_map_arguments(keyactions: generics.IDictionary<string|string[]>): generics.IDictionary<string[]> {
+        var parsed: generics.IDictionary<string[]> = {};
+        Object.keys(keyactions).forEach(key => {
+            var normalized_key: string = this._normalize_event_name(key);
 
-        // One arument, treat it as a dictionary of event names and
-        // actions.
-        if (args.length == 1) {
-            Object.keys(args[0]).forEach(key => {
-                var value = args[0][key];
-                var normalized_key = this._normalize_event_name(key);
-
-                // If the value is not an array, wrap it in one.
-                if (!utils.is_array(value)) {
-                    value = [value];
-                }
-
-                // If the key is already defined, concat the values to
-                // it.  Otherwise, set it.
-                if (parsed[normalized_key] === undefined) {
-                    parsed[normalized_key] = value;
-                } else {
-                    parsed[normalized_key] = parsed[normalized_key].concat(value);
-                }
-            });
-
-        // More than one argument.  Treat as the format:
-        // event_name1, action1, event_name2, action2, ..., event_nameN, actionN
-        } else {
-            for (var i=0; i<Math.floor(args.length/2); i++) {
-                var key = this._normalize_event_name(args[2*i]);
-                var value = args[2*i + 1];
-                if (parsed[key]===undefined) {
-                    parsed[key] = [value];
-                } else {
-                    parsed[key].push(value);
-                }
+            // If the value is not an array, wrap it in one.
+            var value: string[];
+            if (!utils.is_array(keyactions[key])) {
+                value = [<string>keyactions[key]];
+            } else {
+                value = <string[]>keyactions[key];
             }
-        }
+
+            // If the key is already defined, concat the values to
+            // it.  Otherwise, set it.
+            if (parsed[normalized_key] === undefined) {
+                parsed[normalized_key] = value;
+            } else {
+                parsed[normalized_key] = parsed[normalized_key].concat(value);
+            }
+        });
         return parsed;
     }
 
     /**
      * Handles a normalized event.
-     * @param  {string} name - name of the event
-     * @param  {Event} e - browser Event object
-     * @return {null}
+     * @param name - name of the event
+     * @param e - browser Event object
      */
-    _handle_event(name, e) {
-        var normalized_event = this._normalize_event_name(name);
-        var actions = this._map[normalized_event];
-        if (actions) {
-            actions.forEach(action => {
-                if (this.invoke(action, [e])) {
+    private _handle_event(name: string, e: Event): void {
+        var normalized_event: string = this._normalize_event_name(name);
+        var action_names: string[] = this._map[normalized_event];
+        if (action_names) {
+            action_names.forEach(action_name => {
+                if (this.invoke(action_name, [e])) {
                     utils.cancel_bubble(e);
                 }
             });
         }
-        return false;
     }
 
     /**
      * Alphabetically sorts keys in event name, so
-     * @param  {string} name - event name
-     * @return {string} normalized event name
+     * @return normalized event name
      */
-    _normalize_event_name(name) {
+    private _normalize_event_name(name: string): string {
         return name.toLowerCase().trim().split('-').sort().join('-');
-    }
-}
-
-/**
- * Map of API methods by name.
- * @type {dictionary}
- */
-Map.registry = {};
-Map._registry_tags = {};
-
-/**
- * Registers an action.
- * @param  {string} name - name of the action
- * @param  {function} f
- * @param  {Object} (optional) tag - allows you to specify a tag
- *                  which can be used with the `unregister_by_tag`
- *                  method to quickly unregister actions with
- *                  the tag specified.
- * @return {null}
- */
-Map.register = function(name, f, tag) {
-    if (utils.is_array(Map.registry[name])) {
-        Map.registry[name].push(f);
-    } else {
-        if (Map.registry[name]===undefined) {
-            Map.registry[name] = f;
-        } else {
-            Map.registry[name] = [Map.registry[name], f];
-        }
-    }
-
-    if (tag) {
-        if (Map._registry_tags[tag] === undefined) {
-            Map._registry_tags[tag] = [];
-        }
-        Map._registry_tags[tag].push({name: name, f: f});
-    }
-}
-
-/**
- * Unregister an action.
- * @param  {string} name - name of the action
- * @param  {function} f
- * @return {boolean} true if action was found and unregistered
- */
-Map.unregister = function(name, f) {
-    if (utils.is_array(Map.registry[name])) {
-        var index = Map.registry[name].indexOf(f);
-        if (index != -1) {
-            Map.registry[name].splice(index, 1);
-            return true;
-        }
-    } else if (Map.registry[name] == f) {
-        delete Map.registry[name];
-        return true;
-    }
-    return false;
-}
-
-/**
- * Unregisters all of the actions registered with a given tag.
- * @param  {Object} tag - specified in Map.register.
- * @return {boolean} true if the tag was found and deleted.
- */
-Map.unregister_by_tag = function(tag) {
-    if (Map._registry_tags[tag]) {
-        Map._registry_tags[tag].forEach(registration => {
-            Map.unregister(registration.name, registration.f);
-        });
-        delete Map._registry_tags[tag];
-        return true;
     }
 }

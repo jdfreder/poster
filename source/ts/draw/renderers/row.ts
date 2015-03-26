@@ -4,11 +4,24 @@ import canvas = require('../canvas');
 import utils = require('../../utils/utils');
 import renderer = require('./renderer');
 
+export interface ICharacterCoords {
+    row_index: number;
+    char_index: number;
+}
+
+export interface IGetRowChar {
+    (cursor_x: number, cursor_y: number): ICharacterCoords;
+}
+
+export interface IRowRenderer {
+    get_row_char: IGetRowChar;
+}
+
 /**
  * Render the text rows of a DocumentModel.
  * @param {DocumentModel} model instance
  */
-export class RowRenderer extends renderer.RendererBase {
+export class RowRenderer extends renderer.RendererBase implements IRowRenderer {
     protected _model;
     protected _text_canvas;
     protected _base_options;

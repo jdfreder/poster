@@ -4,27 +4,30 @@ var register = keymap.Map.register;
 
 import cursor = require('./cursor');
 import utils = require('../utils/utils');
+import document_model = require('../document_model');
+import row_renderer = require('../draw/renderers/row'); // interfaces only
+import clipboard = require('./clipboard');
+import history = require('./history'); // interfaces only
+
 /**
  * Manages one or more cursors
  */
 export class Cursors extends utils.PosterClass {
-    public get_row_char;
-    public cursors;
+    public get_row_char: row_renderer.IGetRowChar;
+    public cursors: cursor.Cursor[];
 
-    private _model;
-    private _selecting_text;
-    private _clipboard;
-    private _active_cursor;
-    private _history;
+    private _model: document_model.DocumentModel;
+    private _selecting_text: boolean;
+    private _clipboard: clipboard.Clipboard;
+    private _history: history.IHistory;
     
-    constructor(model, clipboard, history) {
+    public constructor(model: document_model.DocumentModel, clipboard: clipboard.Clipboard, history: history.IHistory) {
         super();
         this._model = model;
         this.get_row_char = undefined;
         this.cursors = [];
         this._selecting_text = false;
         this._clipboard = clipboard;
-        this._active_cursor = null;
         this._history = history;
 
         // Create initial cursor.
@@ -48,32 +51,18 @@ export class Cursors extends utils.PosterClass {
     }
 
     /**
-     * Handles history proxy events for individual cursors.
-     * @param  {integer} cursor_index
-     * @param  {string} function_name
-     * @param  {array} function_params
-     */
-    _cursor_proxy(cursor_index, function_name, function_params) {
-        if (cursor_index < this.cursors.length) {
-            var cursor = this.cursors[cursor_index];
-            cursor[function_name].apply(cursor, function_params);
-        }
-    }
-
-    /**
      * Creates a cursor and manages it.
-     * @param {object} [state] state to apply to the new cursor.
-     * @param {boolean} [reversable] - defaults to true, is action reversable.
-     * @return {Cursor} cursor
+     * @param [state] state to apply to the new cursor.
+     * @param [reversable] - defaults to true, is action reversable.
      */
-    create(state, reversable) {
+    public create(state?: cursor.ICursorState, reversable?: boolean): cursor.Cursor {
         // Record this action in history.
         if (reversable === undefined || reversable === true) {
-            this._history.push_action('cursors.create', arguments, 'cursors.pop', []);
+            this._history.push_action('cursors.create', utils.args(arguments), 'cursors.pop', []);
         }
 
         // Create a proxying history method for the cursor itself.
-        var index = this.cursors.length;
+        var index: number = this.cursors.length;
         var history_proxy = (forward_name, forward_params, backward_name, backward_params, autogroup_delay) => {
             this._history.push_action(
                 'cursors._cursor_proxy', [index, forward_name, forward_params],
@@ -86,7 +75,7 @@ export class Cursors extends utils.PosterClass {
         this.cursors.push(new_cursor);
 
         // Set the initial properties of the cursor.
-        new_cursor.set_state(state, false);
+        if (state) new_cursor.set_state(state, false);
 
         // Listen for cursor change events.
         new_cursor.on('change', () => {
@@ -101,7 +90,7 @@ export class Cursors extends utils.PosterClass {
     /**
      * Remove every cursor except for the first one.
      */
-    single() {
+    public single(): void {
         while (this.cursors.length > 1) {
             this.pop();
         }
@@ -109,13 +98,13 @@ export class Cursors extends utils.PosterClass {
 
     /**
      * Remove the last cursor.
-     * @returns {Cursor} last cursor or null
+     * @returns last cursor or null
      */
-    pop() {
+    public pop(): cursor.Cursor {
         if (this.cursors.length > 1) {
 
             // Remove the last cursor and unregister it.
-            var cursor = this.cursors.pop();
+            var cursor: cursor.Cursor = this.cursors.pop();
             cursor.unregister();
             cursor.off('change');
 
@@ -130,35 +119,103 @@ export class Cursors extends utils.PosterClass {
     }
 
     /**
-     * Handles when the selected text is copied to the clipboard.
-     * @param  {string} text - by val text that was cut
-     * @return {null}
+     * Starts selecting text from mouse coordinates.
+     * @param e - mouse event containing the coordinates.
      */
-    _handle_copy(text) {
+    public start_selection(e: MouseEvent): void {
+        var x: number = e.offsetX;
+        var y: number = e.offsetY;
+
+        this._selecting_text = true;
+        if (this.get_row_char) {
+            var location: row_renderer.ICharacterCoords = this.get_row_char(x, y);
+            this.cursors[0].set_both(location.row_index, location.char_index);
+        }
+    }
+
+    /**
+     * Finalizes the selection of text.
+     */
+    public end_selection(): void {
+        this._selecting_text = false;
+    }
+
+    /**
+     * Sets the endpoint of text selection from mouse coordinates.
+     * @param  e - mouse event containing the coordinates.
+     */
+    public set_selection(e: MouseEvent): void {
+        var x: number = e.offsetX;
+        var y: number = e.offsetY;
+        if (this._selecting_text && this.get_row_char) {
+            var location: row_renderer.ICharacterCoords = this.get_row_char(x, y);
+            this.cursors[this.cursors.length-1].set_primary(location.row_index, location.char_index);
+        }
+    }
+
+    /**
+     * Sets the endpoint of text selection from mouse coordinates.
+     * Different than set_selection because it doesn't need a call
+     * to start_selection to work.
+     * @param e - mouse event containing the coordinates.
+     */
+    public start_set_selection(e: MouseEvent): void {
+        this._selecting_text = true;
+        this.set_selection(e);
+    }
+
+    /**
+     * Selects a word at the given mouse coordinates.
+     * @param e - mouse event containing the coordinates.
+     */
+    public select_word(e: MouseEvent): void {
+        var x: number = e.offsetX;
+        var y: number = e.offsetY;
+        if (this.get_row_char) {
+            var location: row_renderer.ICharacterCoords = this.get_row_char(x, y);
+            this.cursors[this.cursors.length-1].select_word(location.row_index, location.char_index);
+        }
+    }
+
+    /**
+     * Handles history proxy events for individual cursors.
+     * @param cursor_index
+     * @param function_name
+     * @param function_params
+     */
+    private _cursor_proxy(cursor_index: number, function_name: string, function_params: any[]): void {
+        if (cursor_index < this.cursors.length) {
+            var cursor = this.cursors[cursor_index];
+            cursor[function_name].apply(cursor, function_params);
+        }
+    }
+
+    /**
+     * Handles when the selected text is copied to the clipboard.
+     * @param text - by val text that was cut
+     */
+    private _handle_copy(text: string): void {
         this.cursors.forEach(cursor =>cursor.copy());
     }
 
     /**
      * Handles when the selected text is cut to the clipboard.
-     * @param  {string} text - by val text that was cut
-     * @return {null}
+     * @param text - by val text that was cut
      */
-    _handle_cut(text) {
+    private _handle_cut(text: string): void {
         this.cursors.forEach(cursor =>cursor.cut());
     }
 
     /**
      * Handles when text is pasted into the document.
-     * @param  {string} text
-     * @return {null}
      */
-    _handle_paste(text) {
+    private _handle_paste(text: string): void {
 
         // If the modulus of the number of cursors and the number of pasted lines
         // of text is zero, split the cut lines among the cursors.
-        var lines = text.split('\n');
+        var lines: string[] = text.split('\n');
         if (this.cursors.length > 1 && lines.length > 1 && lines.length % this.cursors.length === 0) {
-            var lines_per_cursor = lines.length / this.cursors.length;
+            var lines_per_cursor: number = lines.length / this.cursors.length;
             this.cursors.forEach((cursor, index) => {
                 cursor.insert_text(lines.slice(
                     index * lines_per_cursor, 
@@ -171,9 +228,8 @@ export class Cursors extends utils.PosterClass {
 
     /**
      * Update the clippable text based on new selection.
-     * @return {null}
      */
-    _update_selection() {
+    private _update_selection(): void {
         
         // Copy all of the selected text.
         var selections = [];
@@ -181,69 +237,5 @@ export class Cursors extends utils.PosterClass {
 
         // Make the copied text clippable.
         this._clipboard.set_clippable(selections.join('\n'));
-    }
-
-    /**
-     * Starts selecting text from mouse coordinates.
-     * @param  {MouseEvent} e - mouse event containing the coordinates.
-     * @return {null}
-     */
-    start_selection(e) {
-        var x = e.offsetX;
-        var y = e.offsetY;
-
-        this._selecting_text = true;
-        if (this.get_row_char) {
-            var location = this.get_row_char(x, y);
-            this.cursors[0].set_both(location.row_index, location.char_index);
-        }
-    }
-
-    /**
-     * Finalizes the selection of text.
-     * @return {null}
-     */
-    end_selection() {
-        this._selecting_text = false;
-    }
-
-    /**
-     * Sets the endpoint of text selection from mouse coordinates.
-     * @param  {MouseEvent} e - mouse event containing the coordinates.
-     * @return {null}
-     */
-    set_selection(e) {
-        var x = e.offsetX;
-        var y = e.offsetY;
-        if (this._selecting_text && this.get_row_char) {
-            var location = this.get_row_char(x, y);
-            this.cursors[this.cursors.length-1].set_primary(location.row_index, location.char_index);
-        }
-    }
-
-    /**
-     * Sets the endpoint of text selection from mouse coordinates.
-     * Different than set_selection because it doesn't need a call
-     * to start_selection to work.
-     * @param  {MouseEvent} e - mouse event containing the coordinates.
-     * @return {null}
-     */
-    start_set_selection(e) {
-        this._selecting_text = true;
-        this.set_selection(e);
-    }
-
-    /**
-     * Selects a word at the given mouse coordinates.
-     * @param  {MouseEvent} e - mouse event containing the coordinates.
-     * @return {null}
-     */
-    select_word(e) {
-        var x = e.offsetX;
-        var y = e.offsetY;
-        if (this.get_row_char) {
-            var location = this.get_row_char(x, y);
-            this.cursors[this.cursors.length-1].select_word(location.row_index, location.char_index);
-        }
     }
 }

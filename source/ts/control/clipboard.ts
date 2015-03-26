@@ -17,7 +17,7 @@ export class Clipboard extends utils.PosterClass {
     private _el: HTMLElement;
     private _clippable: string;
 
-    constructor(el: HTMLElement) {
+    public constructor(el: HTMLElement) {
         super();
         this._el = el;
 
@@ -39,7 +39,7 @@ export class Clipboard extends utils.PosterClass {
      * Set what will be copied when the user copies.
      * @param text
      */
-    set_clippable(text: string): void {
+    public set_clippable(text: string): void {
         this._clippable = text;
         this.hidden_input.value = this._clippable;
         this._focus();
@@ -50,14 +50,14 @@ export class Clipboard extends utils.PosterClass {
      * @param x
      * @param y
      */
-    set_position(x: number, y: number): void {
+    public set_position(x: number, y: number): void {
         this.hidden_input.setAttribute('style', 'left: ' + String(x) + 'px; top: ' + String(y) + 'px;');
     }
 
     /**
      * Focus the hidden text area.
      */
-    _focus(): void {
+    private _focus(): void {
         this.hidden_input.focus();
         this.hidden_input.select();
     }
@@ -65,7 +65,7 @@ export class Clipboard extends utils.PosterClass {
     /**
      * Handle when the user pastes into the textbox.
      */
-    _handle_paste(e): void {
+    private _handle_paste(e): void {
         var pasted: string = e.clipboardData.getData(e.clipboardData.types[0]);
         utils.cancel_bubble(e);
         this.trigger('paste', pasted);
@@ -74,7 +74,7 @@ export class Clipboard extends utils.PosterClass {
     /**
      * Bind events of the hidden textbox.
      */
-    _bind_events(): void {
+    private _bind_events(): void {
 
         // Listen to el's focus event.  If el is focused, focus the hidden input
         // instead.

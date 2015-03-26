@@ -1,5 +1,6 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 import utils = require('../utils/utils');
+import generics = require('../utils/generics');
 
 /**
  * Event normalizer
@@ -7,19 +8,17 @@ import utils = require('../utils/utils');
  * Listens to DOM events and emits 'cleaned' versions of those events.
  */
 export class Normalizer extends utils.PosterClass {
-    private _el_hooks;
+    private _el_hooks: generics.IDictionary<utils.IHook[]>;
 
-    constructor() {
+    public constructor() {
         super();
         this._el_hooks = {};
     }
 
     /**
      * Listen to the events of an element.
-     * @param  {HTMLElement} el
-     * @return {null}
      */
-    listen_to(el) {
+    public listen_to(el: HTMLElement): void {
         var hooks = [];
         hooks.push(utils.hook(el, 'onkeypress', this._proxy('press', this._handle_keypress_event, el)));
         hooks.push(utils.hook(el, 'onkeydown',  this._proxy('down', this._handle_keyboard_event, el)));
@@ -29,52 +28,42 @@ export class Normalizer extends utils.PosterClass {
         hooks.push(utils.hook(el, 'onmousedown',  this._proxy('down', this._handle_mouse_event, el)));
         hooks.push(utils.hook(el, 'onmouseup',  this._proxy('up', this._handle_mouse_event, el)));
         hooks.push(utils.hook(el, 'onmousemove',  this._proxy('move', this._handle_mousemove_event, el)));
-        this._el_hooks[el] = hooks;
+        this._el_hooks[el.toString()] = hooks;
     }
 
     /**
      * Stops listening to an element.
-     * @param  {HTMLElement} el
-     * @return {null}
      */
-    stop_listening_to(el) {
-        if (this._el_hooks[el] !== undefined) {
-            this._el_hooks[el].forEach(hook => hook.unhook());
-            delete this._el_hooks[el];
+    public stop_listening_to(el: HTMLElement): void {
+        var key: string = el.toString();
+        if (this._el_hooks[key] !== undefined) {
+            this._el_hooks[key].forEach(hook => hook.unhook());
+            delete this._el_hooks[key];
         }
     }
 
     /**
      * Handles when a mouse event occurs
-     * @param  {HTMLElement} el
-     * @param  {Event} e
-     * @return {null}
      */
-    _handle_mouse_event(el, event_name, e) {
-        e = e || window.event;
+    private _handle_mouse_event(el: HTMLElement, event_name: string, e: MouseEvent): void {
+        e = e || <MouseEvent><any>window.event;
         this.trigger(this._modifier_string(e) + 'mouse' + e.button + '-' + event_name, e);
     }
 
     /**
      * Handles when a mouse event occurs
-     * @param  {HTMLElement} el
-     * @param  {Event} e
-     * @return {null}
      */
-    _handle_mousemove_event(el, event_name, e) {
-        e = e || window.event;
+    private _handle_mousemove_event(el: HTMLElement, event_name: string, e: MouseEvent): void {
+        e = e || <MouseEvent><any>window.event;
         this.trigger(this._modifier_string(e) + 'mouse' + '-' + event_name, e);
     }
 
     /**
      * Handles when a keyboard event occurs
-     * @param  {HTMLElement} el
-     * @param  {Event} e
-     * @return {null}
      */
-    _handle_keyboard_event(el, event_name, e) {
-        e = e || window.event;
-        var keyname = this._lookup_keycode(e.keyCode);
+    private _handle_keyboard_event(el: HTMLElement, event_name: string, e: KeyboardEvent): void {
+        e = e || <KeyboardEvent><any>window.event;
+        var keyname: string = this._lookup_keycode(e.keyCode);
         if (keyname !== undefined) {
             this.trigger(this._modifier_string(e) + keyname + '-' + event_name, e);
 
@@ -88,22 +77,15 @@ export class Normalizer extends utils.PosterClass {
 
     /**
      * Handles when a keypress event occurs
-     * @param  {HTMLElement} el
-     * @param  {Event} e
-     * @return {null}
      */
-    _handle_keypress_event(el, event_name, e) {
+    private _handle_keypress_event(el: HTMLElement, event_name: string, e: KeyboardEvent): void {
         this.trigger('keypress', e);
     }
 
     /**
      * Creates an element event proxy.
-     * @param  {function} f
-     * @param  {string} event_name
-     * @param  {HTMLElement} el
-     * @return {null}
      */
-    _proxy(event_name, f, el) {
+    private _proxy(event_name: string, f: utils.ICallback, el: HTMLElement): utils.ICallback {
         var that = this;
         return function() {
             var args = [el, event_name].concat(Array.prototype.slice.call(arguments, 0));
@@ -113,15 +95,17 @@ export class Normalizer extends utils.PosterClass {
 
     /**
      * Create a modifiers string from an event.
-     * @param  {Event} e
-     * @return {string} dash separated modifier string
+     * @return dash separated modifier string
      */
-    _modifier_string(e) {
-        var modifiers = [];
+    private _modifier_string(e: KeyboardEvent | MouseEvent): string {
+        var modifiers: string[] = [];
         if (e.ctrlKey) modifiers.push('ctrl');
         if (e.altKey) modifiers.push('alt');
-        if (e.metaKey) modifiers.push('meta');
         if (e.shiftKey) modifiers.push('shift');
+        
+        // Hack, metaKey not recognized by TypeScript.
+        if (<any>e.metaKey) modifiers.push('meta');
+
         var string = modifiers.sort().join('-');
         if (string.length > 0) string = string + '-';
         return string;
@@ -129,10 +113,9 @@ export class Normalizer extends utils.PosterClass {
 
     /**
      * Lookup the human friendly name for a keycode.
-     * @param  {integer} keycode
-     * @return {string} key name
+     * @return key name
      */
-    _lookup_keycode(keycode) {
+    private _lookup_keycode(keycode: number): string {
         if (112 <= keycode && keycode <= 123) { // F1-F12
             return 'f' + (keycode-111);
         } else if (48 <= keycode && keycode <= 57) { // 0-9
@@ -140,7 +123,7 @@ export class Normalizer extends utils.PosterClass {
         } else if (65 <= keycode && keycode <= 90) { // A-Z
             return 'abcdefghijklmnopqrstuvwxyz'.substring(keycode-65, keycode-64);
         } else {
-            var codes = {
+            var codes: generics.INumericDictionary<string> = {
                 8: 'backspace',
                 9: 'tab',
                 13: 'enter',

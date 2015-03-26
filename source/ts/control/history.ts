@@ -6,9 +6,9 @@ import keymap = require('./map');
 export interface IHistoryPush { 
     (
         forward_name: string, 
-        forward_params: [any], 
+        forward_params: any[], 
         backward_name: string,
-        backward_params: [any],
+        backward_params: any[],
         autogroup_delay?: number
     ): void; 
 }
@@ -17,18 +17,29 @@ export interface IHistory {
     push_action: IHistoryPush;
 }
 
+export interface IHistoricAction {
+    forward: {
+        name: string;
+        parameters: any[];
+    };
+    backward: {
+        name: string;
+        parameters: any[];
+    };
+}
+
 /**
  * Reversible action history.
  */
 export class History extends utils.PosterClass implements IHistory {
-    private _map;
-    private _actions;
-    private _action_groups;
-    private _undone;
-    private _autogroup;
-    private _action_lock;
+    private _map: keymap.Map;
+    private _actions: IHistoricAction[];
+    private _action_groups: IHistoricAction[][];
+    private _undone: IHistoricAction[][];
+    private _autogroup: number;
+    private _action_lock: boolean;
 
-    constructor(map) {
+    public constructor(map) {
         super();
         this._map = map;
         this._actions = [];
@@ -50,7 +61,7 @@ export class History extends utils.PosterClass implements IHistory {
      * @param [autogroup_delay] - time to wait to automatically group the actions.
      *                            If this is undefined, autogrouping will not occur.
      */
-    push_action(forward_name: string, forward_params: [any], backward_name: string, backward_params: [any], autogroup_delay?: number): void {
+    public push_action(forward_name: string, forward_params: any[], backward_name: string, backward_params: any[], autogroup_delay?: number): void {
         if (this._action_lock) return;
 
         this._actions.push({
@@ -74,9 +85,8 @@ export class History extends utils.PosterClass implements IHistory {
             }
 
             // Set a new timeout.
-            var that = this;
-            this._autogroup = setTimeout(function() {
-                that.group_actions();
+            this._autogroup = setTimeout(() => {
+                this.group_actions();
             }, autogroup_delay);
         }
     }
@@ -84,7 +94,7 @@ export class History extends utils.PosterClass implements IHistory {
     /**
      * Commit the pushed actions to one group.
      */
-    group_actions() {
+    public group_actions(): void {
         this._autogroup = null;
         if (this._action_lock) return;
         
@@ -96,14 +106,14 @@ export class History extends utils.PosterClass implements IHistory {
     /**
      * Undo one set of actions.
      */
-    undo() {
+    public undo(): boolean {
         // If a timeout is set, group now.
         if (this._autogroup !== null) {
             clearTimeout(this._autogroup);
             this.group_actions();
         }
 
-        var undo;
+        var undo: IHistoricAction[];
         if (this._actions.length > 0) {
             undo = this._actions;
         } else if (this._action_groups.length > 0) {
@@ -117,9 +127,8 @@ export class History extends utils.PosterClass implements IHistory {
         if (!this._action_lock) {
             this._action_lock = true;
             try {
-                var that = this;
-                undo.forEach(function(action) {
-                    that._map.invoke(action.backward.name, action.backward.parameters);
+                undo.forEach((action: IHistoricAction) => {
+                    this._map.invoke(action.backward.name, action.backward.parameters);
                 });
             } finally {
                 this._action_lock = false;
@@ -134,17 +143,16 @@ export class History extends utils.PosterClass implements IHistory {
     /**
      * Redo one set of actions.
      */
-    redo() {
+    public redo(): boolean {
         if (this._undone.length > 0) {
-            var redo = this._undone.pop();
+            var redo: IHistoricAction[] = this._undone.pop();
             
             // Redo the actions.
             if (!this._action_lock) {
                 this._action_lock = true;
                 try {
-                    var that = this;
-                    redo.forEach(function(action) {
-                        that._map.invoke(action.forward.name, action.forward.parameters);
+                    redo.forEach((action: IHistoricAction) => {
+                        this._map.invoke(action.forward.name, action.forward.parameters);
                     });
                 } finally {
                     this._action_lock = false;
