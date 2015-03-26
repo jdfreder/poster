@@ -2079,7 +2079,2306 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-var utils = require('./utils');
+var utils = require('../utils/utils');
+/**
+ * Eventful clipboard support
+ *
+ * WARNING:  This class is a hudge kludge that works around the prehistoric
+ * clipboard support (lack thereof) in modern webrowsers.  It creates a hidden
+ * textbox which is focused.  The programmer must call `set_clippable` to change
+ * what will be copied when the user hits keys corresponding to a copy
+ * operation.  Events `copy`, `cut`, and `paste` are raised by this class.
+ */
+var Clipboard = (function (_super) {
+    __extends(Clipboard, _super);
+    function Clipboard(el) {
+        _super.call(this);
+        this._el = el;
+        // Create a textbox that's hidden.
+        this.hidden_input = document.createElement('textarea');
+        this.hidden_input.setAttribute('class', 'poster hidden-clipboard');
+        this.hidden_input.setAttribute('x-palm-disable-auto-cap', 'true');
+        this.hidden_input.setAttribute('wrap', 'off');
+        this.hidden_input.setAttribute('autocorrect', 'off');
+        this.hidden_input.setAttribute('autocapitalize', 'off');
+        this.hidden_input.setAttribute('spellcheck', 'false');
+        el.appendChild(this.hidden_input);
+        this._bind_events();
+    }
+    /**
+     * Set what will be copied when the user copies.
+     * @param text
+     */
+    Clipboard.prototype.set_clippable = function (text) {
+        this._clippable = text;
+        this.hidden_input.value = this._clippable;
+        this._focus();
+    };
+    /**
+     * Move the textarea to a point.
+     * @param x
+     * @param y
+     */
+    Clipboard.prototype.set_position = function (x, y) {
+        this.hidden_input.setAttribute('style', 'left: ' + String(x) + 'px; top: ' + String(y) + 'px;');
+    };
+    /**
+     * Focus the hidden text area.
+     */
+    Clipboard.prototype._focus = function () {
+        this.hidden_input.focus();
+        this.hidden_input.select();
+    };
+    /**
+     * Handle when the user pastes into the textbox.
+     */
+    Clipboard.prototype._handle_paste = function (e) {
+        var pasted = e.clipboardData.getData(e.clipboardData.types[0]);
+        utils.cancel_bubble(e);
+        this.trigger('paste', pasted);
+    };
+    /**
+     * Bind events of the hidden textbox.
+     */
+    Clipboard.prototype._bind_events = function () {
+        var _this = this;
+        // Listen to el's focus event.  If el is focused, focus the hidden input
+        // instead.
+        utils.hook(this._el, 'onfocus', utils.proxy(this._focus, this));
+        utils.hook(this.hidden_input, 'onpaste', utils.proxy(this._handle_paste, this));
+        utils.hook(this.hidden_input, 'oncut', function () {
+            // Trigger the event in a timeout so it fires after the system event.
+            setTimeout(function () {
+                _this.trigger('cut', _this._clippable);
+            }, 0);
+        });
+        utils.hook(this.hidden_input, 'oncopy', function () {
+            _this.trigger('copy', _this._clippable);
+        });
+        utils.hook(this.hidden_input, 'onkeypress', function () {
+            setTimeout(function () {
+                _this.hidden_input.value = _this._clippable;
+                _this._focus();
+            }, 0);
+        });
+        utils.hook(this.hidden_input, 'onkeyup', function () {
+            setTimeout(function () {
+                _this.hidden_input.value = _this._clippable;
+                _this._focus();
+            }, 0);
+        });
+    };
+    return Clipboard;
+})(utils.PosterClass);
+exports.Clipboard = Clipboard;
+
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/clipboard.js","/control")
+},{"../utils/utils":40,"1YiZ5S":4,"buffer":1}],7:[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+var keymap = require('./map');
+var register = keymap.Map.register;
+var utils = require('../utils/utils');
+var config_mod = require('../utils/config');
+var config = config_mod.config;
+;
+/**
+ * Input cursor.
+ */
+var Cursor = (function (_super) {
+    __extends(Cursor, _super);
+    function Cursor(model, push_history) {
+        _super.call(this);
+        this._model = model;
+        this._push_history = push_history;
+        this.primary_row = 0;
+        this.primary_char = 0;
+        this.secondary_row = 0;
+        this.secondary_char = 0;
+        this._register_api();
+    }
+    Object.defineProperty(Cursor.prototype, "start_row", {
+        get: function () {
+            return Math.min(this.primary_row, this.secondary_row);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Cursor.prototype, "end_row", {
+        get: function () {
+            return Math.max(this.primary_row, this.secondary_row);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Cursor.prototype, "start_char", {
+        get: function () {
+            if (this.primary_row < this.secondary_row || (this.primary_row == this.secondary_row && this.primary_char <= this.secondary_char)) {
+                return this.primary_char;
+            }
+            else {
+                return this.secondary_char;
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Cursor.prototype, "end_char", {
+        get: function () {
+            if (this.primary_row < this.secondary_row || (this.primary_row == this.secondary_row && this.primary_char <= this.secondary_char)) {
+                return this.secondary_char;
+            }
+            else {
+                return this.primary_char;
+            }
+        },
+        enumerable: true,
+        configurable: true
+    });
+    /**
+     * Unregister the actions and event listeners of this cursor.
+     */
+    Cursor.prototype.unregister = function () {
+        keymap.Map.unregister_by_tag(this);
+    };
+    /**
+     * Gets the state of the cursor.
+     */
+    Cursor.prototype.get_state = function () {
+        return {
+            primary_row: this.primary_row,
+            primary_char: this.primary_char,
+            secondary_row: this.secondary_row,
+            secondary_char: this.secondary_char,
+            _memory_char: this._memory_char
+        };
+    };
+    /**
+     * Sets the state of the cursor.
+     * @param state
+     * @param [historical] - Defaults to true.  Whether this should be recorded in history.
+     */
+    Cursor.prototype.set_state = function (state, historical) {
+        if (state) {
+            var old_state = {};
+            for (var key in state) {
+                if (state.hasOwnProperty(key)) {
+                    old_state[key] = this[key];
+                    this[key] = state[key];
+                }
+            }
+            if (historical === undefined || historical === true) {
+                this._push_history('set_state', [state], 'set_state', [old_state]);
+            }
+            this.trigger('change');
+        }
+    };
+    /**
+     * Moves the primary cursor a given offset.
+     * @param  x
+     * @param  y
+     * @param  (optional) hop=false - hop to the other side of the
+     *                   selected region if the primary is on the opposite of the
+     *                   direction of motion.
+     */
+    Cursor.prototype.move_primary = function (x, y, hop) {
+        if (hop) {
+            if (this.primary_row != this.secondary_row || this.primary_char != this.secondary_char) {
+                var start_row = this.start_row;
+                var start_char = this.start_char;
+                var end_row = this.end_row;
+                var end_char = this.end_char;
+                if (x < 0 || y < 0) {
+                    this.primary_row = start_row;
+                    this.primary_char = start_char;
+                    this.secondary_row = end_row;
+                    this.secondary_char = end_char;
+                }
+                else {
+                    this.primary_row = end_row;
+                    this.primary_char = end_char;
+                    this.secondary_row = start_row;
+                    this.secondary_char = start_char;
+                }
+            }
+        }
+        if (x < 0) {
+            if (this.primary_char + x < 0) {
+                if (this.primary_row === 0) {
+                    this.primary_char = 0;
+                }
+                else {
+                    this.primary_row -= 1;
+                    this.primary_char = this._model._rows[this.primary_row].length;
+                }
+            }
+            else {
+                this.primary_char += x;
+            }
+        }
+        else if (x > 0) {
+            if (this.primary_char + x > this._model._rows[this.primary_row].length) {
+                if (this.primary_row === this._model._rows.length - 1) {
+                    this.primary_char = this._model._rows[this.primary_row].length;
+                }
+                else {
+                    this.primary_row += 1;
+                    this.primary_char = 0;
+                }
+            }
+            else {
+                this.primary_char += x;
+            }
+        }
+        // Remember the character position, vertical navigation across empty lines
+        // shouldn't cause the horizontal position to be lost.
+        if (x !== 0) {
+            this._memory_char = this.primary_char;
+        }
+        if (y !== 0) {
+            this.primary_row += y;
+            this.primary_row = Math.min(Math.max(this.primary_row, 0), this._model._rows.length - 1);
+            if (this._memory_char !== undefined) {
+                this.primary_char = this._memory_char;
+            }
+            if (this.primary_char > this._model._rows[this.primary_row].length) {
+                this.primary_char = this._model._rows[this.primary_row].length;
+            }
+        }
+        this.trigger('change');
+    };
+    /**
+     * Walk the primary cursor in a direction until a not-text character is found.
+     */
+    Cursor.prototype.word_primary = function (direction) {
+        // Make sure direction is 1 or -1.
+        direction = direction < 0 ? -1 : 1;
+        // If moving left and at end of row, move up a row if possible.
+        if (this.primary_char === 0 && direction == -1) {
+            if (this.primary_row !== 0) {
+                this.primary_row--;
+                this.primary_char = this._model._rows[this.primary_row].length;
+                this._memory_char = this.primary_char;
+                this.trigger('change');
+            }
+            return;
+        }
+        // If moving right and at end of row, move down a row if possible.
+        if (this.primary_char >= this._model._rows[this.primary_row].length && direction == 1) {
+            if (this.primary_row < this._model._rows.length - 1) {
+                this.primary_row++;
+                this.primary_char = 0;
+                this._memory_char = this.primary_char;
+                this.trigger('change');
+            }
+            return;
+        }
+        var i = this.primary_char;
+        var hit_text = false;
+        var row_text = this._model._rows[this.primary_row];
+        if (direction == -1) {
+            while (0 < i && !(hit_text && utils.not_text(row_text[i - 1]))) {
+                hit_text = hit_text || !utils.not_text(row_text[i - 1]);
+                i += direction;
+            }
+        }
+        else {
+            while (i < row_text.length && !(hit_text && utils.not_text(row_text[i]))) {
+                hit_text = hit_text || !utils.not_text(row_text[i]);
+                i += direction;
+            }
+        }
+        this.primary_char = i;
+        this._memory_char = this.primary_char;
+        this.trigger('change');
+    };
+    /**
+     * Select all of the text.
+     */
+    Cursor.prototype.select_all = function () {
+        this.primary_row = this._model._rows.length - 1;
+        this.primary_char = this._model._rows[this.primary_row].length;
+        this.secondary_row = 0;
+        this.secondary_char = 0;
+        this.trigger('change');
+    };
+    /**
+     * Move the primary cursor to the line end.
+     */
+    Cursor.prototype.primary_goto_end = function () {
+        // Get the start of the actual content, skipping the whitespace.
+        var row_text = this._model._rows[this.primary_row];
+        var trimmed = row_text.trim();
+        var start = row_text.indexOf(trimmed);
+        var target = row_text.length;
+        if (0 < start && start < row_text.length && this.primary_char !== start + trimmed.length) {
+            target = start + trimmed.length;
+        }
+        // Move the cursor.
+        this.primary_char = target;
+        this._memory_char = this.primary_char;
+        this.trigger('change');
+    };
+    /**
+     * Move the primary cursor to the line start.
+     */
+    Cursor.prototype.primary_goto_start = function () {
+        // Get the start of the actual content, skipping the whitespace.
+        var row_text = this._model._rows[this.primary_row];
+        var start = row_text.indexOf(row_text.trim());
+        var target = 0;
+        if (0 < start && start < row_text.length && this.primary_char !== start) {
+            target = start;
+        }
+        // Move the cursor.
+        this.primary_char = target;
+        this._memory_char = this.primary_char;
+        this.trigger('change');
+    };
+    /**
+     * Selects a word at the given location.
+     */
+    Cursor.prototype.select_word = function (row_index, char_index) {
+        this.set_both(row_index, char_index);
+        this.word_primary(-1);
+        this._reset_secondary();
+        this.word_primary(1);
+    };
+    /**
+     * Set the primary cursor position
+     */
+    Cursor.prototype.set_primary = function (row_index, char_index) {
+        this.primary_row = row_index;
+        this.primary_char = char_index;
+        // Remember the character position, vertical navigation across empty lines
+        // shouldn't cause the horizontal position to be lost.
+        this._memory_char = this.primary_char;
+        this.trigger('change');
+    };
+    /**
+     * Set the secondary cursor position
+     */
+    Cursor.prototype.set_secondary = function (row_index, char_index) {
+        this.secondary_row = row_index;
+        this.secondary_char = char_index;
+        this.trigger('change');
+    };
+    /**
+     * Sets both the primary and secondary cursor positions
+     */
+    Cursor.prototype.set_both = function (row_index, char_index) {
+        this.primary_row = row_index;
+        this.primary_char = char_index;
+        this.secondary_row = row_index;
+        this.secondary_char = char_index;
+        // Remember the character position, vertical navigation across empty lines
+        // shouldn't cause the horizontal position to be lost.
+        this._memory_char = this.primary_char;
+        this.trigger('change');
+    };
+    /**
+     * Handles when a key is pressed.
+     * @param  e - original event.
+     * @return was the event handled.
+     */
+    Cursor.prototype.keypress = function (e) {
+        var _this = this;
+        var char_code = e.which || e.keyCode;
+        var char_typed = String.fromCharCode(char_code);
+        this.remove_selected();
+        this._historical(function () {
+            _this._model_add_text(_this.primary_row, _this.primary_char, char_typed);
+        });
+        this.move_primary(1, 0);
+        this._reset_secondary();
+        return true;
+    };
+    /**
+     * Indent
+     * @param  e - original event.
+     * @return was the event handled.
+     */
+    Cursor.prototype.indent = function (e) {
+        var _this = this;
+        var indent = this._make_indents()[0];
+        this._historical(function () {
+            if (_this.primary_row == _this.secondary_row && _this.primary_char == _this.secondary_char) {
+                _this._model_add_text(_this.primary_row, _this.primary_char, indent);
+            }
+            else {
+                for (var row = _this.start_row; row <= _this.end_row; row++) {
+                    _this._model_add_text(row, 0, indent);
+                }
+            }
+        });
+        this.primary_char += indent.length;
+        this._memory_char = this.primary_char;
+        this.secondary_char += indent.length;
+        this.trigger('change');
+        return true;
+    };
+    /**
+     * Unindent
+     * @param  e - original event.
+     * @return was the event handled.
+     */
+    Cursor.prototype.unindent = function (e) {
+        var _this = this;
+        var indents = this._make_indents();
+        var removed_start = 0;
+        var removed_end = 0;
+        // If no text is selected, remove the indent preceding the
+        // cursor if it exists.
+        this._historical(function () {
+            if (_this.primary_row == _this.secondary_row && _this.primary_char == _this.secondary_char) {
+                for (var i = 0; i < indents.length; i++) {
+                    var indent = indents[i];
+                    if (_this.primary_char >= indent.length) {
+                        var before = _this._model.get_text(_this.primary_row, _this.primary_char - indent.length, _this.primary_row, _this.primary_char);
+                        if (before == indent) {
+                            _this._model_remove_text(_this.primary_row, _this.primary_char - indent.length, _this.primary_row, _this.primary_char);
+                            removed_start = indent.length;
+                            removed_end = indent.length;
+                            break;
+                        }
+                    }
+                }
+            }
+            else {
+                for (var row = _this.start_row; row <= _this.end_row; row++) {
+                    for (var i = 0; i < indents.length; i++) {
+                        var indent = indents[i];
+                        if (_this._model._rows[row].length >= indent.length) {
+                            if (_this._model._rows[row].substring(0, indent.length) == indent) {
+                                _this._model_remove_text(row, 0, row, indent.length);
+                                if (row == _this.start_row)
+                                    removed_start = indent.length;
+                                if (row == _this.end_row)
+                                    removed_end = indent.length;
+                                break;
+                            }
+                        }
+                        ;
+                    }
+                }
+            }
+        });
+        // Move the selected characters backwards if indents were removed.
+        var start_is_primary = (this.primary_row == this.start_row && this.primary_char == this.start_char);
+        if (start_is_primary) {
+            this.primary_char -= removed_start;
+            this.secondary_char -= removed_end;
+        }
+        else {
+            this.primary_char -= removed_end;
+            this.secondary_char -= removed_start;
+        }
+        this._memory_char = this.primary_char;
+        if (removed_end || removed_start)
+            this.trigger('change');
+        return true;
+    };
+    /**
+     * Insert a newline
+     * @param  e - original event.
+     * @return was the event handled.
+     */
+    Cursor.prototype.newline = function (e) {
+        var _this = this;
+        this.remove_selected();
+        // Get the blank space at the begining of the line.
+        var line_text = this._model.get_text(this.primary_row, 0, this.primary_row, this.primary_char);
+        var spaceless = line_text.trim();
+        var left = line_text.length;
+        if (spaceless.length > 0) {
+            left = line_text.indexOf(spaceless);
+        }
+        var indent = line_text.substring(0, left);
+        this._historical(function () {
+            _this._model_add_text(_this.primary_row, _this.primary_char, '\n' + indent);
+        });
+        this.primary_row += 1;
+        this.primary_char = indent.length;
+        this._memory_char = this.primary_char;
+        this._reset_secondary();
+        return true;
+    };
+    /**
+     * Insert text
+     * @param text
+     * @return successful.
+     */
+    Cursor.prototype.insert_text = function (text) {
+        var _this = this;
+        this.remove_selected();
+        this._historical(function () {
+            _this._model_add_text(_this.primary_row, _this.primary_char, text);
+        });
+        // Move cursor to the end.
+        if (text.indexOf('\n') == -1) {
+            this.primary_char = this.start_char + text.length;
+        }
+        else {
+            var lines = text.split('\n');
+            this.primary_row += lines.length - 1;
+            this.primary_char = lines[lines.length - 1].length;
+        }
+        this._reset_secondary();
+        this.trigger('change');
+        return true;
+    };
+    /**
+     * Paste text
+     */
+    Cursor.prototype.paste = function (text) {
+        var _this = this;
+        if (this._copied_row === text) {
+            this._historical(function () {
+                _this._model_add_row(_this.primary_row, text);
+            });
+            this.primary_row++;
+            this.secondary_row++;
+            this.trigger('change');
+        }
+        else {
+            this.insert_text(text);
+        }
+    };
+    /**
+     * Remove the selected text
+     * @return true if text was removed.
+     */
+    Cursor.prototype.remove_selected = function () {
+        var _this = this;
+        if (this.primary_row !== this.secondary_row || this.primary_char !== this.secondary_char) {
+            var row_index = this.start_row;
+            var char_index = this.start_char;
+            this._historical(function () {
+                _this._model_remove_text(_this.start_row, _this.start_char, _this.end_row, _this.end_char);
+            });
+            this.primary_row = row_index;
+            this.primary_char = char_index;
+            this._reset_secondary();
+            this.trigger('change');
+            return true;
+        }
+        return false;
+    };
+    /**
+     * Gets the selected text.
+     * @return selected text
+     */
+    Cursor.prototype.get = function () {
+        if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
+            return this._model._rows[this.primary_row];
+        }
+        else {
+            return this._model.get_text(this.start_row, this.start_char, this.end_row, this.end_char);
+        }
+    };
+    /**
+     * Cuts the selected text.
+     * @return selected text
+     */
+    Cursor.prototype.cut = function () {
+        var text = this.get();
+        if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
+            this._copied_row = this._model._rows[this.primary_row];
+            this._historical(function () {
+                this._model_remove_row(this.primary_row);
+            });
+        }
+        else {
+            this._copied_row = null;
+            this.remove_selected();
+        }
+        return text;
+    };
+    /**
+     * Copies the selected text.
+     * @return selected text
+     */
+    Cursor.prototype.copy = function () {
+        var text = this.get();
+        if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
+            this._copied_row = this._model._rows[this.primary_row];
+        }
+        else {
+            this._copied_row = null;
+        }
+        return text;
+    };
+    /**
+     * Delete forward, typically called by `delete` keypress.
+     * @return success
+     */
+    Cursor.prototype.delete_forward = function () {
+        if (!this.remove_selected()) {
+            this.move_primary(1, 0);
+            this.remove_selected();
+        }
+        return true;
+    };
+    /**
+     * Delete backward, typically called by `backspace` keypress.
+     * @return success
+     */
+    Cursor.prototype.delete_backward = function () {
+        if (!this.remove_selected()) {
+            this.move_primary(-1, 0);
+            this.remove_selected();
+        }
+        return true;
+    };
+    /**
+     * Delete one word backwards.
+     * @return success
+     */
+    Cursor.prototype.delete_word_left = function () {
+        if (!this.remove_selected()) {
+            if (this.primary_char === 0) {
+                this.word_primary(-1);
+                this.remove_selected();
+            }
+            else {
+                // Walk backwards until char index is 0 or
+                // a different type of character is hit.
+                var row = this._model._rows[this.primary_row];
+                var i = this.primary_char - 1;
+                var start_not_text = utils.not_text(row[i]);
+                while (i >= 0 && utils.not_text(row[i]) == start_not_text) {
+                    i--;
+                }
+                this.secondary_char = i + 1;
+                this.remove_selected();
+            }
+        }
+        return true;
+    };
+    /**
+     * Delete one word forwards.
+     * @return success
+     */
+    Cursor.prototype.delete_word_right = function () {
+        if (!this.remove_selected()) {
+            var row = this._model._rows[this.primary_row];
+            if (this.primary_char === row.length) {
+                this.word_primary(1);
+                this.remove_selected();
+            }
+            else {
+                // Walk forwards until char index is at end or
+                // a different type of character is hit.
+                var i = this.primary_char;
+                var start_not_text = utils.not_text(row[i]);
+                while (i < row.length && utils.not_text(row[i]) == start_not_text) {
+                    i++;
+                }
+                this.secondary_char = i;
+                this.remove_selected();
+            }
+        }
+        this._end_historical_move();
+        return true;
+    };
+    /**
+     * Reset the secondary cursor to the value of the primary.
+     */
+    Cursor.prototype._reset_secondary = function () {
+        this.secondary_row = this.primary_row;
+        this.secondary_char = this.primary_char;
+        this.trigger('change');
+    };
+    /**
+     * Adds text to the model while keeping track of the history.
+     */
+    Cursor.prototype._model_add_text = function (row_index, char_index, text) {
+        var lines = text.split('\n');
+        this._push_history('_model_add_text', [row_index, char_index, text], '_model_remove_text', [row_index, char_index, row_index + lines.length - 1, lines.length > 1 ? lines[lines.length - 1].length : char_index + text.length], config.history_group_delay || 100);
+        this._model.add_text(row_index, char_index, text);
+    };
+    /**
+     * Removes text from the model while keeping track of the history.
+     */
+    Cursor.prototype._model_remove_text = function (start_row, start_char, end_row, end_char) {
+        var text = this._model.get_text(start_row, start_char, end_row, end_char);
+        this._push_history('_model_remove_text', [start_row, start_char, end_row, end_char], '_model_add_text', [start_row, start_char, text], config.history_group_delay || 100);
+        this._model.remove_text(start_row, start_char, end_row, end_char);
+    };
+    /**
+     * Adds a row of text while keeping track of the history.
+     */
+    Cursor.prototype._model_add_row = function (row_index, text) {
+        this._push_history('_model_add_row', [row_index, text], '_model_remove_row', [row_index], config.history_group_delay || 100);
+        this._model.add_row(row_index, text);
+    };
+    /**
+     * Removes a row of text while keeping track of the history.
+     */
+    Cursor.prototype._model_remove_row = function (row_index) {
+        this._push_history('_model_remove_row', [row_index], '_model_add_row', [row_index, this._model._rows[row_index]], config.history_group_delay || 100);
+        this._model.remove_row(row_index);
+    };
+    /**
+     * Record the before and after positions of the cursor for history.
+     * @param  f - executes with `this` context
+     */
+    Cursor.prototype._historical = function (f) {
+        this._start_historical_move();
+        var ret = f.apply(this);
+        this._end_historical_move();
+        return ret;
+    };
+    /**
+     * Record the starting state of the cursor for the history buffer.
+     */
+    Cursor.prototype._start_historical_move = function () {
+        if (!this._historical_start) {
+            this._historical_start = this.get_state();
+        }
+    };
+    /**
+     * Record the ending state of the cursor for the history buffer, then
+     * push a reversable action describing the change of the cursor.
+     */
+    Cursor.prototype._end_historical_move = function () {
+        this._push_history('set_state', [this.get_state()], 'set_state', [this._historical_start], config.history_group_delay || 100);
+        this._historical_start = null;
+    };
+    /**
+     * Makes a list of indentation strings used to indent one level,
+     * ordered by usage preference.
+     */
+    Cursor.prototype._make_indents = function () {
+        var indents = [];
+        if (config.use_spaces) {
+            var indent = '';
+            for (var i = 0; i < config.tab_width; i++) {
+                indent += ' ';
+                indents.push(indent);
+            }
+            indents.reverse();
+        }
+        indents.push('\t');
+        return indents;
+    };
+    /**
+     * Registers an action API with the map
+     */
+    Cursor.prototype._register_api = function () {
+        var _this = this;
+        register('cursor.set_state', utils.proxy(this.set_state, this), this);
+        register('cursor.remove_selected', utils.proxy(this.remove_selected, this), this);
+        register('cursor.keypress', utils.proxy(this.keypress, this), this);
+        register('cursor.indent', utils.proxy(this.indent, this), this);
+        register('cursor.unindent', utils.proxy(this.unindent, this), this);
+        register('cursor.newline', utils.proxy(this.newline, this), this);
+        register('cursor.insert_text', utils.proxy(this.insert_text, this), this);
+        register('cursor.delete_backward', utils.proxy(this.delete_backward, this), this);
+        register('cursor.delete_forward', utils.proxy(this.delete_forward, this), this);
+        register('cursor.delete_word_left', utils.proxy(this.delete_word_left, this), this);
+        register('cursor.delete_word_right', utils.proxy(this.delete_word_right, this), this);
+        register('cursor.select_all', utils.proxy(this.select_all, this), this);
+        register('cursor.left', function () {
+            _this.move_primary(-1, 0, true);
+            _this._reset_secondary();
+            return true;
+        });
+        register('cursor.right', function () {
+            _this.move_primary(1, 0, true);
+            _this._reset_secondary();
+            return true;
+        });
+        register('cursor.up', function () {
+            _this.move_primary(0, -1, true);
+            _this._reset_secondary();
+            return true;
+        });
+        register('cursor.down', function () {
+            _this.move_primary(0, 1, true);
+            _this._reset_secondary();
+            return true;
+        });
+        register('cursor.select_left', function () {
+            _this.move_primary(-1, 0);
+            return true;
+        });
+        register('cursor.select_right', function () {
+            _this.move_primary(1, 0);
+            return true;
+        });
+        register('cursor.select_up', function () {
+            _this.move_primary(0, -1);
+            return true;
+        });
+        register('cursor.select_down', function () {
+            _this.move_primary(0, 1);
+            return true;
+        });
+        register('cursor.word_left', function () {
+            _this.word_primary(-1);
+            _this._reset_secondary();
+            return true;
+        });
+        register('cursor.word_right', function () {
+            _this.word_primary(1);
+            _this._reset_secondary();
+            return true;
+        });
+        register('cursor.select_word_left', function () {
+            _this.word_primary(-1);
+            return true;
+        });
+        register('cursor.select_word_right', function () {
+            _this.word_primary(1);
+            return true;
+        });
+        register('cursor.line_start', function () {
+            _this.primary_goto_start();
+            _this._reset_secondary();
+            return true;
+        });
+        register('cursor.line_end', function () {
+            _this.primary_goto_end();
+            _this._reset_secondary();
+            return true;
+        });
+        register('cursor.select_line_start', function () {
+            _this.primary_goto_start();
+            return true;
+        });
+        register('cursor.select_line_end', function () {
+            _this.primary_goto_end();
+            return true;
+        });
+    };
+    return Cursor;
+})(utils.PosterClass);
+exports.Cursor = Cursor;
+
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/cursor.js","/control")
+},{"../utils/config":38,"../utils/utils":40,"./map":11,"1YiZ5S":4,"buffer":1}],8:[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+var keymap = require('./map');
+var register = keymap.Map.register;
+var cursor = require('./cursor');
+var utils = require('../utils/utils');
+/**
+ * Manages one or more cursors
+ */
+var Cursors = (function (_super) {
+    __extends(Cursors, _super);
+    function Cursors(model, clipboard, history) {
+        _super.call(this);
+        this._model = model;
+        this.get_row_char = undefined;
+        this.cursors = [];
+        this._selecting_text = false;
+        this._clipboard = clipboard;
+        this._history = history;
+        // Create initial cursor.
+        this.create(undefined, false);
+        // Register actions.
+        register('cursors._cursor_proxy', utils.proxy(this._cursor_proxy, this));
+        register('cursors.create', utils.proxy(this.create, this));
+        register('cursors.single', utils.proxy(this.single, this));
+        register('cursors.pop', utils.proxy(this.pop, this));
+        register('cursors.start_selection', utils.proxy(this.start_selection, this));
+        register('cursors.set_selection', utils.proxy(this.set_selection, this));
+        register('cursors.start_set_selection', utils.proxy(this.start_set_selection, this));
+        register('cursors.end_selection', utils.proxy(this.end_selection, this));
+        register('cursors.select_word', utils.proxy(this.select_word, this));
+        // Bind clipboard events.
+        this._clipboard.on('cut', utils.proxy(this._handle_cut, this));
+        this._clipboard.on('copy', utils.proxy(this._handle_copy, this));
+        this._clipboard.on('paste', utils.proxy(this._handle_paste, this));
+    }
+    /**
+     * Creates a cursor and manages it.
+     * @param [state] state to apply to the new cursor.
+     * @param [reversable] - defaults to true, is action reversable.
+     */
+    Cursors.prototype.create = function (state, reversable) {
+        var _this = this;
+        // Record this action in history.
+        if (reversable === undefined || reversable === true) {
+            this._history.push_action('cursors.create', utils.args(arguments), 'cursors.pop', []);
+        }
+        // Create a proxying history method for the cursor itself.
+        var index = this.cursors.length;
+        var history_proxy = function (forward_name, forward_params, backward_name, backward_params, autogroup_delay) {
+            _this._history.push_action('cursors._cursor_proxy', [index, forward_name, forward_params], 'cursors._cursor_proxy', [index, backward_name, backward_params], autogroup_delay);
+        };
+        // Create the cursor.
+        var new_cursor = new cursor.Cursor(this._model, history_proxy);
+        this.cursors.push(new_cursor);
+        // Set the initial properties of the cursor.
+        if (state)
+            new_cursor.set_state(state, false);
+        // Listen for cursor change events.
+        new_cursor.on('change', function () {
+            _this.trigger('change', new_cursor);
+            _this._update_selection();
+        });
+        this.trigger('change', new_cursor);
+        return new_cursor;
+    };
+    /**
+     * Remove every cursor except for the first one.
+     */
+    Cursors.prototype.single = function () {
+        while (this.cursors.length > 1) {
+            this.pop();
+        }
+    };
+    /**
+     * Remove the last cursor.
+     * @returns last cursor or null
+     */
+    Cursors.prototype.pop = function () {
+        if (this.cursors.length > 1) {
+            // Remove the last cursor and unregister it.
+            var cursor = this.cursors.pop();
+            cursor.unregister();
+            cursor.off('change');
+            // Record this action in history.
+            this._history.push_action('cursors.pop', [], 'cursors.create', [cursor.get_state()]);
+            // Alert listeners of changes.
+            this.trigger('change');
+            return cursor;
+        }
+        return null;
+    };
+    /**
+     * Starts selecting text from mouse coordinates.
+     * @param e - mouse event containing the coordinates.
+     */
+    Cursors.prototype.start_selection = function (e) {
+        var x = e.offsetX;
+        var y = e.offsetY;
+        this._selecting_text = true;
+        if (this.get_row_char) {
+            var location = this.get_row_char(x, y);
+            this.cursors[0].set_both(location.row_index, location.char_index);
+        }
+    };
+    /**
+     * Finalizes the selection of text.
+     */
+    Cursors.prototype.end_selection = function () {
+        this._selecting_text = false;
+    };
+    /**
+     * Sets the endpoint of text selection from mouse coordinates.
+     * @param  e - mouse event containing the coordinates.
+     */
+    Cursors.prototype.set_selection = function (e) {
+        var x = e.offsetX;
+        var y = e.offsetY;
+        if (this._selecting_text && this.get_row_char) {
+            var location = this.get_row_char(x, y);
+            this.cursors[this.cursors.length - 1].set_primary(location.row_index, location.char_index);
+        }
+    };
+    /**
+     * Sets the endpoint of text selection from mouse coordinates.
+     * Different than set_selection because it doesn't need a call
+     * to start_selection to work.
+     * @param e - mouse event containing the coordinates.
+     */
+    Cursors.prototype.start_set_selection = function (e) {
+        this._selecting_text = true;
+        this.set_selection(e);
+    };
+    /**
+     * Selects a word at the given mouse coordinates.
+     * @param e - mouse event containing the coordinates.
+     */
+    Cursors.prototype.select_word = function (e) {
+        var x = e.offsetX;
+        var y = e.offsetY;
+        if (this.get_row_char) {
+            var location = this.get_row_char(x, y);
+            this.cursors[this.cursors.length - 1].select_word(location.row_index, location.char_index);
+        }
+    };
+    /**
+     * Handles history proxy events for individual cursors.
+     * @param cursor_index
+     * @param function_name
+     * @param function_params
+     */
+    Cursors.prototype._cursor_proxy = function (cursor_index, function_name, function_params) {
+        if (cursor_index < this.cursors.length) {
+            var cursor = this.cursors[cursor_index];
+            cursor[function_name].apply(cursor, function_params);
+        }
+    };
+    /**
+     * Handles when the selected text is copied to the clipboard.
+     * @param text - by val text that was cut
+     */
+    Cursors.prototype._handle_copy = function (text) {
+        this.cursors.forEach(function (cursor) { return cursor.copy(); });
+    };
+    /**
+     * Handles when the selected text is cut to the clipboard.
+     * @param text - by val text that was cut
+     */
+    Cursors.prototype._handle_cut = function (text) {
+        this.cursors.forEach(function (cursor) { return cursor.cut(); });
+    };
+    /**
+     * Handles when text is pasted into the document.
+     */
+    Cursors.prototype._handle_paste = function (text) {
+        // If the modulus of the number of cursors and the number of pasted lines
+        // of text is zero, split the cut lines among the cursors.
+        var lines = text.split('\n');
+        if (this.cursors.length > 1 && lines.length > 1 && lines.length % this.cursors.length === 0) {
+            var lines_per_cursor = lines.length / this.cursors.length;
+            this.cursors.forEach(function (cursor, index) {
+                cursor.insert_text(lines.slice(index * lines_per_cursor, index * lines_per_cursor + lines_per_cursor).join('\n'));
+            });
+        }
+        else {
+            this.cursors.forEach(function (cursor) { return cursor.paste(text); });
+        }
+    };
+    /**
+     * Update the clippable text based on new selection.
+     */
+    Cursors.prototype._update_selection = function () {
+        // Copy all of the selected text.
+        var selections = [];
+        this.cursors.forEach(function (cursor) { return selections.push(cursor.get()); });
+        // Make the copied text clippable.
+        this._clipboard.set_clippable(selections.join('\n'));
+    };
+    return Cursors;
+})(utils.PosterClass);
+exports.Cursors = Cursors;
+
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/cursors.js","/control")
+},{"../utils/utils":40,"./cursor":7,"./map":11,"1YiZ5S":4,"buffer":1}],9:[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+var _map;
+if (navigator.appVersion.indexOf("Mac") != -1) {
+    _map = {
+        'alt-leftarrow': 'cursor.word_left',
+        'alt-rightarrow': 'cursor.word_right',
+        'shift-alt-leftarrow': 'cursor.select_word_left',
+        'shift-alt-rightarrow': 'cursor.select_word_right',
+        'alt-backspace': 'cursor.delete_word_left',
+        'alt-delete': 'cursor.delete_word_right',
+        'meta-leftarrow': 'cursor.line_start',
+        'meta-rightarrow': 'cursor.line_end',
+        'shift-meta-leftarrow': 'cursor.select_line_start',
+        'shift-meta-rightarrow': 'cursor.select_line_end',
+        'meta-a': 'cursor.select_all',
+        'meta-z': 'history.undo',
+        'meta-y': 'history.redo',
+    };
+}
+else {
+    _map = {
+        'ctrl-leftarrow': 'cursor.word_left',
+        'ctrl-rightarrow': 'cursor.word_right',
+        'ctrl-backspace': 'cursor.delete_word_left',
+        'ctrl-delete': 'cursor.delete_word_right',
+        'shift-ctrl-leftarrow': 'cursor.select_word_left',
+        'shift-ctrl-rightarrow': 'cursor.select_word_right',
+        'home': 'cursor.line_start',
+        'end': 'cursor.line_end',
+        'shift-home': 'cursor.select_line_start',
+        'shift-end': 'cursor.select_line_end',
+        'ctrl-a': 'cursor.select_all',
+        'ctrl-z': 'history.undo',
+        'ctrl-y': 'history.redo',
+    };
+}
+// Common bindings
+_map['keypress'] = 'cursor.keypress';
+_map['enter'] = 'cursor.newline';
+_map['delete'] = 'cursor.delete_forward';
+_map['backspace'] = 'cursor.delete_backward';
+_map['leftarrow'] = 'cursor.left';
+_map['rightarrow'] = 'cursor.right';
+_map['uparrow'] = 'cursor.up';
+_map['downarrow'] = 'cursor.down';
+_map['shift-leftarrow'] = 'cursor.select_left';
+_map['shift-rightarrow'] = 'cursor.select_right';
+_map['shift-uparrow'] = 'cursor.select_up';
+_map['shift-downarrow'] = 'cursor.select_down';
+_map['mouse0-dblclick'] = 'cursors.select_word';
+_map['mouse0-down'] = 'cursors.start_selection';
+_map['mouse-move'] = 'cursors.set_selection';
+_map['mouse0-up'] = 'cursors.end_selection';
+_map['shift-mouse0-up'] = 'cursors.end_selection';
+_map['shift-mouse0-down'] = 'cursors.start_set_selection';
+_map['shift-mouse-move'] = 'cursors.set_selection';
+_map['tab'] = 'cursor.indent';
+_map['shift-tab'] = 'cursor.unindent';
+_map['escape'] = 'cursors.single';
+exports.map = _map;
+
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/default.js","/control")
+},{"1YiZ5S":4,"buffer":1}],10:[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var utils = require('../utils/utils');
+var keymap = require('./map');
+/**
+ * Reversible action history.
+ */
+var History = (function (_super) {
+    __extends(History, _super);
+    function History(map) {
+        _super.call(this);
+        this._map = map;
+        this._actions = [];
+        this._action_groups = [];
+        this._undone = [];
+        this._autogroup = null;
+        this._action_lock = false;
+        keymap.Map.register('history.undo', utils.proxy(this.undo, this));
+        keymap.Map.register('history.redo', utils.proxy(this.redo, this));
+    }
+    /**
+     * Push a reversible action to the history.
+     * @param forward_name - name of the forward action
+     * @param forward_params - parameters to use when invoking the forward action
+     * @param backward_name - name of the backward action
+     * @param backward_params - parameters to use when invoking the backward action
+     * @param [autogroup_delay] - time to wait to automatically group the actions.
+     *                            If this is undefined, autogrouping will not occur.
+     */
+    History.prototype.push_action = function (forward_name, forward_params, backward_name, backward_params, autogroup_delay) {
+        var _this = this;
+        if (this._action_lock)
+            return;
+        this._actions.push({
+            forward: {
+                name: forward_name,
+                parameters: forward_params,
+            },
+            backward: {
+                name: backward_name,
+                parameters: backward_params,
+            }
+        });
+        this._undone = [];
+        // If a delay is defined, prepare a timeout to autogroup.
+        if (autogroup_delay !== undefined) {
+            // If another timeout was already set, cancel it.
+            if (this._autogroup !== null) {
+                clearTimeout(this._autogroup);
+            }
+            // Set a new timeout.
+            this._autogroup = setTimeout(function () {
+                _this.group_actions();
+            }, autogroup_delay);
+        }
+    };
+    /**
+     * Commit the pushed actions to one group.
+     */
+    History.prototype.group_actions = function () {
+        this._autogroup = null;
+        if (this._action_lock)
+            return;
+        this._action_groups.push(this._actions);
+        this._actions = [];
+        this._undone = [];
+    };
+    /**
+     * Undo one set of actions.
+     */
+    History.prototype.undo = function () {
+        var _this = this;
+        // If a timeout is set, group now.
+        if (this._autogroup !== null) {
+            clearTimeout(this._autogroup);
+            this.group_actions();
+        }
+        var undo;
+        if (this._actions.length > 0) {
+            undo = this._actions;
+        }
+        else if (this._action_groups.length > 0) {
+            undo = this._action_groups.pop();
+            undo.reverse();
+        }
+        else {
+            return true;
+        }
+        // Undo the actions.
+        if (!this._action_lock) {
+            this._action_lock = true;
+            try {
+                undo.forEach(function (action) {
+                    _this._map.invoke(action.backward.name, action.backward.parameters);
+                });
+            }
+            finally {
+                this._action_lock = false;
+            }
+        }
+        // Allow the action to be redone.
+        this._undone.push(undo);
+        return true;
+    };
+    /**
+     * Redo one set of actions.
+     */
+    History.prototype.redo = function () {
+        var _this = this;
+        if (this._undone.length > 0) {
+            var redo = this._undone.pop();
+            // Redo the actions.
+            if (!this._action_lock) {
+                this._action_lock = true;
+                try {
+                    redo.forEach(function (action) {
+                        _this._map.invoke(action.forward.name, action.forward.parameters);
+                    });
+                }
+                finally {
+                    this._action_lock = false;
+                }
+            }
+            // Allow the action to be undone.
+            this._action_groups.push(redo);
+        }
+        return true;
+    };
+    return History;
+})(utils.PosterClass);
+exports.History = History;
+
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/history.js","/control")
+},{"../utils/utils":40,"./map":11,"1YiZ5S":4,"buffer":1}],11:[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+var utils = require('../utils/utils');
+/**
+ * Event normalizer
+ *
+ * Listens to DOM events and emits 'cleaned' versions of those events.
+ */
+var Map = (function (_super) {
+    __extends(Map, _super);
+    function Map(normalizer) {
+        _super.call(this);
+        this._map = {};
+        // Create normalizer property
+        this._normalizer = null;
+        this._proxy_handle_event = utils.proxy(this._handle_event, this);
+        // If defined, set the normalizer.
+        if (normalizer)
+            this.normalizer = normalizer;
+    }
+    Object.defineProperty(Map.prototype, "normalizer", {
+        get: function () {
+            return this._normalizer;
+        },
+        set: function (value) {
+            // Remove event handler.
+            if (this._normalizer)
+                this._normalizer.off_all(this._proxy_handle_event);
+            // Set, and add event handler.
+            this._normalizer = value;
+            if (value)
+                value.on_all(this._proxy_handle_event);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    /**
+     * Append event actions to the map.
+     *
+     * The map allows you to register actions for keys.
+     * Example:
+     *     map.map({
+     *         'ctrl-a': 'cursors.select_all',
+     *     })
+     *
+     * Multiple actions can be registered for a single event.
+     * The actions are executed sequentially, until one action
+     * returns `true` in which case the execution haults.  This
+     * allows actions to run conditionally.
+     * Example:
+     *     // Implementing a dual mode editor, you may have two
+     *     // functions to register for one key. i.e.:
+     *     var do_a = function(e) {
+     *         if (mode=='edit') {
+     *             console.log('A');
+     *             return true;
+     *         }
+     *     }
+     *     var do_b = function(e) {
+     *         if (mode=='command') {
+     *             console.log('B');
+     *             return true;
+     *         }
+     *     }
+     *
+     *     // To register both for one key
+     *     Map.register('action_a', do_a);
+     *     Map.register('action_b', do_b);
+     *     map.map({
+     *         'alt-v': ['action_a', 'action_b'],
+     *     });
+     */
+    Map.prototype.map = function (keyactions) {
+        var _this = this;
+        var parsed = this._parse_map_arguments(keyactions);
+        Object.keys(parsed).forEach(function (key) {
+            if (_this._map[key] === undefined) {
+                _this._map[key] = parsed[key];
+            }
+            else {
+                _this._map[key] = _this._map[key].concat(parsed[key]);
+            }
+        });
+    };
+    /**
+     * Prepend event actions to the map.
+     *
+     * See the doc for `map` for a detailed description of
+     * possible input values.
+     */
+    Map.prototype.prepend_map = function (keyactions) {
+        var _this = this;
+        var parsed = this._parse_map_arguments(keyactions);
+        Object.keys(parsed).forEach(function (key) {
+            if (_this._map[key] === undefined) {
+                _this._map[key] = parsed[key];
+            }
+            else {
+                _this._map[key] = parsed[key].concat(_this._map[key]);
+            }
+        });
+    };
+    /**
+     * Unmap event actions in the map.
+     *
+     * See the doc for `map` for a detailed description of
+     * possible input values.
+     */
+    Map.prototype.unmap = function (keyactions) {
+        var _this = this;
+        var parsed = this._parse_map_arguments(keyactions);
+        Object.keys(parsed).forEach(function (key) {
+            if (_this._map[key] !== undefined) {
+                parsed[key].forEach(function (value) {
+                    var index = _this._map[key].indexOf(value);
+                    if (index != -1) {
+                        _this._map[key].splice(index, 1);
+                    }
+                });
+            }
+        });
+    };
+    /**
+     * Get a modifiable array of the actions for a particular event.
+     * @return by ref copy of the actions registered to an event.
+     */
+    Map.prototype.get_mapping = function (event) {
+        return this._map[this._normalize_event_name(event)];
+    };
+    /**
+     * Invokes the callbacks of an action by name.
+     * @param name
+     * @param [args] - arguments to pass to the action callback[s]
+     * @return true if one or more of the actions returned true
+     */
+    Map.prototype.invoke = function (name, args) {
+        var action_callbacks = Map.registry[name];
+        if (action_callbacks) {
+            var returns = [];
+            action_callbacks.forEach(function (action_callback) {
+                returns.push(action_callback.apply(undefined, args) === true);
+            });
+            // If one of the action callbacks returned true, cancel bubbling.
+            if (returns.some(function (x) {
+                return x;
+            })) {
+                return true;
+            }
+        }
+        return false;
+    };
+    /**
+     * Parse the arguments to a map function.
+     */
+    Map.prototype._parse_map_arguments = function (keyactions) {
+        var _this = this;
+        var parsed = {};
+        Object.keys(keyactions).forEach(function (key) {
+            var normalized_key = _this._normalize_event_name(key);
+            // If the value is not an array, wrap it in one.
+            var value;
+            if (!utils.is_array(keyactions[key])) {
+                value = [keyactions[key]];
+            }
+            else {
+                value = keyactions[key];
+            }
+            // If the key is already defined, concat the values to
+            // it.  Otherwise, set it.
+            if (parsed[normalized_key] === undefined) {
+                parsed[normalized_key] = value;
+            }
+            else {
+                parsed[normalized_key] = parsed[normalized_key].concat(value);
+            }
+        });
+        return parsed;
+    };
+    /**
+     * Handles a normalized event.
+     * @param name - name of the event
+     * @param e - browser Event object
+     */
+    Map.prototype._handle_event = function (name, e) {
+        var _this = this;
+        var normalized_event = this._normalize_event_name(name);
+        var action_names = this._map[normalized_event];
+        if (action_names) {
+            action_names.forEach(function (action_name) {
+                if (_this.invoke(action_name, [e])) {
+                    utils.cancel_bubble(e);
+                }
+            });
+        }
+    };
+    /**
+     * Alphabetically sorts keys in event name, so
+     * @return normalized event name
+     */
+    Map.prototype._normalize_event_name = function (name) {
+        return name.toLowerCase().trim().split('-').sort().join('-');
+    };
+    Map.registry = {};
+    Map._registry_tags = {};
+    /**
+     * Registers an action.
+     * @param name - name of the action
+     * @param f
+     * @param (optional) tag - allows you to specify a tag
+     *                  which can be used with the `unregister_by_tag`
+     *                  method to quickly unregister actions with
+     *                  the tag specified.
+     */
+    Map.register = function (name, f, tag) {
+        if (utils.is_array(Map.registry[name])) {
+            Map.registry[name].push(f);
+        }
+        else {
+            Map.registry[name] = [f];
+        }
+        if (tag) {
+            if (Map._registry_tags[tag] === undefined) {
+                Map._registry_tags[tag] = [];
+            }
+            Map._registry_tags[tag].push({ name: name, f: f });
+        }
+    };
+    /**
+     * Unregister an action.
+     * @param name - name of the action
+     * @param f
+     * @return true if action was found and unregistered
+     */
+    Map.unregister = function (name, f) {
+        var index = Map.registry[name].indexOf(f);
+        if (index != -1) {
+            Map.registry[name].splice(index, 1);
+            return true;
+        }
+        return false;
+    };
+    /**
+     * Unregisters all of the actions registered with a given tag.
+     * @param tag - specified in Map.register.
+     * @return true if the tag was found and deleted.
+     */
+    Map.unregister_by_tag = function (tag) {
+        if (Map._registry_tags[tag]) {
+            Map._registry_tags[tag].forEach(function (registration) {
+                Map.unregister(registration.name, registration.f);
+            });
+            delete Map._registry_tags[tag];
+            return true;
+        }
+    };
+    return Map;
+})(utils.PosterClass);
+exports.Map = Map;
+
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/map.js","/control")
+},{"../utils/utils":40,"1YiZ5S":4,"buffer":1}],12:[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+var utils = require('../utils/utils');
+/**
+ * Event normalizer
+ *
+ * Listens to DOM events and emits 'cleaned' versions of those events.
+ */
+var Normalizer = (function (_super) {
+    __extends(Normalizer, _super);
+    function Normalizer() {
+        _super.call(this);
+        this._el_hooks = {};
+    }
+    /**
+     * Listen to the events of an element.
+     */
+    Normalizer.prototype.listen_to = function (el) {
+        var hooks = [];
+        hooks.push(utils.hook(el, 'onkeypress', this._proxy('press', this._handle_keypress_event, el)));
+        hooks.push(utils.hook(el, 'onkeydown', this._proxy('down', this._handle_keyboard_event, el)));
+        hooks.push(utils.hook(el, 'onkeyup', this._proxy('up', this._handle_keyboard_event, el)));
+        hooks.push(utils.hook(el, 'ondblclick', this._proxy('dblclick', this._handle_mouse_event, el)));
+        hooks.push(utils.hook(el, 'onclick', this._proxy('click', this._handle_mouse_event, el)));
+        hooks.push(utils.hook(el, 'onmousedown', this._proxy('down', this._handle_mouse_event, el)));
+        hooks.push(utils.hook(el, 'onmouseup', this._proxy('up', this._handle_mouse_event, el)));
+        hooks.push(utils.hook(el, 'onmousemove', this._proxy('move', this._handle_mousemove_event, el)));
+        this._el_hooks[el.toString()] = hooks;
+    };
+    /**
+     * Stops listening to an element.
+     */
+    Normalizer.prototype.stop_listening_to = function (el) {
+        var key = el.toString();
+        if (this._el_hooks[key] !== undefined) {
+            this._el_hooks[key].forEach(function (hook) { return hook.unhook(); });
+            delete this._el_hooks[key];
+        }
+    };
+    /**
+     * Handles when a mouse event occurs
+     */
+    Normalizer.prototype._handle_mouse_event = function (el, event_name, e) {
+        e = e || window.event;
+        this.trigger(this._modifier_string(e) + 'mouse' + e.button + '-' + event_name, e);
+    };
+    /**
+     * Handles when a mouse event occurs
+     */
+    Normalizer.prototype._handle_mousemove_event = function (el, event_name, e) {
+        e = e || window.event;
+        this.trigger(this._modifier_string(e) + 'mouse' + '-' + event_name, e);
+    };
+    /**
+     * Handles when a keyboard event occurs
+     */
+    Normalizer.prototype._handle_keyboard_event = function (el, event_name, e) {
+        e = e || window.event;
+        var keyname = this._lookup_keycode(e.keyCode);
+        if (keyname !== undefined) {
+            this.trigger(this._modifier_string(e) + keyname + '-' + event_name, e);
+            if (event_name == 'down') {
+                this.trigger(this._modifier_string(e) + keyname, e);
+            }
+        }
+        this.trigger(this._modifier_string(e) + String(e.keyCode) + '-' + event_name, e);
+        this.trigger('key' + event_name, e);
+    };
+    /**
+     * Handles when a keypress event occurs
+     */
+    Normalizer.prototype._handle_keypress_event = function (el, event_name, e) {
+        this.trigger('keypress', e);
+    };
+    /**
+     * Creates an element event proxy.
+     */
+    Normalizer.prototype._proxy = function (event_name, f, el) {
+        var that = this;
+        return function () {
+            var args = [el, event_name].concat(Array.prototype.slice.call(arguments, 0));
+            return f.apply(that, args);
+        };
+    };
+    /**
+     * Create a modifiers string from an event.
+     * @return dash separated modifier string
+     */
+    Normalizer.prototype._modifier_string = function (e) {
+        var modifiers = [];
+        if (e.ctrlKey)
+            modifiers.push('ctrl');
+        if (e.altKey)
+            modifiers.push('alt');
+        if (e.shiftKey)
+            modifiers.push('shift');
+        // Hack, metaKey not recognized by TypeScript.
+        if (e.metaKey)
+            modifiers.push('meta');
+        var string = modifiers.sort().join('-');
+        if (string.length > 0)
+            string = string + '-';
+        return string;
+    };
+    /**
+     * Lookup the human friendly name for a keycode.
+     * @return key name
+     */
+    Normalizer.prototype._lookup_keycode = function (keycode) {
+        if (112 <= keycode && keycode <= 123) {
+            return 'f' + (keycode - 111);
+        }
+        else if (48 <= keycode && keycode <= 57) {
+            return String(keycode - 48);
+        }
+        else if (65 <= keycode && keycode <= 90) {
+            return 'abcdefghijklmnopqrstuvwxyz'.substring(keycode - 65, keycode - 64);
+        }
+        else {
+            var codes = {
+                8: 'backspace',
+                9: 'tab',
+                13: 'enter',
+                16: 'shift',
+                17: 'ctrl',
+                18: 'alt',
+                19: 'pause',
+                20: 'capslock',
+                27: 'esc',
+                32: 'space',
+                33: 'pageup',
+                34: 'pagedown',
+                35: 'end',
+                36: 'home',
+                37: 'leftarrow',
+                38: 'uparrow',
+                39: 'rightarrow',
+                40: 'downarrow',
+                44: 'printscreen',
+                45: 'insert',
+                46: 'delete',
+                91: 'windows',
+                93: 'menu',
+                144: 'numlock',
+                145: 'scrolllock',
+                188: 'comma',
+                190: 'period',
+                191: 'fowardslash',
+                192: 'tilde',
+                219: 'leftbracket',
+                220: 'backslash',
+                221: 'rightbracket',
+                222: 'quote',
+            };
+            return codes[keycode];
+        }
+        // TODO: this function is missing some browser specific
+        // keycode mappings.
+    };
+    return Normalizer;
+})(utils.PosterClass);
+exports.Normalizer = Normalizer;
+
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/normalizer.js","/control")
+},{"../utils/utils":40,"1YiZ5S":4,"buffer":1}],13:[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var utils = require('./utils/utils');
+var normalizer = require('./control/normalizer');
+var keymap = require('./control/map');
+var default_keymap = require('./control/default');
+var cursors = require('./control/cursors');
+var clipboard = require('./control/clipboard');
+var history = require('./control/history');
+/**
+ * Controller for a DocumentModel.
+ */
+var DocumentController = (function (_super) {
+    __extends(DocumentController, _super);
+    function DocumentController(el, model) {
+        _super.call(this);
+        this.clipboard = new clipboard.Clipboard(el);
+        this.normalizer = new normalizer.Normalizer();
+        this.normalizer.listen_to(el);
+        this.normalizer.listen_to(this.clipboard.hidden_input);
+        this.map = new keymap.Map(this.normalizer);
+        this.map.map(default_keymap.map);
+        this.history = new history.History(this.map);
+        this.cursors = new cursors.Cursors(model, this.clipboard, this.history);
+    }
+    return DocumentController;
+})(utils.PosterClass);
+exports.DocumentController = DocumentController;
+
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/document_controller.js","/")
+},{"./control/clipboard":6,"./control/cursors":8,"./control/default":9,"./control/history":10,"./control/map":11,"./control/normalizer":12,"./utils/utils":40,"1YiZ5S":4,"buffer":1}],14:[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var utils = require('./utils/utils');
+var superset = require('./utils/superset');
+/**
+ * Model containing all of the document's data (text).
+ */
+var DocumentModel = (function (_super) {
+    __extends(DocumentModel, _super);
+    function DocumentModel() {
+        _super.call(this);
+        this._rows = [];
+        this._row_tags = [];
+        this._tag_lock = 0;
+        this._pending_tag_events = false;
+    }
+    Object.defineProperty(DocumentModel.prototype, "rows", {
+        get: function () {
+            // Return a shallow copy of the array so it cannot be modified.
+            return [].concat(this._rows);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(DocumentModel.prototype, "text", {
+        get: function () {
+            return this._get_text();
+        },
+        set: function (value) {
+            this._set_text(value);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    /**
+     * Acquire a lock on tag events
+     *
+     * Prevents tag events from firing.
+     * @return {integer} lock count
+     */
+    DocumentModel.prototype.acquire_tag_event_lock = function () {
+        return this._tag_lock++;
+    };
+    /**
+     * Release a lock on tag events
+     * @return {integer} lock count
+     */
+    DocumentModel.prototype.release_tag_event_lock = function () {
+        this._tag_lock--;
+        if (this._tag_lock < 0) {
+            this._tag_lock = 0;
+        }
+        if (this._tag_lock === 0 && this._pending_tag_events) {
+            this._pending_tag_events = false;
+            this.trigger_tag_events();
+        }
+        return this._tag_lock;
+    };
+    /**
+     * Triggers the tag change events.
+     * @return {null}
+     */
+    DocumentModel.prototype.trigger_tag_events = function (rows) {
+        if (this._tag_lock === 0) {
+            this.trigger('tags_changed', this._pending_tag_events_rows);
+            this._pending_tag_events_rows = undefined;
+        }
+        else {
+            this._pending_tag_events = true;
+            if (this._pending_tag_events_rows) {
+                this._pending_tag_events_rows = this._pending_tag_events_rows.concat(rows);
+            }
+            else {
+                this._pending_tag_events_rows = rows;
+            }
+        }
+    };
+    /**
+     * Sets a 'tag' on the text specified.
+     * @param {integer} start_row - row the tag starts on
+     * @param {integer} start_char - index, in the row, of the first tagged character
+     * @param {integer} end_row - row the tag ends on
+     * @param {integer} end_char - index, in the row, of the last tagged character
+     * @param {string} tag_name
+     * @param {any} tag_value - overrides any previous tags
+     */
+    DocumentModel.prototype.set_tag = function (start_row, start_char, end_row, end_char, tag_name, tag_value) {
+        var coords = this.validate_coords.apply(this, arguments);
+        var rows = [];
+        for (var row = coords.start_row; row <= coords.end_row; row++) {
+            // Make sure the superset is defined for the row/tag_name pair.
+            var row_tags = this._row_tags[row];
+            if (row_tags[tag_name] === undefined) {
+                row_tags[tag_name] = new superset.Superset();
+            }
+            // Get the start and end char indicies.
+            var s = coords.start_char;
+            var e = coords.end_char;
+            if (row > coords.start_row)
+                s = 0;
+            if (row < coords.end_row)
+                e = this._rows[row].length - 1;
+            // Set the value for the range.
+            row_tags[tag_name].set(s, e, tag_value);
+            rows.push(row);
+        }
+        this.trigger_tag_events(rows);
+    };
+    /**
+     * Removed all of the tags on the document.
+     * @param  {integer} start_row
+     * @param  {integer} end_row
+     * @return {null}
+     */
+    DocumentModel.prototype.clear_tags = function (start_row, end_row) {
+        start_row = start_row !== undefined ? start_row : 0;
+        end_row = end_row !== undefined ? end_row : this._row_tags.length - 1;
+        var rows = [];
+        for (var i = start_row; i <= end_row; i++) {
+            this._row_tags[i] = {};
+            rows.push(i);
+        }
+        this.trigger_tag_events(rows);
+    };
+    /**
+     * Get the tag value applied to the character.
+     * @param  {string} tag_name
+     * @param  {integer} row_index
+     * @param  {integer} char_index
+     * @return {object} value or undefined
+     */
+    DocumentModel.prototype.get_tag_value = function (tag_name, row_index, char_index) {
+        // Loop through the tags on this row.
+        var row_tags = this._row_tags[row_index][tag_name];
+        if (row_tags !== undefined) {
+            var tag_array = row_tags.array;
+            for (var i = 0; i < tag_array.length; i++) {
+                // Check if within.
+                if (tag_array[i][0] <= char_index && char_index <= tag_array[i][1]) {
+                    return tag_array[i][2];
+                }
+            }
+        }
+        return undefined;
+    };
+    /**
+     * Get the tag value ranges applied to the specific range.
+     * @param  {string} tag_name
+     * @param  {integer} start_row
+     * @param  {integer} start_char
+     * @param  {integer} end_row
+     * @param  {integer} end_char
+     * @return {array} array of tag value ranges ([row_index, start_char, end_char, tag_value])
+     */
+    DocumentModel.prototype.get_tags = function (tag_name, start_row, start_char, end_row, end_char) {
+        var coords = this.validate_coords.call(this, start_row, start_char, end_row, end_char);
+        var values = [];
+        for (var row = coords.start_row; row <= coords.end_row; row++) {
+            // Get the start and end char indicies.
+            var s = coords.start_char;
+            var e = coords.end_char;
+            if (row > coords.start_row)
+                s = 0;
+            if (row < coords.end_row)
+                e = this._rows[row].length - 1;
+            // Loop through the tags on this row.
+            var row_tags = this._row_tags[row][tag_name];
+            if (row_tags !== undefined) {
+                var tag_array = row_tags.array;
+                for (var i = 0; i < tag_array.length; i++) {
+                    var ns = tag_array[i][0];
+                    var ne = tag_array[i][1];
+                    // Check if the areas insersect.
+                    if (ns <= e && ne >= s) {
+                        values.push([row, ns, ne, tag_array[i][2]]);
+                    }
+                }
+            }
+        }
+        return values;
+    };
+    /**
+     * Adds text efficiently somewhere in the document.
+     * @param {integer} row_index
+     * @param {integer} char_index
+     * @param {string} text
+     */
+    DocumentModel.prototype.add_text = function (row_index, char_index, text) {
+        var coords = this.validate_coords.apply(this, Array.prototype.slice.call(arguments, 0, 2));
+        var old_text = this._rows[coords.start_row];
+        // If the text has a new line in it, just re-set
+        // the rows list.
+        if (text.indexOf('\n') != -1) {
+            var new_rows = [];
+            if (coords.start_row > 0) {
+                new_rows = this._rows.slice(0, coords.start_row);
+            }
+            var old_row_start = old_text.substring(0, coords.start_char);
+            var old_row_end = old_text.substring(coords.start_char);
+            var split_text = text.split('\n');
+            new_rows.push(old_row_start + split_text[0]);
+            if (split_text.length > 2) {
+                new_rows = new_rows.concat(split_text.slice(1, split_text.length - 1));
+            }
+            new_rows.push(split_text[split_text.length - 1] + old_row_end);
+            if (coords.start_row + 1 < this._rows.length) {
+                new_rows = new_rows.concat(this._rows.slice(coords.start_row + 1));
+            }
+            this._rows = new_rows;
+            this._resized_rows();
+            this.trigger('row_changed', old_text, coords.start_row);
+            this.trigger('rows_added', coords.start_row + 1, coords.start_row + split_text.length - 1);
+            this.trigger('changed');
+        }
+        else {
+            this._rows[coords.start_row] = old_text.substring(0, coords.start_char) + text + old_text.substring(coords.start_char);
+            this.trigger('row_changed', old_text, coords.start_row);
+            this.trigger('changed');
+        }
+    };
+    /**
+     * Removes a block of text from the document
+     * @param  {integer} start_row
+     * @param  {integer} start_char
+     * @param  {integer} end_row
+     * @param  {integer} end_char
+     * @return {null}
+     */
+    DocumentModel.prototype.remove_text = function (start_row, start_char, end_row, end_char) {
+        var coords = this.validate_coords.apply(this, arguments);
+        var old_text = this._rows[coords.start_row];
+        if (coords.start_row == coords.end_row) {
+            this._rows[coords.start_row] = this._rows[coords.start_row].substring(0, coords.start_char) + this._rows[coords.start_row].substring(coords.end_char);
+        }
+        else {
+            this._rows[coords.start_row] = this._rows[coords.start_row].substring(0, coords.start_char) + this._rows[coords.end_row].substring(coords.end_char);
+        }
+        if (coords.end_row - coords.start_row > 0) {
+            var rows_removed = this._rows.splice(coords.start_row + 1, coords.end_row - coords.start_row);
+            this._resized_rows();
+            // If there are more deleted rows than rows remaining, it
+            // is faster to run a calculation on the remaining rows than
+            // to run it on the rows removed.
+            if (rows_removed.length > this._rows.length) {
+                this.trigger('text_changed');
+                this.trigger('changed');
+            }
+            else {
+                this.trigger('row_changed', old_text, coords.start_row);
+                this.trigger('rows_removed', rows_removed);
+                this.trigger('changed');
+            }
+        }
+        else if (coords.end_row == coords.start_row) {
+            this.trigger('row_changed', old_text, coords.start_row);
+            this.trigger('changed');
+        }
+    };
+    /**
+     * Remove a row from the document.
+     * @param  {integer} row_index
+     * @return {null}
+     */
+    DocumentModel.prototype.remove_row = function (row_index) {
+        if (0 < row_index && row_index < this._rows.length) {
+            var rows_removed = this._rows.splice(row_index, 1);
+            this._resized_rows();
+            this.trigger('rows_removed', rows_removed);
+            this.trigger('changed');
+        }
+    };
+    /**
+     * Gets a chunk of text.
+     * @param  {integer} start_row
+     * @param  {integer} start_char
+     * @param  {integer} end_row
+     * @param  {integer} end_char
+     * @return {string}
+     */
+    DocumentModel.prototype.get_text = function (start_row, start_char, end_row, end_char) {
+        var coords = this.validate_coords.apply(this, arguments);
+        if (coords.start_row == coords.end_row) {
+            return this._rows[coords.start_row].substring(coords.start_char, coords.end_char);
+        }
+        else {
+            var text = [];
+            text.push(this._rows[coords.start_row].substring(coords.start_char));
+            if (coords.end_row - coords.start_row > 1) {
+                for (var i = coords.start_row + 1; i < coords.end_row; i++) {
+                    text.push(this._rows[i]);
+                }
+            }
+            text.push(this._rows[coords.end_row].substring(0, coords.end_char));
+            return text.join('\n');
+        }
+    };
+    /**
+     * Add a row to the document
+     * @param {integer} row_index
+     * @param {string} text - new row's text
+     */
+    DocumentModel.prototype.add_row = function (row_index, text) {
+        var new_rows = [];
+        if (row_index > 0) {
+            new_rows = this._rows.slice(0, row_index);
+        }
+        new_rows.push(text);
+        if (row_index < this._rows.length) {
+            new_rows = new_rows.concat(this._rows.slice(row_index));
+        }
+        this._rows = new_rows;
+        this._resized_rows();
+        this.trigger('rows_added', row_index, row_index);
+        this.trigger('changed');
+    };
+    /**
+     * Validates row, character coordinates in the document.
+     * @param  {integer} start_row
+     * @param  {integer} start_char
+     * @param  {integer} (optional) end_row
+     * @param  {integer} (optional) end_char
+     * @return {dictionary} dictionary containing validated coordinates {start_row,
+     *                      start_char, end_row, end_char}
+     */
+    DocumentModel.prototype.validate_coords = function (start_row, start_char, end_row, end_char) {
+        // Make sure the values aren't undefined.
+        if (start_row === undefined)
+            start_row = 0;
+        if (start_char === undefined)
+            start_char = 0;
+        if (end_row === undefined)
+            end_row = start_row;
+        if (end_char === undefined)
+            end_char = start_char;
+        // Make sure the values are within the bounds of the contents.
+        if (this._rows.length === 0) {
+            start_row = 0;
+            start_char = 0;
+            end_row = 0;
+            end_char = 0;
+        }
+        else {
+            if (start_row >= this._rows.length)
+                start_row = this._rows.length - 1;
+            if (start_row < 0)
+                start_row = 0;
+            if (end_row >= this._rows.length)
+                end_row = this._rows.length - 1;
+            if (end_row < 0)
+                end_row = 0;
+            if (start_char > this._rows[start_row].length)
+                start_char = this._rows[start_row].length;
+            if (start_char < 0)
+                start_char = 0;
+            if (end_char > this._rows[end_row].length)
+                end_char = this._rows[end_row].length;
+            if (end_char < 0)
+                end_char = 0;
+        }
+        // Make sure the start is before the end.
+        if (start_row > end_row || (start_row == end_row && start_char > end_char)) {
+            return {
+                start_row: end_row,
+                start_char: end_char,
+                end_row: start_row,
+                end_char: start_char,
+            };
+        }
+        else {
+            return {
+                start_row: start_row,
+                start_char: start_char,
+                end_row: end_row,
+                end_char: end_char,
+            };
+        }
+    };
+    /**
+     * Gets the text of the document.
+     * @return {string}
+     */
+    DocumentModel.prototype._get_text = function () {
+        return this._rows.join('\n');
+    };
+    /**
+     * Sets the text of the document.
+     * Complexity O(N) for N rows
+     * @param {string} value
+     */
+    DocumentModel.prototype._set_text = function (value) {
+        this._rows = value.split('\n');
+        this._resized_rows();
+        this.trigger('text_changed');
+        this.trigger('changed');
+    };
+    /**
+     * Updates _row's partner arrays.
+     * @return {null}
+     */
+    DocumentModel.prototype._resized_rows = function () {
+        while (this._row_tags.length < this._rows.length) {
+            this._row_tags.push({});
+        }
+        if (this._row_tags.length > this._rows.length) {
+            this._row_tags.splice(this._rows.length, this._row_tags.length - this._rows.length);
+        }
+    };
+    return DocumentModel;
+})(utils.PosterClass);
+exports.DocumentModel = DocumentModel;
+
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/document_model.js","/")
+},{"./utils/superset":39,"./utils/utils":40,"1YiZ5S":4,"buffer":1}],15:[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var utils = require('./utils/utils');
+// Renderers
+var batch = require('./draw/renderers/batch');
+var highlighted_row = require('./draw/renderers/highlighted_row');
+var cursors = require('./draw/renderers/cursors');
+var selections = require('./draw/renderers/selections');
+var color = require('./draw/renderers/color');
+var highlighter = require('./syntax/prism');
+/**
+ * Visual representation of a DocumentModel instance
+ * @param {Canvas} canvas instance
+ * @param {DocumentModel} model instance
+ * @param {Cursors} cursors_model instance
+ * @param {Style} style - describes rendering style
+ * @param {function} has_focus - function that checks if the text area has focus
+ * @param {function} move_focal_point - function that moves the focal point
+ */
+var DocumentView = (function (_super) {
+    __extends(DocumentView, _super);
+    function DocumentView(canvas, model, cursors_model, style, has_focus, move_focal_point) {
+        this._model = model;
+        // Create child renderers.
+        var row_renderer = new highlighted_row.HighlightedRowRenderer(model, canvas, style);
+        row_renderer.margin_left = 2;
+        row_renderer.margin_top = 2;
+        this.row_renderer = row_renderer;
+        // Make sure changes made to the cursor(s) are within the visible region.
+        cursors_model.on('change', function (cursor) {
+            var row_index = cursor.primary_row;
+            var char_index = cursor.primary_char;
+            var top = row_renderer.get_row_top(row_index);
+            var height = row_renderer.get_row_height(row_index);
+            var left = row_renderer.measure_partial_row_width(row_index, char_index) + row_renderer.margin_left;
+            var bottom = top + height;
+            var canvas_height = canvas.height - 20;
+            if (bottom > canvas.scroll_top + canvas_height) {
+                canvas.scroll_top = bottom - canvas_height;
+            }
+            else if (top < canvas.scroll_top) {
+                canvas.scroll_top = top;
+            }
+            var canvas_width = canvas.width - 20;
+            if (left > canvas.scroll_left + canvas_width) {
+                canvas.scroll_left = left - canvas_width;
+            }
+            else if (left - row_renderer.margin_left < canvas.scroll_left) {
+                canvas.scroll_left = Math.max(0, left - row_renderer.margin_left);
+            }
+            move_focal_point(left - canvas.scroll_left, top - canvas.scroll_top - canvas.height);
+        });
+        var cursors_renderer = new cursors.CursorsRenderer(cursors_model, style, row_renderer, has_focus);
+        var selections_renderer = new selections.SelectionsRenderer(cursors_model, style, row_renderer, has_focus, cursors_renderer);
+        // Create the background renderer
+        var color_renderer = new color.ColorRenderer();
+        color_renderer.color = style.background || 'white';
+        style.on('changed:style', function () {
+            color_renderer.color = style.background;
+        });
+        // Create the document highlighter, which needs to know about the currently
+        // rendered rows in order to know where to highlight.
+        this.highlighter = new highlighter.PrismHighlighter(model, row_renderer);
+        // Pass get_row_char into cursors.
+        cursors_model.get_row_char = utils.proxy(row_renderer.get_row_char, row_renderer);
+        // Call base constructor.
+        _super.call(this, [
+            color_renderer,
+            selections_renderer,
+            row_renderer,
+            cursors_renderer,
+        ], canvas);
+        // Hookup render events.
+        this._canvas.on('redraw', utils.proxy(this.render, this));
+        this._model.on('changed', utils.proxy(canvas.redraw, canvas));
+    }
+    Object.defineProperty(DocumentView.prototype, "language", {
+        get: function () {
+            return this._language;
+        },
+        set: function (value) {
+            this.highlighter.load(value);
+            this._language = value;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    return DocumentView;
+})(batch.BatchRenderer);
+exports.DocumentView = DocumentView;
+
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/document_view.js","/")
+},{"./draw/renderers/batch":18,"./draw/renderers/color":19,"./draw/renderers/cursors":20,"./draw/renderers/highlighted_row":21,"./draw/renderers/selections":24,"./syntax/prism":37,"./utils/utils":40,"1YiZ5S":4,"buffer":1}],16:[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var utils = require('../utils/utils');
 /**
  * Animation helper.
  */
@@ -2108,8 +4407,8 @@ var Animator = (function (_super) {
 })(utils.PosterClass);
 exports.Animator = Animator;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/animator.js","/")
-},{"./utils":40,"1YiZ5S":4,"buffer":1}],7:[function(require,module,exports){
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/animator.js","/draw")
+},{"../utils/utils":40,"1YiZ5S":4,"buffer":1}],17:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -2118,8 +4417,8 @@ var __extends = this.__extends || function (d, b) {
     d.prototype = new __();
 };
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var utils = require('./utils');
-var config_mod = require('./config');
+var utils = require('../utils/utils');
+var config_mod = require('../utils/config');
 var config = config_mod.config;
 /**
  * HTML canvas with drawing convinience functions.
@@ -2651,8 +4950,8 @@ var Canvas = (function (_super) {
 })(utils.PosterClass);
 exports.Canvas = Canvas;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/canvas.js","/")
-},{"./config":9,"./utils":40,"1YiZ5S":4,"buffer":1}],8:[function(require,module,exports){
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/canvas.js","/draw")
+},{"../utils/config":38,"../utils/utils":40,"1YiZ5S":4,"buffer":1}],18:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -2661,3355 +4960,9 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-var utils = require('./utils');
-/**
- * Eventful clipboard support
- *
- * WARNING:  This class is a hudge kludge that works around the prehistoric
- * clipboard support (lack thereof) in modern webrowsers.  It creates a hidden
- * textbox which is focused.  The programmer must call `set_clippable` to change
- * what will be copied when the user hits keys corresponding to a copy
- * operation.  Events `copy`, `cut`, and `paste` are raised by this class.
- */
-var Clipboard = (function (_super) {
-    __extends(Clipboard, _super);
-    function Clipboard(el) {
-        _super.call(this);
-        this._el = el;
-        // Create a textbox that's hidden.
-        this.hidden_input = document.createElement('textarea');
-        this.hidden_input.setAttribute('class', 'poster hidden-clipboard');
-        this.hidden_input.setAttribute('x-palm-disable-auto-cap', true);
-        this.hidden_input.setAttribute('wrap', 'off');
-        this.hidden_input.setAttribute('autocorrect', 'off');
-        this.hidden_input.setAttribute('autocapitalize', 'off');
-        this.hidden_input.setAttribute('spellcheck', false);
-        el.appendChild(this.hidden_input);
-        this._bind_events();
-    }
-    /**
-     * Set what will be copied when the user copies.
-     * @param {string} text
-     */
-    Clipboard.prototype.set_clippable = function (text) {
-        this._clippable = text;
-        this.hidden_input.value = this._clippable;
-        this._focus();
-    };
-    /**
-     * Move the textarea to a point.
-     * @param {number} x
-     * @param {number} y
-     */
-    Clipboard.prototype.set_position = function (x, y) {
-        this.hidden_input.setAttribute('style', 'left: ' + String(x) + 'px; top: ' + String(y) + 'px;');
-    };
-    /**
-     * Focus the hidden text area.
-     * @return {null}
-     */
-    Clipboard.prototype._focus = function () {
-        this.hidden_input.focus();
-        this.hidden_input.select();
-    };
-    /**
-     * Handle when the user pastes into the textbox.
-     * @return {null}
-     */
-    Clipboard.prototype._handle_paste = function (e) {
-        var pasted = e.clipboardData.getData(e.clipboardData.types[0]);
-        utils.cancel_bubble(e);
-        this.trigger('paste', pasted);
-    };
-    /**
-     * Bind events of the hidden textbox.
-     * @return {null}
-     */
-    Clipboard.prototype._bind_events = function () {
-        var _this = this;
-        // Listen to el's focus event.  If el is focused, focus the hidden input
-        // instead.
-        utils.hook(this._el, 'onfocus', utils.proxy(this._focus, this));
-        utils.hook(this.hidden_input, 'onpaste', utils.proxy(this._handle_paste, this));
-        utils.hook(this.hidden_input, 'oncut', function () {
-            // Trigger the event in a timeout so it fires after the system event.
-            setTimeout(function () {
-                _this.trigger('cut', _this._clippable);
-            }, 0);
-        });
-        utils.hook(this.hidden_input, 'oncopy', function () {
-            _this.trigger('copy', _this._clippable);
-        });
-        utils.hook(this.hidden_input, 'onkeypress', function () {
-            setTimeout(function () {
-                _this.hidden_input.value = _this._clippable;
-                _this._focus();
-            }, 0);
-        });
-        utils.hook(this.hidden_input, 'onkeyup', function () {
-            setTimeout(function () {
-                _this.hidden_input.value = _this._clippable;
-                _this._focus();
-            }, 0);
-        });
-    };
-    return Clipboard;
-})(utils.PosterClass);
-exports.Clipboard = Clipboard;
-
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/clipboard.js","/")
-},{"./utils":40,"1YiZ5S":4,"buffer":1}],9:[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var utils = require('./utils');
-exports.config = new utils.PosterClass([
-    'highlight_draw',
-    'highlight_blit',
-    'newline_width',
-    'tab_width',
-    'use_spaces',
-    'history_group_delay',
-]);
-// Set defaults
-exports.config.tab_width = 4;
-exports.config.use_spaces = true;
-exports.config.history_group_delay = 100;
-
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/config.js","/")
-},{"./utils":40,"1YiZ5S":4,"buffer":1}],10:[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var keymap = require('./events/map');
-var register = keymap.Map.register;
-var utils = require('./utils');
-var config_mod = require('./config');
-var config = config_mod.config;
-/**
- * Input cursor.
- */
-var Cursor = (function (_super) {
-    __extends(Cursor, _super);
-    function Cursor(model, push_history) {
-        _super.call(this);
-        this._model = model;
-        this._push_history = push_history;
-        this.primary_row = 0;
-        this.primary_char = 0;
-        this.secondary_row = 0;
-        this.secondary_char = 0;
-        this._register_api();
-    }
-    Object.defineProperty(Cursor.prototype, "start_row", {
-        get: function () {
-            return Math.min(this.primary_row, this.secondary_row);
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(Cursor.prototype, "end_row", {
-        get: function () {
-            return Math.max(this.primary_row, this.secondary_row);
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(Cursor.prototype, "start_char", {
-        get: function () {
-            if (this.primary_row < this.secondary_row || (this.primary_row == this.secondary_row && this.primary_char <= this.secondary_char)) {
-                return this.primary_char;
-            }
-            else {
-                return this.secondary_char;
-            }
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(Cursor.prototype, "end_char", {
-        get: function () {
-            if (this.primary_row < this.secondary_row || (this.primary_row == this.secondary_row && this.primary_char <= this.secondary_char)) {
-                return this.secondary_char;
-            }
-            else {
-                return this.primary_char;
-            }
-        },
-        enumerable: true,
-        configurable: true
-    });
-    /**
-     * Unregister the actions and event listeners of this cursor.
-     */
-    Cursor.prototype.unregister = function () {
-        keymap.Map.unregister_by_tag(this);
-    };
-    /**
-     * Gets the state of the cursor.
-     * @return {object} state
-     */
-    Cursor.prototype.get_state = function () {
-        return {
-            primary_row: this.primary_row,
-            primary_char: this.primary_char,
-            secondary_row: this.secondary_row,
-            secondary_char: this.secondary_char,
-            _memory_char: this._memory_char
-        };
-    };
-    /**
-     * Sets the state of the cursor.
-     * @param {object} state
-     * @param {boolean} [historical] - Defaults to true.  Whether this should be recorded in history.
-     */
-    Cursor.prototype.set_state = function (state, historical) {
-        if (state) {
-            var old_state = {};
-            for (var key in state) {
-                if (state.hasOwnProperty(key)) {
-                    old_state[key] = this[key];
-                    this[key] = state[key];
-                }
-            }
-            if (historical === undefined || historical === true) {
-                this._push_history('set_state', [state], 'set_state', [old_state]);
-            }
-            this.trigger('change');
-        }
-    };
-    /**
-     * Moves the primary cursor a given offset.
-     * @param  {integer} x
-     * @param  {integer} y
-     * @param  {boolean} (optional) hop=false - hop to the other side of the
-     *                   selected region if the primary is on the opposite of the
-     *                   direction of motion.
-     * @return {null}
-     */
-    Cursor.prototype.move_primary = function (x, y, hop) {
-        if (hop) {
-            if (this.primary_row != this.secondary_row || this.primary_char != this.secondary_char) {
-                var start_row = this.start_row;
-                var start_char = this.start_char;
-                var end_row = this.end_row;
-                var end_char = this.end_char;
-                if (x < 0 || y < 0) {
-                    this.primary_row = start_row;
-                    this.primary_char = start_char;
-                    this.secondary_row = end_row;
-                    this.secondary_char = end_char;
-                }
-                else {
-                    this.primary_row = end_row;
-                    this.primary_char = end_char;
-                    this.secondary_row = start_row;
-                    this.secondary_char = start_char;
-                }
-            }
-        }
-        if (x < 0) {
-            if (this.primary_char + x < 0) {
-                if (this.primary_row === 0) {
-                    this.primary_char = 0;
-                }
-                else {
-                    this.primary_row -= 1;
-                    this.primary_char = this._model._rows[this.primary_row].length;
-                }
-            }
-            else {
-                this.primary_char += x;
-            }
-        }
-        else if (x > 0) {
-            if (this.primary_char + x > this._model._rows[this.primary_row].length) {
-                if (this.primary_row === this._model._rows.length - 1) {
-                    this.primary_char = this._model._rows[this.primary_row].length;
-                }
-                else {
-                    this.primary_row += 1;
-                    this.primary_char = 0;
-                }
-            }
-            else {
-                this.primary_char += x;
-            }
-        }
-        // Remember the character position, vertical navigation across empty lines
-        // shouldn't cause the horizontal position to be lost.
-        if (x !== 0) {
-            this._memory_char = this.primary_char;
-        }
-        if (y !== 0) {
-            this.primary_row += y;
-            this.primary_row = Math.min(Math.max(this.primary_row, 0), this._model._rows.length - 1);
-            if (this._memory_char !== undefined) {
-                this.primary_char = this._memory_char;
-            }
-            if (this.primary_char > this._model._rows[this.primary_row].length) {
-                this.primary_char = this._model._rows[this.primary_row].length;
-            }
-        }
-        this.trigger('change');
-    };
-    /**
-     * Walk the primary cursor in a direction until a not-text character is found.
-     * @param  {integer} direction
-     * @return {null}
-     */
-    Cursor.prototype.word_primary = function (direction) {
-        // Make sure direction is 1 or -1.
-        direction = direction < 0 ? -1 : 1;
-        // If moving left and at end of row, move up a row if possible.
-        if (this.primary_char === 0 && direction == -1) {
-            if (this.primary_row !== 0) {
-                this.primary_row--;
-                this.primary_char = this._model._rows[this.primary_row].length;
-                this._memory_char = this.primary_char;
-                this.trigger('change');
-            }
-            return;
-        }
-        // If moving right and at end of row, move down a row if possible.
-        if (this.primary_char >= this._model._rows[this.primary_row].length && direction == 1) {
-            if (this.primary_row < this._model._rows.length - 1) {
-                this.primary_row++;
-                this.primary_char = 0;
-                this._memory_char = this.primary_char;
-                this.trigger('change');
-            }
-            return;
-        }
-        var i = this.primary_char;
-        var hit_text = false;
-        var row_text = this._model._rows[this.primary_row];
-        if (direction == -1) {
-            while (0 < i && !(hit_text && utils.not_text(row_text[i - 1]))) {
-                hit_text = hit_text || !utils.not_text(row_text[i - 1]);
-                i += direction;
-            }
-        }
-        else {
-            while (i < row_text.length && !(hit_text && utils.not_text(row_text[i]))) {
-                hit_text = hit_text || !utils.not_text(row_text[i]);
-                i += direction;
-            }
-        }
-        this.primary_char = i;
-        this._memory_char = this.primary_char;
-        this.trigger('change');
-    };
-    /**
-     * Select all of the text.
-     * @return {null}
-     */
-    Cursor.prototype.select_all = function () {
-        this.primary_row = this._model._rows.length - 1;
-        this.primary_char = this._model._rows[this.primary_row].length;
-        this.secondary_row = 0;
-        this.secondary_char = 0;
-        this.trigger('change');
-    };
-    /**
-     * Move the primary cursor to the line end.
-     * @return {null}
-     */
-    Cursor.prototype.primary_goto_end = function () {
-        // Get the start of the actual content, skipping the whitespace.
-        var row_text = this._model._rows[this.primary_row];
-        var trimmed = row_text.trim();
-        var start = row_text.indexOf(trimmed);
-        var target = row_text.length;
-        if (0 < start && start < row_text.length && this.primary_char !== start + trimmed.length) {
-            target = start + trimmed.length;
-        }
-        // Move the cursor.
-        this.primary_char = target;
-        this._memory_char = this.primary_char;
-        this.trigger('change');
-    };
-    /**
-     * Move the primary cursor to the line start.
-     * @return {null}
-     */
-    Cursor.prototype.primary_goto_start = function () {
-        // Get the start of the actual content, skipping the whitespace.
-        var row_text = this._model._rows[this.primary_row];
-        var start = row_text.indexOf(row_text.trim());
-        var target = 0;
-        if (0 < start && start < row_text.length && this.primary_char !== start) {
-            target = start;
-        }
-        // Move the cursor.
-        this.primary_char = target;
-        this._memory_char = this.primary_char;
-        this.trigger('change');
-    };
-    /**
-     * Selects a word at the given location.
-     * @param {integer} row_index
-     * @param {integer} char_index
-     */
-    Cursor.prototype.select_word = function (row_index, char_index) {
-        this.set_both(row_index, char_index);
-        this.word_primary(-1);
-        this._reset_secondary();
-        this.word_primary(1);
-    };
-    /**
-     * Set the primary cursor position
-     * @param {integer} row_index
-     * @param {integer} char_index
-     */
-    Cursor.prototype.set_primary = function (row_index, char_index) {
-        this.primary_row = row_index;
-        this.primary_char = char_index;
-        // Remember the character position, vertical navigation across empty lines
-        // shouldn't cause the horizontal position to be lost.
-        this._memory_char = this.primary_char;
-        this.trigger('change');
-    };
-    /**
-     * Set the secondary cursor position
-     * @param {integer} row_index
-     * @param {integer} char_index
-     */
-    Cursor.prototype.set_secondary = function (row_index, char_index) {
-        this.secondary_row = row_index;
-        this.secondary_char = char_index;
-        this.trigger('change');
-    };
-    /**
-     * Sets both the primary and secondary cursor positions
-     * @param {integer} row_index
-     * @param {integer} char_index
-     */
-    Cursor.prototype.set_both = function (row_index, char_index) {
-        this.primary_row = row_index;
-        this.primary_char = char_index;
-        this.secondary_row = row_index;
-        this.secondary_char = char_index;
-        // Remember the character position, vertical navigation across empty lines
-        // shouldn't cause the horizontal position to be lost.
-        this._memory_char = this.primary_char;
-        this.trigger('change');
-    };
-    /**
-     * Handles when a key is pressed.
-     * @param  {Event} e - original key press event.
-     * @return {null}
-     */
-    Cursor.prototype.keypress = function (e) {
-        var char_code = e.which || e.keyCode;
-        var char_typed = String.fromCharCode(char_code);
-        this.remove_selected();
-        this._historical(function () {
-            this._model_add_text(this.primary_row, this.primary_char, char_typed);
-        });
-        this.move_primary(1, 0);
-        this._reset_secondary();
-        return true;
-    };
-    /**
-     * Indent
-     * @param  {Event} e - original key press event.
-     * @return {null}
-     */
-    Cursor.prototype.indent = function (e) {
-        var indent = this._make_indents()[0];
-        this._historical(function () {
-            if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
-                this._model_add_text(this.primary_row, this.primary_char, indent);
-            }
-            else {
-                for (var row = this.start_row; row <= this.end_row; row++) {
-                    this._model_add_text(row, 0, indent);
-                }
-            }
-        });
-        this.primary_char += indent.length;
-        this._memory_char = this.primary_char;
-        this.secondary_char += indent.length;
-        this.trigger('change');
-        return true;
-    };
-    /**
-     * Unindent
-     * @param  {Event} e - original key press event.
-     * @return {null}
-     */
-    Cursor.prototype.unindent = function (e) {
-        var indents = this._make_indents();
-        var removed_start = 0;
-        var removed_end = 0;
-        // If no text is selected, remove the indent preceding the
-        // cursor if it exists.
-        this._historical(function () {
-            if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
-                for (var i = 0; i < indents.length; i++) {
-                    var indent = indents[i];
-                    if (this.primary_char >= indent.length) {
-                        var before = this._model.get_text(this.primary_row, this.primary_char - indent.length, this.primary_row, this.primary_char);
-                        if (before == indent) {
-                            this._model_remove_text(this.primary_row, this.primary_char - indent.length, this.primary_row, this.primary_char);
-                            removed_start = indent.length;
-                            removed_end = indent.length;
-                            break;
-                        }
-                    }
-                }
-            }
-            else {
-                for (var row = this.start_row; row <= this.end_row; row++) {
-                    for (var i = 0; i < indents.length; i++) {
-                        var indent = indents[i];
-                        if (this._model._rows[row].length >= indent.length) {
-                            if (this._model._rows[row].substring(0, indent.length) == indent) {
-                                this._model_remove_text(row, 0, row, indent.length);
-                                if (row == this.start_row)
-                                    removed_start = indent.length;
-                                if (row == this.end_row)
-                                    removed_end = indent.length;
-                                break;
-                            }
-                        }
-                        ;
-                    }
-                }
-            }
-        });
-        // Move the selected characters backwards if indents were removed.
-        var start_is_primary = (this.primary_row == this.start_row && this.primary_char == this.start_char);
-        if (start_is_primary) {
-            this.primary_char -= removed_start;
-            this.secondary_char -= removed_end;
-        }
-        else {
-            this.primary_char -= removed_end;
-            this.secondary_char -= removed_start;
-        }
-        this._memory_char = this.primary_char;
-        if (removed_end || removed_start)
-            this.trigger('change');
-        return true;
-    };
-    /**
-     * Insert a newline
-     * @return {null}
-     */
-    Cursor.prototype.newline = function (e) {
-        this.remove_selected();
-        // Get the blank space at the begining of the line.
-        var line_text = this._model.get_text(this.primary_row, 0, this.primary_row, this.primary_char);
-        var spaceless = line_text.trim();
-        var left = line_text.length;
-        if (spaceless.length > 0) {
-            left = line_text.indexOf(spaceless);
-        }
-        var indent = line_text.substring(0, left);
-        this._historical(function () {
-            this._model_add_text(this.primary_row, this.primary_char, '\n' + indent);
-        });
-        this.primary_row += 1;
-        this.primary_char = indent.length;
-        this._memory_char = this.primary_char;
-        this._reset_secondary();
-        return true;
-    };
-    /**
-     * Insert text
-     * @param  {string} text
-     * @return {null}
-     */
-    Cursor.prototype.insert_text = function (text) {
-        this.remove_selected();
-        this._historical(function () {
-            this._model_add_text(this.primary_row, this.primary_char, text);
-        });
-        // Move cursor to the end.
-        if (text.indexOf('\n') == -1) {
-            this.primary_char = this.start_char + text.length;
-        }
-        else {
-            var lines = text.split('\n');
-            this.primary_row += lines.length - 1;
-            this.primary_char = lines[lines.length - 1].length;
-        }
-        this._reset_secondary();
-        this.trigger('change');
-        return true;
-    };
-    /**
-     * Paste text
-     * @param  {string} text
-     * @return {null}
-     */
-    Cursor.prototype.paste = function (text) {
-        if (this._copied_row === text) {
-            this._historical(function () {
-                this._model_add_row(this.primary_row, text);
-            });
-            this.primary_row++;
-            this.secondary_row++;
-            this.trigger('change');
-        }
-        else {
-            this.insert_text(text);
-        }
-    };
-    /**
-     * Remove the selected text
-     * @return {boolean} true if text was removed.
-     */
-    Cursor.prototype.remove_selected = function () {
-        if (this.primary_row !== this.secondary_row || this.primary_char !== this.secondary_char) {
-            var row_index = this.start_row;
-            var char_index = this.start_char;
-            this._historical(function () {
-                this._model_remove_text(this.start_row, this.start_char, this.end_row, this.end_char);
-            });
-            this.primary_row = row_index;
-            this.primary_char = char_index;
-            this._reset_secondary();
-            this.trigger('change');
-            return true;
-        }
-        return false;
-    };
-    /**
-     * Gets the selected text.
-     * @return {string} selected text
-     */
-    Cursor.prototype.get = function () {
-        if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
-            return this._model._rows[this.primary_row];
-        }
-        else {
-            return this._model.get_text(this.start_row, this.start_char, this.end_row, this.end_char);
-        }
-    };
-    /**
-     * Cuts the selected text.
-     * @return {string} selected text
-     */
-    Cursor.prototype.cut = function () {
-        var text = this.get();
-        if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
-            this._copied_row = this._model._rows[this.primary_row];
-            this._historical(function () {
-                this._model_remove_row(this.primary_row);
-            });
-        }
-        else {
-            this._copied_row = null;
-            this.remove_selected();
-        }
-        return text;
-    };
-    /**
-     * Copies the selected text.
-     * @return {string} selected text
-     */
-    Cursor.prototype.copy = function () {
-        var text = this.get();
-        if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
-            this._copied_row = this._model._rows[this.primary_row];
-        }
-        else {
-            this._copied_row = null;
-        }
-        return text;
-    };
-    /**
-     * Delete forward, typically called by `delete` keypress.
-     * @return {null}
-     */
-    Cursor.prototype.delete_forward = function () {
-        if (!this.remove_selected()) {
-            this.move_primary(1, 0);
-            this.remove_selected();
-        }
-        return true;
-    };
-    /**
-     * Delete backward, typically called by `backspace` keypress.
-     * @return {null}
-     */
-    Cursor.prototype.delete_backward = function () {
-        if (!this.remove_selected()) {
-            this.move_primary(-1, 0);
-            this.remove_selected();
-        }
-        return true;
-    };
-    /**
-     * Delete one word backwards.
-     * @return {boolean} success
-     */
-    Cursor.prototype.delete_word_left = function () {
-        if (!this.remove_selected()) {
-            if (this.primary_char === 0) {
-                this.word_primary(-1);
-                this.remove_selected();
-            }
-            else {
-                // Walk backwards until char index is 0 or
-                // a different type of character is hit.
-                var row = this._model._rows[this.primary_row];
-                var i = this.primary_char - 1;
-                var start_not_text = utils.not_text(row[i]);
-                while (i >= 0 && utils.not_text(row[i]) == start_not_text) {
-                    i--;
-                }
-                this.secondary_char = i + 1;
-                this.remove_selected();
-            }
-        }
-        return true;
-    };
-    /**
-     * Delete one word forwards.
-     * @return {boolean} success
-     */
-    Cursor.prototype.delete_word_right = function () {
-        if (!this.remove_selected()) {
-            var row = this._model._rows[this.primary_row];
-            if (this.primary_char === row.length) {
-                this.word_primary(1);
-                this.remove_selected();
-            }
-            else {
-                // Walk forwards until char index is at end or
-                // a different type of character is hit.
-                var i = this.primary_char;
-                var start_not_text = utils.not_text(row[i]);
-                while (i < row.length && utils.not_text(row[i]) == start_not_text) {
-                    i++;
-                }
-                this.secondary_char = i;
-                this.remove_selected();
-            }
-        }
-        this._end_historical_move();
-        return true;
-    };
-    /**
-     * Reset the secondary cursor to the value of the primary.
-     * @return {[type]} [description]
-     */
-    Cursor.prototype._reset_secondary = function () {
-        this.secondary_row = this.primary_row;
-        this.secondary_char = this.primary_char;
-        this.trigger('change');
-    };
-    /**
-     * Adds text to the model while keeping track of the history.
-     * @param  {integer} row_index
-     * @param  {integer} char_index
-     * @param  {string} text
-     */
-    Cursor.prototype._model_add_text = function (row_index, char_index, text) {
-        var lines = text.split('\n');
-        this._push_history('_model_add_text', [row_index, char_index, text], '_model_remove_text', [row_index, char_index, row_index + lines.length - 1, lines.length > 1 ? lines[lines.length - 1].length : char_index + text.length], config.history_group_delay || 100);
-        this._model.add_text(row_index, char_index, text);
-    };
-    /**
-     * Removes text from the model while keeping track of the history.
-     * @param  {integer} start_row
-     * @param  {integer} start_char
-     * @param  {integer} end_row
-     * @param  {integer} end_char
-     */
-    Cursor.prototype._model_remove_text = function (start_row, start_char, end_row, end_char) {
-        var text = this._model.get_text(start_row, start_char, end_row, end_char);
-        this._push_history('_model_remove_text', [start_row, start_char, end_row, end_char], '_model_add_text', [start_row, start_char, text], config.history_group_delay || 100);
-        this._model.remove_text(start_row, start_char, end_row, end_char);
-    };
-    /**
-     * Adds a row of text while keeping track of the history.
-     * @param  {integer} row_index
-     * @param  {string} text
-     */
-    Cursor.prototype._model_add_row = function (row_index, text) {
-        this._push_history('_model_add_row', [row_index, text], '_model_remove_row', [row_index], config.history_group_delay || 100);
-        this._model.add_row(row_index, text);
-    };
-    /**
-     * Removes a row of text while keeping track of the history.
-     * @param  {integer} row_index
-     */
-    Cursor.prototype._model_remove_row = function (row_index) {
-        this._push_history('_model_remove_row', [row_index], '_model_add_row', [row_index, this._model._rows[row_index]], config.history_group_delay || 100);
-        this._model.remove_row(row_index);
-    };
-    /**
-     * Record the before and after positions of the cursor for history.
-     * @param  {function} f - executes with `this` context
-     */
-    Cursor.prototype._historical = function (f) {
-        this._start_historical_move();
-        var ret = f.apply(this);
-        this._end_historical_move();
-        return ret;
-    };
-    /**
-     * Record the starting state of the cursor for the history buffer.
-     */
-    Cursor.prototype._start_historical_move = function () {
-        if (!this._historical_start) {
-            this._historical_start = this.get_state();
-        }
-    };
-    /**
-     * Record the ending state of the cursor for the history buffer, then
-     * push a reversable action describing the change of the cursor.
-     */
-    Cursor.prototype._end_historical_move = function () {
-        this._push_history('set_state', [this.get_state()], 'set_state', [this._historical_start], config.history_group_delay || 100);
-        this._historical_start = null;
-    };
-    /**
-     * Makes a list of indentation strings used to indent one level,
-     * ordered by usage preference.
-     * @return {string}
-     */
-    Cursor.prototype._make_indents = function () {
-        var indents = [];
-        if (config.use_spaces) {
-            var indent = '';
-            for (var i = 0; i < config.tab_width; i++) {
-                indent += ' ';
-                indents.push(indent);
-            }
-            indents.reverse();
-        }
-        indents.push('\t');
-        return indents;
-    };
-    /**
-     * Registers an action API with the map
-     * @return {null}
-     */
-    Cursor.prototype._register_api = function () {
-        var _this = this;
-        register('cursor.set_state', utils.proxy(this.set_state, this), this);
-        register('cursor.remove_selected', utils.proxy(this.remove_selected, this), this);
-        register('cursor.keypress', utils.proxy(this.keypress, this), this);
-        register('cursor.indent', utils.proxy(this.indent, this), this);
-        register('cursor.unindent', utils.proxy(this.unindent, this), this);
-        register('cursor.newline', utils.proxy(this.newline, this), this);
-        register('cursor.insert_text', utils.proxy(this.insert_text, this), this);
-        register('cursor.delete_backward', utils.proxy(this.delete_backward, this), this);
-        register('cursor.delete_forward', utils.proxy(this.delete_forward, this), this);
-        register('cursor.delete_word_left', utils.proxy(this.delete_word_left, this), this);
-        register('cursor.delete_word_right', utils.proxy(this.delete_word_right, this), this);
-        register('cursor.select_all', utils.proxy(this.select_all, this), this);
-        register('cursor.left', function () {
-            _this.move_primary(-1, 0, true);
-            _this._reset_secondary();
-            return true;
-        });
-        register('cursor.right', function () {
-            _this.move_primary(1, 0, true);
-            _this._reset_secondary();
-            return true;
-        });
-        register('cursor.up', function () {
-            _this.move_primary(0, -1, true);
-            _this._reset_secondary();
-            return true;
-        });
-        register('cursor.down', function () {
-            _this.move_primary(0, 1, true);
-            _this._reset_secondary();
-            return true;
-        });
-        register('cursor.select_left', function () {
-            _this.move_primary(-1, 0);
-            return true;
-        });
-        register('cursor.select_right', function () {
-            _this.move_primary(1, 0);
-            return true;
-        });
-        register('cursor.select_up', function () {
-            _this.move_primary(0, -1);
-            return true;
-        });
-        register('cursor.select_down', function () {
-            _this.move_primary(0, 1);
-            return true;
-        });
-        register('cursor.word_left', function () {
-            _this.word_primary(-1);
-            _this._reset_secondary();
-            return true;
-        });
-        register('cursor.word_right', function () {
-            _this.word_primary(1);
-            _this._reset_secondary();
-            return true;
-        });
-        register('cursor.select_word_left', function () {
-            _this.word_primary(-1);
-            return true;
-        });
-        register('cursor.select_word_right', function () {
-            _this.word_primary(1);
-            return true;
-        });
-        register('cursor.line_start', function () {
-            _this.primary_goto_start();
-            _this._reset_secondary();
-            return true;
-        });
-        register('cursor.line_end', function () {
-            _this.primary_goto_end();
-            _this._reset_secondary();
-            return true;
-        });
-        register('cursor.select_line_start', function () {
-            _this.primary_goto_start();
-            return true;
-        });
-        register('cursor.select_line_end', function () {
-            _this.primary_goto_end();
-            return true;
-        });
-    };
-    return Cursor;
-})(utils.PosterClass);
-exports.Cursor = Cursor;
-
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/cursor.js","/")
-},{"./config":9,"./events/map":16,"./utils":40,"1YiZ5S":4,"buffer":1}],11:[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var keymap = require('./events/map');
-var register = keymap.Map.register;
-var cursor = require('./cursor');
-var utils = require('./utils');
-/**
- * Manages one or more cursors
- */
-var Cursors = (function (_super) {
-    __extends(Cursors, _super);
-    function Cursors(model, clipboard, history) {
-        _super.call(this);
-        this._model = model;
-        this.get_row_char = undefined;
-        this.cursors = [];
-        this._selecting_text = false;
-        this._clipboard = clipboard;
-        this._active_cursor = null;
-        this._history = history;
-        // Create initial cursor.
-        this.create(undefined, false);
-        // Register actions.
-        register('cursors._cursor_proxy', utils.proxy(this._cursor_proxy, this));
-        register('cursors.create', utils.proxy(this.create, this));
-        register('cursors.single', utils.proxy(this.single, this));
-        register('cursors.pop', utils.proxy(this.pop, this));
-        register('cursors.start_selection', utils.proxy(this.start_selection, this));
-        register('cursors.set_selection', utils.proxy(this.set_selection, this));
-        register('cursors.start_set_selection', utils.proxy(this.start_set_selection, this));
-        register('cursors.end_selection', utils.proxy(this.end_selection, this));
-        register('cursors.select_word', utils.proxy(this.select_word, this));
-        // Bind clipboard events.
-        this._clipboard.on('cut', utils.proxy(this._handle_cut, this));
-        this._clipboard.on('copy', utils.proxy(this._handle_copy, this));
-        this._clipboard.on('paste', utils.proxy(this._handle_paste, this));
-    }
-    /**
-     * Handles history proxy events for individual cursors.
-     * @param  {integer} cursor_index
-     * @param  {string} function_name
-     * @param  {array} function_params
-     */
-    Cursors.prototype._cursor_proxy = function (cursor_index, function_name, function_params) {
-        if (cursor_index < this.cursors.length) {
-            var cursor = this.cursors[cursor_index];
-            cursor[function_name].apply(cursor, function_params);
-        }
-    };
-    /**
-     * Creates a cursor and manages it.
-     * @param {object} [state] state to apply to the new cursor.
-     * @param {boolean} [reversable] - defaults to true, is action reversable.
-     * @return {Cursor} cursor
-     */
-    Cursors.prototype.create = function (state, reversable) {
-        var _this = this;
-        // Record this action in history.
-        if (reversable === undefined || reversable === true) {
-            this._history.push_action('cursors.create', arguments, 'cursors.pop', []);
-        }
-        // Create a proxying history method for the cursor itself.
-        var index = this.cursors.length;
-        var history_proxy = function (forward_name, forward_params, backward_name, backward_params, autogroup_delay) {
-            _this._history.push_action('cursors._cursor_proxy', [index, forward_name, forward_params], 'cursors._cursor_proxy', [index, backward_name, backward_params], autogroup_delay);
-        };
-        // Create the cursor.
-        var new_cursor = new cursor.Cursor(this._model, history_proxy);
-        this.cursors.push(new_cursor);
-        // Set the initial properties of the cursor.
-        new_cursor.set_state(state, false);
-        // Listen for cursor change events.
-        new_cursor.on('change', function () {
-            _this.trigger('change', new_cursor);
-            _this._update_selection();
-        });
-        this.trigger('change', new_cursor);
-        return new_cursor;
-    };
-    /**
-     * Remove every cursor except for the first one.
-     */
-    Cursors.prototype.single = function () {
-        while (this.cursors.length > 1) {
-            this.pop();
-        }
-    };
-    /**
-     * Remove the last cursor.
-     * @returns {Cursor} last cursor or null
-     */
-    Cursors.prototype.pop = function () {
-        if (this.cursors.length > 1) {
-            // Remove the last cursor and unregister it.
-            var cursor = this.cursors.pop();
-            cursor.unregister();
-            cursor.off('change');
-            // Record this action in history.
-            this._history.push_action('cursors.pop', [], 'cursors.create', [cursor.get_state()]);
-            // Alert listeners of changes.
-            this.trigger('change');
-            return cursor;
-        }
-        return null;
-    };
-    /**
-     * Handles when the selected text is copied to the clipboard.
-     * @param  {string} text - by val text that was cut
-     * @return {null}
-     */
-    Cursors.prototype._handle_copy = function (text) {
-        this.cursors.forEach(function (cursor) { return cursor.copy(); });
-    };
-    /**
-     * Handles when the selected text is cut to the clipboard.
-     * @param  {string} text - by val text that was cut
-     * @return {null}
-     */
-    Cursors.prototype._handle_cut = function (text) {
-        this.cursors.forEach(function (cursor) { return cursor.cut(); });
-    };
-    /**
-     * Handles when text is pasted into the document.
-     * @param  {string} text
-     * @return {null}
-     */
-    Cursors.prototype._handle_paste = function (text) {
-        // If the modulus of the number of cursors and the number of pasted lines
-        // of text is zero, split the cut lines among the cursors.
-        var lines = text.split('\n');
-        if (this.cursors.length > 1 && lines.length > 1 && lines.length % this.cursors.length === 0) {
-            var lines_per_cursor = lines.length / this.cursors.length;
-            this.cursors.forEach(function (cursor, index) {
-                cursor.insert_text(lines.slice(index * lines_per_cursor, index * lines_per_cursor + lines_per_cursor).join('\n'));
-            });
-        }
-        else {
-            this.cursors.forEach(function (cursor) { return cursor.paste(text); });
-        }
-    };
-    /**
-     * Update the clippable text based on new selection.
-     * @return {null}
-     */
-    Cursors.prototype._update_selection = function () {
-        // Copy all of the selected text.
-        var selections = [];
-        this.cursors.forEach(function (cursor) { return selections.push(cursor.get()); });
-        // Make the copied text clippable.
-        this._clipboard.set_clippable(selections.join('\n'));
-    };
-    /**
-     * Starts selecting text from mouse coordinates.
-     * @param  {MouseEvent} e - mouse event containing the coordinates.
-     * @return {null}
-     */
-    Cursors.prototype.start_selection = function (e) {
-        var x = e.offsetX;
-        var y = e.offsetY;
-        this._selecting_text = true;
-        if (this.get_row_char) {
-            var location = this.get_row_char(x, y);
-            this.cursors[0].set_both(location.row_index, location.char_index);
-        }
-    };
-    /**
-     * Finalizes the selection of text.
-     * @return {null}
-     */
-    Cursors.prototype.end_selection = function () {
-        this._selecting_text = false;
-    };
-    /**
-     * Sets the endpoint of text selection from mouse coordinates.
-     * @param  {MouseEvent} e - mouse event containing the coordinates.
-     * @return {null}
-     */
-    Cursors.prototype.set_selection = function (e) {
-        var x = e.offsetX;
-        var y = e.offsetY;
-        if (this._selecting_text && this.get_row_char) {
-            var location = this.get_row_char(x, y);
-            this.cursors[this.cursors.length - 1].set_primary(location.row_index, location.char_index);
-        }
-    };
-    /**
-     * Sets the endpoint of text selection from mouse coordinates.
-     * Different than set_selection because it doesn't need a call
-     * to start_selection to work.
-     * @param  {MouseEvent} e - mouse event containing the coordinates.
-     * @return {null}
-     */
-    Cursors.prototype.start_set_selection = function (e) {
-        this._selecting_text = true;
-        this.set_selection(e);
-    };
-    /**
-     * Selects a word at the given mouse coordinates.
-     * @param  {MouseEvent} e - mouse event containing the coordinates.
-     * @return {null}
-     */
-    Cursors.prototype.select_word = function (e) {
-        var x = e.offsetX;
-        var y = e.offsetY;
-        if (this.get_row_char) {
-            var location = this.get_row_char(x, y);
-            this.cursors[this.cursors.length - 1].select_word(location.row_index, location.char_index);
-        }
-    };
-    return Cursors;
-})(utils.PosterClass);
-exports.Cursors = Cursors;
-
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/cursors.js","/")
-},{"./cursor":10,"./events/map":16,"./utils":40,"1YiZ5S":4,"buffer":1}],12:[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-var utils = require('./utils');
-var normalizer = require('./events/normalizer');
-var keymap = require('./events/map');
-var default_keymap = require('./events/default');
-var cursors = require('./cursors');
-var clipboard = require('./clipboard');
-var history = require('./history');
-/**
- * Controller for a DocumentModel.
- */
-var DocumentController = (function (_super) {
-    __extends(DocumentController, _super);
-    function DocumentController(el, model) {
-        _super.call(this);
-        this.clipboard = new clipboard.Clipboard(el);
-        this.normalizer = new normalizer.Normalizer();
-        this.normalizer.listen_to(el);
-        this.normalizer.listen_to(this.clipboard.hidden_input);
-        this.map = new keymap.Map(this.normalizer);
-        this.map.map(default_keymap.map);
-        this.history = new history.History(this.map);
-        this.cursors = new cursors.Cursors(model, this.clipboard, this.history);
-    }
-    return DocumentController;
-})(utils.PosterClass);
-exports.DocumentController = DocumentController;
-
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/document_controller.js","/")
-},{"./clipboard":8,"./cursors":11,"./events/default":15,"./events/map":16,"./events/normalizer":17,"./history":21,"./utils":40,"1YiZ5S":4,"buffer":1}],13:[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-var utils = require('./utils');
-var superset = require('./superset');
-/**
- * Model containing all of the document's data (text).
- */
-var DocumentModel = (function (_super) {
-    __extends(DocumentModel, _super);
-    function DocumentModel() {
-        _super.call(this);
-        this._rows = [];
-        this._row_tags = [];
-        this._tag_lock = 0;
-        this._pending_tag_events = false;
-    }
-    Object.defineProperty(DocumentModel.prototype, "rows", {
-        get: function () {
-            // Return a shallow copy of the array so it cannot be modified.
-            return [].concat(this._rows);
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(DocumentModel.prototype, "text", {
-        get: function () {
-            return this._get_text();
-        },
-        set: function (value) {
-            this._set_text(value);
-        },
-        enumerable: true,
-        configurable: true
-    });
-    /**
-     * Acquire a lock on tag events
-     *
-     * Prevents tag events from firing.
-     * @return {integer} lock count
-     */
-    DocumentModel.prototype.acquire_tag_event_lock = function () {
-        return this._tag_lock++;
-    };
-    /**
-     * Release a lock on tag events
-     * @return {integer} lock count
-     */
-    DocumentModel.prototype.release_tag_event_lock = function () {
-        this._tag_lock--;
-        if (this._tag_lock < 0) {
-            this._tag_lock = 0;
-        }
-        if (this._tag_lock === 0 && this._pending_tag_events) {
-            this._pending_tag_events = false;
-            this.trigger_tag_events();
-        }
-        return this._tag_lock;
-    };
-    /**
-     * Triggers the tag change events.
-     * @return {null}
-     */
-    DocumentModel.prototype.trigger_tag_events = function (rows) {
-        if (this._tag_lock === 0) {
-            this.trigger('tags_changed', this._pending_tag_events_rows);
-            this._pending_tag_events_rows = undefined;
-        }
-        else {
-            this._pending_tag_events = true;
-            if (this._pending_tag_events_rows) {
-                this._pending_tag_events_rows = this._pending_tag_events_rows.concat(rows);
-            }
-            else {
-                this._pending_tag_events_rows = rows;
-            }
-        }
-    };
-    /**
-     * Sets a 'tag' on the text specified.
-     * @param {integer} start_row - row the tag starts on
-     * @param {integer} start_char - index, in the row, of the first tagged character
-     * @param {integer} end_row - row the tag ends on
-     * @param {integer} end_char - index, in the row, of the last tagged character
-     * @param {string} tag_name
-     * @param {any} tag_value - overrides any previous tags
-     */
-    DocumentModel.prototype.set_tag = function (start_row, start_char, end_row, end_char, tag_name, tag_value) {
-        var coords = this.validate_coords.apply(this, arguments);
-        var rows = [];
-        for (var row = coords.start_row; row <= coords.end_row; row++) {
-            // Make sure the superset is defined for the row/tag_name pair.
-            var row_tags = this._row_tags[row];
-            if (row_tags[tag_name] === undefined) {
-                row_tags[tag_name] = new superset.Superset();
-            }
-            // Get the start and end char indicies.
-            var s = coords.start_char;
-            var e = coords.end_char;
-            if (row > coords.start_row)
-                s = 0;
-            if (row < coords.end_row)
-                e = this._rows[row].length - 1;
-            // Set the value for the range.
-            row_tags[tag_name].set(s, e, tag_value);
-            rows.push(row);
-        }
-        this.trigger_tag_events(rows);
-    };
-    /**
-     * Removed all of the tags on the document.
-     * @param  {integer} start_row
-     * @param  {integer} end_row
-     * @return {null}
-     */
-    DocumentModel.prototype.clear_tags = function (start_row, end_row) {
-        start_row = start_row !== undefined ? start_row : 0;
-        end_row = end_row !== undefined ? end_row : this._row_tags.length - 1;
-        var rows = [];
-        for (var i = start_row; i <= end_row; i++) {
-            this._row_tags[i] = {};
-            rows.push(i);
-        }
-        this.trigger_tag_events(rows);
-    };
-    /**
-     * Get the tag value applied to the character.
-     * @param  {string} tag_name
-     * @param  {integer} row_index
-     * @param  {integer} char_index
-     * @return {object} value or undefined
-     */
-    DocumentModel.prototype.get_tag_value = function (tag_name, row_index, char_index) {
-        // Loop through the tags on this row.
-        var row_tags = this._row_tags[row_index][tag_name];
-        if (row_tags !== undefined) {
-            var tag_array = row_tags.array;
-            for (var i = 0; i < tag_array.length; i++) {
-                // Check if within.
-                if (tag_array[i][0] <= char_index && char_index <= tag_array[i][1]) {
-                    return tag_array[i][2];
-                }
-            }
-        }
-        return undefined;
-    };
-    /**
-     * Get the tag value ranges applied to the specific range.
-     * @param  {string} tag_name
-     * @param  {integer} start_row
-     * @param  {integer} start_char
-     * @param  {integer} end_row
-     * @param  {integer} end_char
-     * @return {array} array of tag value ranges ([row_index, start_char, end_char, tag_value])
-     */
-    DocumentModel.prototype.get_tags = function (tag_name, start_row, start_char, end_row, end_char) {
-        var coords = this.validate_coords.call(this, start_row, start_char, end_row, end_char);
-        var values = [];
-        for (var row = coords.start_row; row <= coords.end_row; row++) {
-            // Get the start and end char indicies.
-            var s = coords.start_char;
-            var e = coords.end_char;
-            if (row > coords.start_row)
-                s = 0;
-            if (row < coords.end_row)
-                e = this._rows[row].length - 1;
-            // Loop through the tags on this row.
-            var row_tags = this._row_tags[row][tag_name];
-            if (row_tags !== undefined) {
-                var tag_array = row_tags.array;
-                for (var i = 0; i < tag_array.length; i++) {
-                    var ns = tag_array[i][0];
-                    var ne = tag_array[i][1];
-                    // Check if the areas insersect.
-                    if (ns <= e && ne >= s) {
-                        values.push([row, ns, ne, tag_array[i][2]]);
-                    }
-                }
-            }
-        }
-        return values;
-    };
-    /**
-     * Adds text efficiently somewhere in the document.
-     * @param {integer} row_index
-     * @param {integer} char_index
-     * @param {string} text
-     */
-    DocumentModel.prototype.add_text = function (row_index, char_index, text) {
-        var coords = this.validate_coords.apply(this, Array.prototype.slice.call(arguments, 0, 2));
-        var old_text = this._rows[coords.start_row];
-        // If the text has a new line in it, just re-set
-        // the rows list.
-        if (text.indexOf('\n') != -1) {
-            var new_rows = [];
-            if (coords.start_row > 0) {
-                new_rows = this._rows.slice(0, coords.start_row);
-            }
-            var old_row_start = old_text.substring(0, coords.start_char);
-            var old_row_end = old_text.substring(coords.start_char);
-            var split_text = text.split('\n');
-            new_rows.push(old_row_start + split_text[0]);
-            if (split_text.length > 2) {
-                new_rows = new_rows.concat(split_text.slice(1, split_text.length - 1));
-            }
-            new_rows.push(split_text[split_text.length - 1] + old_row_end);
-            if (coords.start_row + 1 < this._rows.length) {
-                new_rows = new_rows.concat(this._rows.slice(coords.start_row + 1));
-            }
-            this._rows = new_rows;
-            this._resized_rows();
-            this.trigger('row_changed', old_text, coords.start_row);
-            this.trigger('rows_added', coords.start_row + 1, coords.start_row + split_text.length - 1);
-            this.trigger('changed');
-        }
-        else {
-            this._rows[coords.start_row] = old_text.substring(0, coords.start_char) + text + old_text.substring(coords.start_char);
-            this.trigger('row_changed', old_text, coords.start_row);
-            this.trigger('changed');
-        }
-    };
-    /**
-     * Removes a block of text from the document
-     * @param  {integer} start_row
-     * @param  {integer} start_char
-     * @param  {integer} end_row
-     * @param  {integer} end_char
-     * @return {null}
-     */
-    DocumentModel.prototype.remove_text = function (start_row, start_char, end_row, end_char) {
-        var coords = this.validate_coords.apply(this, arguments);
-        var old_text = this._rows[coords.start_row];
-        if (coords.start_row == coords.end_row) {
-            this._rows[coords.start_row] = this._rows[coords.start_row].substring(0, coords.start_char) + this._rows[coords.start_row].substring(coords.end_char);
-        }
-        else {
-            this._rows[coords.start_row] = this._rows[coords.start_row].substring(0, coords.start_char) + this._rows[coords.end_row].substring(coords.end_char);
-        }
-        if (coords.end_row - coords.start_row > 0) {
-            var rows_removed = this._rows.splice(coords.start_row + 1, coords.end_row - coords.start_row);
-            this._resized_rows();
-            // If there are more deleted rows than rows remaining, it
-            // is faster to run a calculation on the remaining rows than
-            // to run it on the rows removed.
-            if (rows_removed.length > this._rows.length) {
-                this.trigger('text_changed');
-                this.trigger('changed');
-            }
-            else {
-                this.trigger('row_changed', old_text, coords.start_row);
-                this.trigger('rows_removed', rows_removed);
-                this.trigger('changed');
-            }
-        }
-        else if (coords.end_row == coords.start_row) {
-            this.trigger('row_changed', old_text, coords.start_row);
-            this.trigger('changed');
-        }
-    };
-    /**
-     * Remove a row from the document.
-     * @param  {integer} row_index
-     * @return {null}
-     */
-    DocumentModel.prototype.remove_row = function (row_index) {
-        if (0 < row_index && row_index < this._rows.length) {
-            var rows_removed = this._rows.splice(row_index, 1);
-            this._resized_rows();
-            this.trigger('rows_removed', rows_removed);
-            this.trigger('changed');
-        }
-    };
-    /**
-     * Gets a chunk of text.
-     * @param  {integer} start_row
-     * @param  {integer} start_char
-     * @param  {integer} end_row
-     * @param  {integer} end_char
-     * @return {string}
-     */
-    DocumentModel.prototype.get_text = function (start_row, start_char, end_row, end_char) {
-        var coords = this.validate_coords.apply(this, arguments);
-        if (coords.start_row == coords.end_row) {
-            return this._rows[coords.start_row].substring(coords.start_char, coords.end_char);
-        }
-        else {
-            var text = [];
-            text.push(this._rows[coords.start_row].substring(coords.start_char));
-            if (coords.end_row - coords.start_row > 1) {
-                for (var i = coords.start_row + 1; i < coords.end_row; i++) {
-                    text.push(this._rows[i]);
-                }
-            }
-            text.push(this._rows[coords.end_row].substring(0, coords.end_char));
-            return text.join('\n');
-        }
-    };
-    /**
-     * Add a row to the document
-     * @param {integer} row_index
-     * @param {string} text - new row's text
-     */
-    DocumentModel.prototype.add_row = function (row_index, text) {
-        var new_rows = [];
-        if (row_index > 0) {
-            new_rows = this._rows.slice(0, row_index);
-        }
-        new_rows.push(text);
-        if (row_index < this._rows.length) {
-            new_rows = new_rows.concat(this._rows.slice(row_index));
-        }
-        this._rows = new_rows;
-        this._resized_rows();
-        this.trigger('rows_added', row_index, row_index);
-        this.trigger('changed');
-    };
-    /**
-     * Validates row, character coordinates in the document.
-     * @param  {integer} start_row
-     * @param  {integer} start_char
-     * @param  {integer} (optional) end_row
-     * @param  {integer} (optional) end_char
-     * @return {dictionary} dictionary containing validated coordinates {start_row,
-     *                      start_char, end_row, end_char}
-     */
-    DocumentModel.prototype.validate_coords = function (start_row, start_char, end_row, end_char) {
-        // Make sure the values aren't undefined.
-        if (start_row === undefined)
-            start_row = 0;
-        if (start_char === undefined)
-            start_char = 0;
-        if (end_row === undefined)
-            end_row = start_row;
-        if (end_char === undefined)
-            end_char = start_char;
-        // Make sure the values are within the bounds of the contents.
-        if (this._rows.length === 0) {
-            start_row = 0;
-            start_char = 0;
-            end_row = 0;
-            end_char = 0;
-        }
-        else {
-            if (start_row >= this._rows.length)
-                start_row = this._rows.length - 1;
-            if (start_row < 0)
-                start_row = 0;
-            if (end_row >= this._rows.length)
-                end_row = this._rows.length - 1;
-            if (end_row < 0)
-                end_row = 0;
-            if (start_char > this._rows[start_row].length)
-                start_char = this._rows[start_row].length;
-            if (start_char < 0)
-                start_char = 0;
-            if (end_char > this._rows[end_row].length)
-                end_char = this._rows[end_row].length;
-            if (end_char < 0)
-                end_char = 0;
-        }
-        // Make sure the start is before the end.
-        if (start_row > end_row || (start_row == end_row && start_char > end_char)) {
-            return {
-                start_row: end_row,
-                start_char: end_char,
-                end_row: start_row,
-                end_char: start_char,
-            };
-        }
-        else {
-            return {
-                start_row: start_row,
-                start_char: start_char,
-                end_row: end_row,
-                end_char: end_char,
-            };
-        }
-    };
-    /**
-     * Gets the text of the document.
-     * @return {string}
-     */
-    DocumentModel.prototype._get_text = function () {
-        return this._rows.join('\n');
-    };
-    /**
-     * Sets the text of the document.
-     * Complexity O(N) for N rows
-     * @param {string} value
-     */
-    DocumentModel.prototype._set_text = function (value) {
-        this._rows = value.split('\n');
-        this._resized_rows();
-        this.trigger('text_changed');
-        this.trigger('changed');
-    };
-    /**
-     * Updates _row's partner arrays.
-     * @return {null}
-     */
-    DocumentModel.prototype._resized_rows = function () {
-        while (this._row_tags.length < this._rows.length) {
-            this._row_tags.push({});
-        }
-        if (this._row_tags.length > this._rows.length) {
-            this._row_tags.splice(this._rows.length, this._row_tags.length - this._rows.length);
-        }
-    };
-    return DocumentModel;
-})(utils.PosterClass);
-exports.DocumentModel = DocumentModel;
-
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/document_model.js","/")
-},{"./superset":39,"./utils":40,"1YiZ5S":4,"buffer":1}],14:[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-var utils = require('./utils');
-// Renderers
-var batch = require('./renderers/batch');
-var highlighted_row = require('./renderers/highlighted_row');
-var cursors = require('./renderers/cursors');
-var selections = require('./renderers/selections');
-var color = require('./renderers/color');
-var highlighter = require('./highlighters/prism');
-/**
- * Visual representation of a DocumentModel instance
- * @param {Canvas} canvas instance
- * @param {DocumentModel} model instance
- * @param {Cursors} cursors_model instance
- * @param {Style} style - describes rendering style
- * @param {function} has_focus - function that checks if the text area has focus
- * @param {function} move_focal_point - function that moves the focal point
- */
-var DocumentView = (function (_super) {
-    __extends(DocumentView, _super);
-    function DocumentView(canvas, model, cursors_model, style, has_focus, move_focal_point) {
-        this._model = model;
-        // Create child renderers.
-        var row_renderer = new highlighted_row.HighlightedRowRenderer(model, canvas, style);
-        row_renderer.margin_left = 2;
-        row_renderer.margin_top = 2;
-        this.row_renderer = row_renderer;
-        // Make sure changes made to the cursor(s) are within the visible region.
-        cursors_model.on('change', function (cursor) {
-            var row_index = cursor.primary_row;
-            var char_index = cursor.primary_char;
-            var top = row_renderer.get_row_top(row_index);
-            var height = row_renderer.get_row_height(row_index);
-            var left = row_renderer.measure_partial_row_width(row_index, char_index) + row_renderer.margin_left;
-            var bottom = top + height;
-            var canvas_height = canvas.height - 20;
-            if (bottom > canvas.scroll_top + canvas_height) {
-                canvas.scroll_top = bottom - canvas_height;
-            }
-            else if (top < canvas.scroll_top) {
-                canvas.scroll_top = top;
-            }
-            var canvas_width = canvas.width - 20;
-            if (left > canvas.scroll_left + canvas_width) {
-                canvas.scroll_left = left - canvas_width;
-            }
-            else if (left - row_renderer.margin_left < canvas.scroll_left) {
-                canvas.scroll_left = Math.max(0, left - row_renderer.margin_left);
-            }
-            move_focal_point(left - canvas.scroll_left, top - canvas.scroll_top - canvas.height);
-        });
-        var cursors_renderer = new cursors.CursorsRenderer(cursors_model, style, row_renderer, has_focus);
-        var selections_renderer = new selections.SelectionsRenderer(cursors_model, style, row_renderer, has_focus, cursors_renderer);
-        // Create the background renderer
-        var color_renderer = new color.ColorRenderer();
-        color_renderer.color = style.background || 'white';
-        style.on('changed:style', function () {
-            color_renderer.color = style.background;
-        });
-        // Create the document highlighter, which needs to know about the currently
-        // rendered rows in order to know where to highlight.
-        this.highlighter = new highlighter.PrismHighlighter(model, row_renderer);
-        // Pass get_row_char into cursors.
-        cursors_model.get_row_char = utils.proxy(row_renderer.get_row_char, row_renderer);
-        // Call base constructor.
-        _super.call(this, [
-            color_renderer,
-            selections_renderer,
-            row_renderer,
-            cursors_renderer,
-        ], canvas);
-        // Hookup render events.
-        this._canvas.on('redraw', utils.proxy(this.render, this));
-        this._model.on('changed', utils.proxy(canvas.redraw, canvas));
-    }
-    Object.defineProperty(DocumentView.prototype, "language", {
-        get: function () {
-            return this._language;
-        },
-        set: function (value) {
-            this.highlighter.load(value);
-            this._language = value;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    return DocumentView;
-})(batch.BatchRenderer);
-exports.DocumentView = DocumentView;
-
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/document_view.js","/")
-},{"./highlighters/prism":20,"./renderers/batch":28,"./renderers/color":29,"./renderers/cursors":30,"./renderers/highlighted_row":31,"./renderers/selections":34,"./utils":40,"1YiZ5S":4,"buffer":1}],15:[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-// OSX bindings
-var _map;
-if (navigator.appVersion.indexOf("Mac") != -1) {
-    _map = {
-        'alt-leftarrow': 'cursor.word_left',
-        'alt-rightarrow': 'cursor.word_right',
-        'shift-alt-leftarrow': 'cursor.select_word_left',
-        'shift-alt-rightarrow': 'cursor.select_word_right',
-        'alt-backspace': 'cursor.delete_word_left',
-        'alt-delete': 'cursor.delete_word_right',
-        'meta-leftarrow': 'cursor.line_start',
-        'meta-rightarrow': 'cursor.line_end',
-        'shift-meta-leftarrow': 'cursor.select_line_start',
-        'shift-meta-rightarrow': 'cursor.select_line_end',
-        'meta-a': 'cursor.select_all',
-        'meta-z': 'history.undo',
-        'meta-y': 'history.redo',
-    };
-}
-else {
-    _map = {
-        'ctrl-leftarrow': 'cursor.word_left',
-        'ctrl-rightarrow': 'cursor.word_right',
-        'ctrl-backspace': 'cursor.delete_word_left',
-        'ctrl-delete': 'cursor.delete_word_right',
-        'shift-ctrl-leftarrow': 'cursor.select_word_left',
-        'shift-ctrl-rightarrow': 'cursor.select_word_right',
-        'home': 'cursor.line_start',
-        'end': 'cursor.line_end',
-        'shift-home': 'cursor.select_line_start',
-        'shift-end': 'cursor.select_line_end',
-        'ctrl-a': 'cursor.select_all',
-        'ctrl-z': 'history.undo',
-        'ctrl-y': 'history.redo',
-    };
-}
-// Common bindings
-_map['keypress'] = 'cursor.keypress';
-_map['enter'] = 'cursor.newline';
-_map['delete'] = 'cursor.delete_forward';
-_map['backspace'] = 'cursor.delete_backward';
-_map['leftarrow'] = 'cursor.left';
-_map['rightarrow'] = 'cursor.right';
-_map['uparrow'] = 'cursor.up';
-_map['downarrow'] = 'cursor.down';
-_map['shift-leftarrow'] = 'cursor.select_left';
-_map['shift-rightarrow'] = 'cursor.select_right';
-_map['shift-uparrow'] = 'cursor.select_up';
-_map['shift-downarrow'] = 'cursor.select_down';
-_map['mouse0-dblclick'] = 'cursors.select_word';
-_map['mouse0-down'] = 'cursors.start_selection';
-_map['mouse-move'] = 'cursors.set_selection';
-_map['mouse0-up'] = 'cursors.end_selection';
-_map['shift-mouse0-up'] = 'cursors.end_selection';
-_map['shift-mouse0-down'] = 'cursors.start_set_selection';
-_map['shift-mouse-move'] = 'cursors.set_selection';
-_map['tab'] = 'cursor.indent';
-_map['shift-tab'] = 'cursor.unindent';
-_map['escape'] = 'cursors.single';
-exports.map = _map;
-
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/events/default.js","/events")
-},{"1YiZ5S":4,"buffer":1}],16:[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var utils = require('../utils');
-/**
- * Event normalizer
- *
- * Listens to DOM events and emits 'cleaned' versions of those events.
- */
-var Map = (function (_super) {
-    __extends(Map, _super);
-    function Map(normalizer) {
-        _super.call(this);
-        this._map = {};
-        // Create normalizer property
-        this._normalizer = null;
-        this._proxy_handle_event = utils.proxy(this._handle_event, this);
-        // If defined, set the normalizer.
-        if (normalizer)
-            this.normalizer = normalizer;
-    }
-    Object.defineProperty(Map.prototype, "normalizer", {
-        get: function () {
-            return this._normalizer;
-        },
-        set: function (value) {
-            // Remove event handler.
-            if (this._normalizer)
-                this._normalizer.off_all(this._proxy_handle_event);
-            // Set, and add event handler.
-            this._normalizer = value;
-            if (value)
-                value.on_all(this._proxy_handle_event);
-        },
-        enumerable: true,
-        configurable: true
-    });
-    /**
-     * Append event actions to the map.
-     *
-     * This method has two signatures.  If a single argument
-     * is passed to it, that argument is treated like a
-     * dictionary.  If more than one argument is passed to it,
-     * each argument is treated as alternating key, value
-     * pairs of a dictionary.
-     *
-     * The map allows you to register actions for keys.
-     * Example:
-     *     map.map({
-     *         'ctrl-a': 'cursors.select_all',
-     *     })
-     *
-     * Multiple actions can be registered for a single event.
-     * The actions are executed sequentially, until one action
-     * returns `true` in which case the execution haults.  This
-     * allows actions to run conditionally.
-     * Example:
-     *     // Implementing a dual mode editor, you may have two
-     *     // functions to register for one key. i.e.:
-     *     var do_a = function(e) {
-     *         if (mode=='edit') {
-     *             console.log('A');
-     *             return true;
-     *         }
-     *     }
-     *     var do_b = function(e) {
-     *         if (mode=='command') {
-     *             console.log('B');
-     *             return true;
-     *         }
-     *     }
-     *
-     *     // To register both for one key
-     *     Map.register('action_a', do_a);
-     *     Map.register('action_b', do_b);
-     *     map.map({
-     *         'alt-v': ['action_a', 'action_b'],
-     *     });
-     *
-     * @return {null}
-     */
-    Map.prototype.map = function () {
-        var _this = this;
-        var parsed = this._parse_map_arguments(arguments);
-        Object.keys(parsed).forEach(function (key) {
-            if (_this._map[key] === undefined) {
-                _this._map[key] = parsed[key];
-            }
-            else {
-                _this._map[key] = _this._map[key].concat(parsed[key]);
-            }
-        });
-    };
-    /**
-     * Prepend event actions to the map.
-     *
-     * See the doc for `map` for a detailed description of
-     * possible input values.
-     * @return {null}
-     */
-    Map.prototype.prepend_map = function () {
-        var _this = this;
-        var parsed = this._parse_map_arguments(arguments);
-        Object.keys(parsed).forEach(function (key) {
-            if (_this._map[key] === undefined) {
-                _this._map[key] = parsed[key];
-            }
-            else {
-                _this._map[key] = parsed[key].concat(_this._map[key]);
-            }
-        });
-    };
-    /**
-     * Unmap event actions in the map.
-     *
-     * See the doc for `map` for a detailed description of
-     * possible input values.
-     * @return {null}
-     */
-    Map.prototype.unmap = function () {
-        var _this = this;
-        var parsed = this._parse_map_arguments(arguments);
-        Object.keys(parsed).forEach(function (key) {
-            if (_this._map[key] !== undefined) {
-                parsed[key].forEach(function (value) {
-                    var index = this._map[key].indexOf(value);
-                    if (index != -1) {
-                        this._map[key].splice(index, 1);
-                    }
-                });
-            }
-        });
-    };
-    /**
-     * Get a modifiable array of the actions for a particular event.
-     * @param  {string} event
-     * @return {array} by ref copy of the actions registered to an event.
-     */
-    Map.prototype.get_mapping = function (event) {
-        return this._map[this._normalize_event_name(event)];
-    };
-    /**
-     * Invokes the callbacks of an action by name.
-     * @param  {string} name
-     * @param  {array} [args] - arguments to pass to the action callback[s]
-     * @return {boolean} true if one or more of the actions returned true
-     */
-    Map.prototype.invoke = function (name, args) {
-        var action_callbacks = Map.registry[name];
-        if (action_callbacks) {
-            if (utils.is_array(action_callbacks)) {
-                var returns = [];
-                action_callbacks.forEach(function (action_callback) {
-                    returns.push(action_callback.apply(undefined, args) === true);
-                });
-                // If one of the action callbacks returned true, cancel bubbling.
-                if (returns.some(function (x) {
-                    return x;
-                })) {
-                    return true;
-                }
-            }
-            else {
-                if (action_callbacks.apply(undefined, args) === true) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    };
-    /**
-     * Parse the arguments to a map function.
-     * @param  {arguments array} args
-     * @return {dictionary} parsed results
-     */
-    Map.prototype._parse_map_arguments = function (args) {
-        var _this = this;
-        var parsed = {};
-        // One arument, treat it as a dictionary of event names and
-        // actions.
-        if (args.length == 1) {
-            Object.keys(args[0]).forEach(function (key) {
-                var value = args[0][key];
-                var normalized_key = _this._normalize_event_name(key);
-                // If the value is not an array, wrap it in one.
-                if (!utils.is_array(value)) {
-                    value = [value];
-                }
-                // If the key is already defined, concat the values to
-                // it.  Otherwise, set it.
-                if (parsed[normalized_key] === undefined) {
-                    parsed[normalized_key] = value;
-                }
-                else {
-                    parsed[normalized_key] = parsed[normalized_key].concat(value);
-                }
-            });
-        }
-        else {
-            for (var i = 0; i < Math.floor(args.length / 2); i++) {
-                var key = this._normalize_event_name(args[2 * i]);
-                var value = args[2 * i + 1];
-                if (parsed[key] === undefined) {
-                    parsed[key] = [value];
-                }
-                else {
-                    parsed[key].push(value);
-                }
-            }
-        }
-        return parsed;
-    };
-    /**
-     * Handles a normalized event.
-     * @param  {string} name - name of the event
-     * @param  {Event} e - browser Event object
-     * @return {null}
-     */
-    Map.prototype._handle_event = function (name, e) {
-        var _this = this;
-        var normalized_event = this._normalize_event_name(name);
-        var actions = this._map[normalized_event];
-        if (actions) {
-            actions.forEach(function (action) {
-                if (_this.invoke(action, [e])) {
-                    utils.cancel_bubble(e);
-                }
-            });
-        }
-        return false;
-    };
-    /**
-     * Alphabetically sorts keys in event name, so
-     * @param  {string} name - event name
-     * @return {string} normalized event name
-     */
-    Map.prototype._normalize_event_name = function (name) {
-        return name.toLowerCase().trim().split('-').sort().join('-');
-    };
-    return Map;
-})(utils.PosterClass);
-exports.Map = Map;
-/**
- * Map of API methods by name.
- * @type {dictionary}
- */
-Map.registry = {};
-Map._registry_tags = {};
-/**
- * Registers an action.
- * @param  {string} name - name of the action
- * @param  {function} f
- * @param  {Object} (optional) tag - allows you to specify a tag
- *                  which can be used with the `unregister_by_tag`
- *                  method to quickly unregister actions with
- *                  the tag specified.
- * @return {null}
- */
-Map.register = function (name, f, tag) {
-    if (utils.is_array(Map.registry[name])) {
-        Map.registry[name].push(f);
-    }
-    else {
-        if (Map.registry[name] === undefined) {
-            Map.registry[name] = f;
-        }
-        else {
-            Map.registry[name] = [Map.registry[name], f];
-        }
-    }
-    if (tag) {
-        if (Map._registry_tags[tag] === undefined) {
-            Map._registry_tags[tag] = [];
-        }
-        Map._registry_tags[tag].push({ name: name, f: f });
-    }
-};
-/**
- * Unregister an action.
- * @param  {string} name - name of the action
- * @param  {function} f
- * @return {boolean} true if action was found and unregistered
- */
-Map.unregister = function (name, f) {
-    if (utils.is_array(Map.registry[name])) {
-        var index = Map.registry[name].indexOf(f);
-        if (index != -1) {
-            Map.registry[name].splice(index, 1);
-            return true;
-        }
-    }
-    else if (Map.registry[name] == f) {
-        delete Map.registry[name];
-        return true;
-    }
-    return false;
-};
-/**
- * Unregisters all of the actions registered with a given tag.
- * @param  {Object} tag - specified in Map.register.
- * @return {boolean} true if the tag was found and deleted.
- */
-Map.unregister_by_tag = function (tag) {
-    if (Map._registry_tags[tag]) {
-        Map._registry_tags[tag].forEach(function (registration) {
-            Map.unregister(registration.name, registration.f);
-        });
-        delete Map._registry_tags[tag];
-        return true;
-    }
-};
-
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/events/map.js","/events")
-},{"../utils":40,"1YiZ5S":4,"buffer":1}],17:[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var utils = require('../utils');
-/**
- * Event normalizer
- *
- * Listens to DOM events and emits 'cleaned' versions of those events.
- */
-var Normalizer = (function (_super) {
-    __extends(Normalizer, _super);
-    function Normalizer() {
-        _super.call(this);
-        this._el_hooks = {};
-    }
-    /**
-     * Listen to the events of an element.
-     * @param  {HTMLElement} el
-     * @return {null}
-     */
-    Normalizer.prototype.listen_to = function (el) {
-        var hooks = [];
-        hooks.push(utils.hook(el, 'onkeypress', this._proxy('press', this._handle_keypress_event, el)));
-        hooks.push(utils.hook(el, 'onkeydown', this._proxy('down', this._handle_keyboard_event, el)));
-        hooks.push(utils.hook(el, 'onkeyup', this._proxy('up', this._handle_keyboard_event, el)));
-        hooks.push(utils.hook(el, 'ondblclick', this._proxy('dblclick', this._handle_mouse_event, el)));
-        hooks.push(utils.hook(el, 'onclick', this._proxy('click', this._handle_mouse_event, el)));
-        hooks.push(utils.hook(el, 'onmousedown', this._proxy('down', this._handle_mouse_event, el)));
-        hooks.push(utils.hook(el, 'onmouseup', this._proxy('up', this._handle_mouse_event, el)));
-        hooks.push(utils.hook(el, 'onmousemove', this._proxy('move', this._handle_mousemove_event, el)));
-        this._el_hooks[el] = hooks;
-    };
-    /**
-     * Stops listening to an element.
-     * @param  {HTMLElement} el
-     * @return {null}
-     */
-    Normalizer.prototype.stop_listening_to = function (el) {
-        if (this._el_hooks[el] !== undefined) {
-            this._el_hooks[el].forEach(function (hook) { return hook.unhook(); });
-            delete this._el_hooks[el];
-        }
-    };
-    /**
-     * Handles when a mouse event occurs
-     * @param  {HTMLElement} el
-     * @param  {Event} e
-     * @return {null}
-     */
-    Normalizer.prototype._handle_mouse_event = function (el, event_name, e) {
-        e = e || window.event;
-        this.trigger(this._modifier_string(e) + 'mouse' + e.button + '-' + event_name, e);
-    };
-    /**
-     * Handles when a mouse event occurs
-     * @param  {HTMLElement} el
-     * @param  {Event} e
-     * @return {null}
-     */
-    Normalizer.prototype._handle_mousemove_event = function (el, event_name, e) {
-        e = e || window.event;
-        this.trigger(this._modifier_string(e) + 'mouse' + '-' + event_name, e);
-    };
-    /**
-     * Handles when a keyboard event occurs
-     * @param  {HTMLElement} el
-     * @param  {Event} e
-     * @return {null}
-     */
-    Normalizer.prototype._handle_keyboard_event = function (el, event_name, e) {
-        e = e || window.event;
-        var keyname = this._lookup_keycode(e.keyCode);
-        if (keyname !== undefined) {
-            this.trigger(this._modifier_string(e) + keyname + '-' + event_name, e);
-            if (event_name == 'down') {
-                this.trigger(this._modifier_string(e) + keyname, e);
-            }
-        }
-        this.trigger(this._modifier_string(e) + String(e.keyCode) + '-' + event_name, e);
-        this.trigger('key' + event_name, e);
-    };
-    /**
-     * Handles when a keypress event occurs
-     * @param  {HTMLElement} el
-     * @param  {Event} e
-     * @return {null}
-     */
-    Normalizer.prototype._handle_keypress_event = function (el, event_name, e) {
-        this.trigger('keypress', e);
-    };
-    /**
-     * Creates an element event proxy.
-     * @param  {function} f
-     * @param  {string} event_name
-     * @param  {HTMLElement} el
-     * @return {null}
-     */
-    Normalizer.prototype._proxy = function (event_name, f, el) {
-        var that = this;
-        return function () {
-            var args = [el, event_name].concat(Array.prototype.slice.call(arguments, 0));
-            return f.apply(that, args);
-        };
-    };
-    /**
-     * Create a modifiers string from an event.
-     * @param  {Event} e
-     * @return {string} dash separated modifier string
-     */
-    Normalizer.prototype._modifier_string = function (e) {
-        var modifiers = [];
-        if (e.ctrlKey)
-            modifiers.push('ctrl');
-        if (e.altKey)
-            modifiers.push('alt');
-        if (e.metaKey)
-            modifiers.push('meta');
-        if (e.shiftKey)
-            modifiers.push('shift');
-        var string = modifiers.sort().join('-');
-        if (string.length > 0)
-            string = string + '-';
-        return string;
-    };
-    /**
-     * Lookup the human friendly name for a keycode.
-     * @param  {integer} keycode
-     * @return {string} key name
-     */
-    Normalizer.prototype._lookup_keycode = function (keycode) {
-        if (112 <= keycode && keycode <= 123) {
-            return 'f' + (keycode - 111);
-        }
-        else if (48 <= keycode && keycode <= 57) {
-            return String(keycode - 48);
-        }
-        else if (65 <= keycode && keycode <= 90) {
-            return 'abcdefghijklmnopqrstuvwxyz'.substring(keycode - 65, keycode - 64);
-        }
-        else {
-            var codes = {
-                8: 'backspace',
-                9: 'tab',
-                13: 'enter',
-                16: 'shift',
-                17: 'ctrl',
-                18: 'alt',
-                19: 'pause',
-                20: 'capslock',
-                27: 'esc',
-                32: 'space',
-                33: 'pageup',
-                34: 'pagedown',
-                35: 'end',
-                36: 'home',
-                37: 'leftarrow',
-                38: 'uparrow',
-                39: 'rightarrow',
-                40: 'downarrow',
-                44: 'printscreen',
-                45: 'insert',
-                46: 'delete',
-                91: 'windows',
-                93: 'menu',
-                144: 'numlock',
-                145: 'scrolllock',
-                188: 'comma',
-                190: 'period',
-                191: 'fowardslash',
-                192: 'tilde',
-                219: 'leftbracket',
-                220: 'backslash',
-                221: 'rightbracket',
-                222: 'quote',
-            };
-            return codes[keycode];
-        }
-        // TODO: this function is missing some browser specific
-        // keycode mappings.
-    };
-    return Normalizer;
-})(utils.PosterClass);
-exports.Normalizer = Normalizer;
-
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/events/normalizer.js","/events")
-},{"../utils":40,"1YiZ5S":4,"buffer":1}],18:[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var scrolling_canvas = require('./scrolling_canvas');
-var document_controller = require('./document_controller');
-var document_model = require('./document_model');
-var document_view = require('./document_view');
-var pluginmanager = require('./plugins/manager');
-var plugin = require('./plugins/plugin');
-var renderer = require('./renderers/renderer');
-var style = require('./style');
-var utils = require('./utils');
-var config_mod = require('./config');
-var prism = require('prismjs');
-var config = config_mod.config;
-/**
- * Canvas based text editor
- */
-var Poster = (function (_super) {
-    __extends(Poster, _super);
-    function Poster() {
-        var _this = this;
-        _super.call(this);
-        // Create canvas
-        this.canvas = new scrolling_canvas.ScrollingCanvas();
-        this.el = this.canvas.el; // Convenience
-        this._style = new style.Style();
-        // Create model, controller, and view.
-        this.model = new document_model.DocumentModel();
-        this.controller = new document_controller.DocumentController(this.canvas.el, this.model);
-        this.view = new document_view.DocumentView(this.canvas, this.model, this.controller.cursors, this._style, function () {
-            return _this.controller.clipboard.hidden_input === document.activeElement || _this.canvas.focused;
-        }, function (x, y) { return _this.controller.clipboard.set_position(x, y); });
-        // Load plugins.
-        this.plugins = new pluginmanager.PluginManager(this);
-        this.plugins.load('gutter');
-        this.plugins.load('linenumbers');
-    }
-    Object.defineProperty(Poster.prototype, "style", {
-        get: function () {
-            return this._style;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(Poster.prototype, "config", {
-        get: function () {
-            return config;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(Poster.prototype, "value", {
-        get: function () {
-            return this.model.text;
-        },
-        set: function (value) {
-            this.model.text = value;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(Poster.prototype, "width", {
-        get: function () {
-            return this.view.width;
-        },
-        set: function (value) {
-            this.view.width = value;
-            this.trigger('resized');
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(Poster.prototype, "height", {
-        get: function () {
-            return this.view.height;
-        },
-        set: function (value) {
-            this.view.height = value;
-            this.trigger('resized');
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(Poster.prototype, "language", {
-        get: function () {
-            return this.view.language;
-        },
-        set: function (value) {
-            this.view.language = value;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    return Poster;
-})(utils.PosterClass);
-window.poster = {
-    Poster: Poster,
-    Canvas: plugin.PluginBase,
-    PluginBase: plugin.PluginBase,
-    RendererBase: renderer.RendererBase,
-    utils: utils
-};
-// Expose prism so the user can load custom language files.
-window.Prism = prism;
-
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/fake_df73b741.js","/")
-},{"./config":9,"./document_controller":12,"./document_model":13,"./document_view":14,"./plugins/manager":26,"./plugins/plugin":27,"./renderers/renderer":32,"./scrolling_canvas":35,"./style":36,"./utils":40,"1YiZ5S":4,"buffer":1,"prismjs":5}],19:[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-var utils = require('../utils');
-/**
- * Listens to a model and higlights the text accordingly.
- * @param {DocumentModel} model
- */
-var HighlighterBase = (function (_super) {
-    __extends(HighlighterBase, _super);
-    function HighlighterBase(model, row_renderer) {
-        _super.call(this);
-        this._model = model;
-        this._row_renderer = row_renderer;
-        this._queued = null;
-        this.delay = 15; //ms
-        // Bind events.
-        this._row_renderer.on('rows_changed', utils.proxy(this._handle_scroll, this));
-        this._model.on('text_changed', utils.proxy(this._handle_text_change, this));
-        this._model.on('row_changed', utils.proxy(this._handle_text_change, this));
-    }
-    /**
-     * Highlight the document
-     * @return {null}
-     */
-    HighlighterBase.prototype.highlight = function (start_row, end_row) {
-        throw new Error('Not implemented');
-    };
-    /**
-     * Queues a highlight operation.
-     *
-     * If a highlight operation is already queued, don't queue
-     * another one.  This ensures that the highlighting is
-     * frame rate locked.  Highlighting is an expensive operation.
-     * @return {null}
-     */
-    HighlighterBase.prototype._queue_highlighter = function () {
-        var _this = this;
-        if (this._queued === null) {
-            this._queued = setTimeout(function () {
-                _this._model.acquire_tag_event_lock();
-                try {
-                    var visible_rows = _this._row_renderer.get_visible_rows();
-                    var top_row = visible_rows.top_row;
-                    var bottom_row = visible_rows.bottom_row;
-                    _this.highlight(top_row, bottom_row);
-                }
-                finally {
-                    _this._model.release_tag_event_lock();
-                    _this._queued = null;
-                }
-            }, this.delay);
-        }
-    };
-    /**
-     * Handles when the visible row indicies are changed.
-     * @return {null}
-     */
-    HighlighterBase.prototype._handle_scroll = function (start_row, end_row) {
-        this._queue_highlighter();
-    };
-    /**
-     * Handles when the text changes.
-     * @return {null}
-     */
-    HighlighterBase.prototype._handle_text_change = function () {
-        this._queue_highlighter();
-    };
-    return HighlighterBase;
-})(utils.PosterClass);
-exports.HighlighterBase = HighlighterBase;
-
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/highlighters/highlighter.js","/highlighters")
-},{"../utils":40,"1YiZ5S":4,"buffer":1}],20:[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-var superset = require('../superset');
-var highlighter = require('./highlighter');
-var prism = require('prismjs');
-/**
- * Listens to a model and highlights the text accordingly.
- * @param {DocumentModel} model
- */
-var PrismHighlighter = (function (_super) {
-    __extends(PrismHighlighter, _super);
-    function PrismHighlighter(model, row_renderer) {
-        _super.call(this, model, row_renderer);
-        // Look back and forward this many rows for contextually 
-        // sensitive highlighting.
-        this._row_padding = 30;
-        this._language = null;
-    }
-    Object.defineProperty(PrismHighlighter.prototype, "languages", {
-        get: function () {
-            var languages = [];
-            for (var l in prism.languages) {
-                if (["extend", "insertBefore", "DFS"].indexOf(l) == -1) {
-                    languages.push(l);
-                }
-            }
-            return languages;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    /**
-     * Highlight the document
-     * @return {null}
-     */
-    PrismHighlighter.prototype.highlight = function (start_row, end_row) {
-        var _this = this;
-        // Get the first and last rows that should be highlighted.
-        start_row = Math.max(0, start_row - this._row_padding);
-        end_row = Math.min(this._model._rows.length - 1, end_row + this._row_padding);
-        // Abort if language isn't specified.
-        if (!this._language)
-            return;
-        // Get the text of the rows.
-        var text = this._model.get_text(start_row, 0, end_row, this._model._rows[end_row].length);
-        // Figure out where each tag belongs.
-        var highlights = this._highlight(text); // [start_index, end_index, tag]
-        // Calculate Poster tags
-        highlights.forEach(function (highlight) {
-            // Translate tag character indicies to row, char coordinates.
-            var before_rows = text.substring(0, highlight[0]).split('\n');
-            var group_start_row = start_row + before_rows.length - 1;
-            var group_start_char = before_rows[before_rows.length - 1].length;
-            var after_rows = text.substring(0, highlight[1]).split('\n');
-            var group_end_row = start_row + after_rows.length - 1;
-            var group_end_char = after_rows[after_rows.length - 1].length;
-            while (group_start_char === _this._model._rows[group_start_row].length) {
-                if (group_start_row < group_end_row) {
-                    group_start_row++;
-                    group_start_char = 0;
-                }
-                else {
-                    return;
-                }
-            }
-            while (group_end_char === 0) {
-                if (group_end_row > group_start_row) {
-                    group_end_row--;
-                    group_end_char = _this._model._rows[group_end_row].length;
-                }
-                else {
-                    return;
-                }
-            }
-            // Apply tag if it's not already applied.
-            var tag = highlight[2].toLowerCase();
-            var existing_tags = _this._model.get_tags('syntax', group_start_row, group_start_char, group_end_row, group_end_char);
-            // Make sure the number of tags = number of rows.
-            var correct_count = (existing_tags.length === group_end_row - group_start_row + 1);
-            // Make sure every tag value equals the new value.
-            var correct_values = true;
-            var i;
-            if (correct_count) {
-                for (i = 0; i < existing_tags.length; i++) {
-                    if (existing_tags[i][3] !== tag) {
-                        correct_values = false;
-                        break;
-                    }
-                }
-            }
-            // Check that the start and ends of tags are correct.
-            var correct_ranges = true;
-            if (correct_count && correct_values) {
-                if (existing_tags.length == 1) {
-                    correct_ranges = existing_tags[0][1] === group_start_char && existing_tags[0][2] === group_end_char;
-                }
-                else {
-                    correct_ranges = existing_tags[0][1] <= group_start_char && existing_tags[0][2] >= _this._model._rows[group_start_row].length - 1;
-                    correct_ranges = correct_ranges && existing_tags[existing_tags.length - 1][1] === 0 && existing_tags[existing_tags.length - 1][2] >= group_end_char;
-                    for (i = 1; i < existing_tags.length - 1; i++) {
-                        correct_ranges = correct_ranges && existing_tags[i][1] === 0 && existing_tags[i][2] >= _this._model._rows[existing_tags[i][0]].length - 1;
-                        if (!correct_ranges)
-                            break;
-                    }
-                }
-            }
-            if (!(correct_count && correct_values && correct_ranges)) {
-                _this._model.set_tag(group_start_row, group_start_char, group_end_row, group_end_char, 'syntax', tag);
-            }
-        });
-    };
-    /**
-     * Find each part of text that needs to be highlighted.
-     * @param  {string} text
-     * @return {array} list containing items of the form [start_index, end_index, tag]
-     */
-    PrismHighlighter.prototype._highlight = function (text) {
-        // Tokenize using prism.js
-        var tokens = prism.tokenize(text, this._language);
-        // Convert the tokens into [start_index, end_index, tag]
-        var left = 0;
-        var flatten = function (tokens, prefix) {
-            if (!prefix) {
-                prefix = [];
-            }
-            var flat = [];
-            for (var i = 0; i < tokens.length; i++) {
-                var token = tokens[i];
-                if (token.content) {
-                    flat = flat.concat(flatten([].concat(token.content), prefix.concat(token.type)));
-                }
-                else {
-                    if (prefix.length > 0) {
-                        flat.push([left, left + token.length, prefix.join(' ')]);
-                    }
-                    left += token.length;
-                }
-            }
-            return flat;
-        };
-        var tags = flatten(tokens);
-        // Use a superset to reduce overlapping tags.
-        var set = new superset.Superset();
-        set.set(0, text.length - 1, '');
-        tags.forEach(function (tag) { return set.set(tag[0], tag[1] - 1, tag[2]); });
-        return set.array;
-    };
-    /**
-     * Loads a syntax by language name.
-     * @param  {string or dictionary} language
-     * @return {boolean} success
-     */
-    PrismHighlighter.prototype.load = function (language) {
-        try {
-            // Check if the language exists.
-            if (prism.languages[language] === undefined) {
-                throw new Error('Language does not exist!');
-            }
-            this._language = prism.languages[language];
-            this._queue_highlighter();
-            return true;
-        }
-        catch (e) {
-            console.error('Error loading language', e);
-            this._language = null;
-            return false;
-        }
-    };
-    return PrismHighlighter;
-})(highlighter.HighlighterBase);
-exports.PrismHighlighter = PrismHighlighter;
-
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/highlighters/prism.js","/highlighters")
-},{"../superset":39,"./highlighter":19,"1YiZ5S":4,"buffer":1,"prismjs":5}],21:[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-var utils = require('./utils');
-var keymap = require('./events/map');
-/**
- * Reversible action history.
- */
-var History = (function (_super) {
-    __extends(History, _super);
-    function History(map) {
-        _super.call(this);
-        this._map = map;
-        this._actions = [];
-        this._action_groups = [];
-        this._undone = [];
-        this._autogroup = null;
-        this._action_lock = false;
-        keymap.Map.register('history.undo', utils.proxy(this.undo, this));
-        keymap.Map.register('history.redo', utils.proxy(this.redo, this));
-    }
-    /**
-     * Push a reversible action to the history.
-     * @param  {string} forward_name - name of the forward action
-     * @param  {array} forward_params - parameters to use when invoking the forward action
-     * @param  {string} backward_name - name of the backward action
-     * @param  {array} backward_params - parameters to use when invoking the backward action
-     * @param  {float} [autogroup_delay] - time to wait to automatically group the actions.
-     *                                     If this is undefined, autogrouping will not occur.
-     */
-    History.prototype.push_action = function (forward_name, forward_params, backward_name, backward_params, autogroup_delay) {
-        if (this._action_lock)
-            return;
-        this._actions.push({
-            forward: {
-                name: forward_name,
-                parameters: forward_params,
-            },
-            backward: {
-                name: backward_name,
-                parameters: backward_params,
-            }
-        });
-        this._undone = [];
-        // If a delay is defined, prepare a timeout to autogroup.
-        if (autogroup_delay !== undefined) {
-            // If another timeout was already set, cancel it.
-            if (this._autogroup !== null) {
-                clearTimeout(this._autogroup);
-            }
-            // Set a new timeout.
-            var that = this;
-            this._autogroup = setTimeout(function () {
-                that.group_actions();
-            }, autogroup_delay);
-        }
-    };
-    /**
-     * Commit the pushed actions to one group.
-     */
-    History.prototype.group_actions = function () {
-        this._autogroup = null;
-        if (this._action_lock)
-            return;
-        this._action_groups.push(this._actions);
-        this._actions = [];
-        this._undone = [];
-    };
-    /**
-     * Undo one set of actions.
-     */
-    History.prototype.undo = function () {
-        // If a timeout is set, group now.
-        if (this._autogroup !== null) {
-            clearTimeout(this._autogroup);
-            this.group_actions();
-        }
-        var undo;
-        if (this._actions.length > 0) {
-            undo = this._actions;
-        }
-        else if (this._action_groups.length > 0) {
-            undo = this._action_groups.pop();
-            undo.reverse();
-        }
-        else {
-            return true;
-        }
-        // Undo the actions.
-        if (!this._action_lock) {
-            this._action_lock = true;
-            try {
-                var that = this;
-                undo.forEach(function (action) {
-                    that._map.invoke(action.backward.name, action.backward.parameters);
-                });
-            }
-            finally {
-                this._action_lock = false;
-            }
-        }
-        // Allow the action to be redone.
-        this._undone.push(undo);
-        return true;
-    };
-    /**
-     * Redo one set of actions.
-     */
-    History.prototype.redo = function () {
-        if (this._undone.length > 0) {
-            var redo = this._undone.pop();
-            // Redo the actions.
-            if (!this._action_lock) {
-                this._action_lock = true;
-                try {
-                    var that = this;
-                    redo.forEach(function (action) {
-                        that._map.invoke(action.forward.name, action.forward.parameters);
-                    });
-                }
-                finally {
-                    this._action_lock = false;
-                }
-            }
-            // Allow the action to be undone.
-            this._action_groups.push(redo);
-        }
-        return true;
-    };
-    return History;
-})(utils.PosterClass);
-exports.History = History;
-
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/history.js","/")
-},{"./events/map":16,"./utils":40,"1YiZ5S":4,"buffer":1}],22:[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var plugin = require('../plugin');
+var utils = require('../../utils/utils');
 var renderer = require('./renderer');
-/**
- * Gutter plugin.
- */
-var Gutter = (function (_super) {
-    __extends(Gutter, _super);
-    function Gutter() {
-        _super.call(this);
-        this.on('load', this._handle_load, this);
-        this.on('unload', this._handle_unload, this);
-        this._gutter_width = 50;
-    }
-    Object.defineProperty(Gutter.prototype, "gutter_width", {
-        // Create a gutter_width property that is adjustable.
-        get: function () {
-            return this._gutter_width;
-        },
-        set: function (value) {
-            this._set_width(value);
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(Gutter.prototype, "renderer", {
-        get: function () {
-            return this._renderer;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    /**
-     * Sets the gutter's width.
-     * @param {integer} value - width in pixels
-     */
-    Gutter.prototype._set_width = function (value) {
-        if (this._gutter_width !== value) {
-            if (this.loaded) {
-                this.poster.view.row_renderer.margin_left += value - this._gutter_width;
-            }
-            this._gutter_width = value;
-            this.trigger('changed');
-        }
-    };
-    /**
-     * Handles when the plugin is loaded.
-     */
-    Gutter.prototype._handle_load = function () {
-        this.poster.view.row_renderer.margin_left += this._gutter_width;
-        this._renderer = new renderer.GutterRenderer(this);
-        this.register_renderer(this._renderer);
-    };
-    /**
-     * Handles when the plugin is unloaded.
-     */
-    Gutter.prototype._handle_unload = function () {
-        // Remove all listeners to this plugin's changed event.
-        this._renderer.unregister();
-        this.poster.view.row_renderer.margin_left -= this._gutter_width;
-    };
-    return Gutter;
-})(plugin.PluginBase);
-exports.Gutter = Gutter;
-
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/gutter/gutter.js","/plugins/gutter")
-},{"../plugin":27,"./renderer":23,"1YiZ5S":4,"buffer":1}],23:[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var renderer = require('../../renderers/renderer');
-/**
- * Renderers the gutter.
- */
-var GutterRenderer = (function (_super) {
-    __extends(GutterRenderer, _super);
-    function GutterRenderer(gutter) {
-        var _this = this;
-        _super.call(this, undefined, { parent_independent: true });
-        this._gutter = gutter;
-        this._gutter.on('changed', function () {
-            _this._render();
-            _this.trigger('changed');
-        });
-        this._hovering = false;
-    }
-    /**
-     * Handles rendering
-     * Only re-render when scrolled horizontally.
-     */
-    GutterRenderer.prototype.render = function (scroll) {
-        // Scrolled right xor hovering
-        var left = this._gutter.poster.canvas.scroll_left;
-        if ((left > 0) !== this._hovering) {
-            this._hovering = left > 0;
-            this._render();
-        }
-    };
-    /**
-     * Renders the gutter
-     */
-    GutterRenderer.prototype._render = function () {
-        this._canvas.clear();
-        var width = this._gutter.gutter_width;
-        this._canvas.draw_rectangle(0, 0, width, this.height, {
-            fill_color: this._gutter.poster.style.gutter,
-        });
-        // If the gutter is hovering over content, draw a drop shadow.
-        if (this._hovering) {
-            var shadow_width = 15;
-            var gradient = this._canvas.gradient(width, 0, width + shadow_width, 0, this._gutter.poster.style.gutter_shadow || [
-                [0, 'black'],
-                [1, 'transparent']
-            ]);
-            this._canvas.draw_rectangle(width, 0, shadow_width, this.height, {
-                fill_color: gradient,
-                alpha: 0.35,
-            });
-        }
-    };
-    /**
-     * Unregister the event listeners
-     * @param  {Poster} poster
-     * @param  {Gutter} gutter
-     */
-    GutterRenderer.prototype.unregister = function () {
-        this._gutter.off('changed', this._render);
-    };
-    return GutterRenderer;
-})(renderer.RendererBase);
-exports.GutterRenderer = GutterRenderer;
-
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/gutter/renderer.js","/plugins/gutter")
-},{"../../renderers/renderer":32,"1YiZ5S":4,"buffer":1}],24:[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var plugin = require('../plugin');
-var renderer = require('./renderer');
-/**
- * Line numbers plugin.
- */
-var LineNumbers = (function (_super) {
-    __extends(LineNumbers, _super);
-    function LineNumbers() {
-        _super.call(this);
-        this.on('load', this._handle_load, this);
-        this.on('unload', this._handle_unload, this);
-    }
-    /**
-     * Handles when the plugin is loaded.
-     */
-    LineNumbers.prototype._handle_load = function () {
-        this._renderer = new renderer.LineNumbersRenderer(this);
-        this.register_renderer(this._renderer);
-    };
-    /**
-     * Handles when the plugin is unloaded.
-     */
-    LineNumbers.prototype._handle_unload = function () {
-        // Remove all listeners to this plugin's changed event.
-        this._renderer.unregister();
-    };
-    return LineNumbers;
-})(plugin.PluginBase);
-exports.LineNumbers = LineNumbers;
-
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/linenumbers/linenumbers.js","/plugins/linenumbers")
-},{"../plugin":27,"./renderer":25,"1YiZ5S":4,"buffer":1}],25:[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var renderer = require('../../renderers/renderer');
-var utils = require('../../utils');
-var canvas = require('../../canvas');
-/**
- * Renderers the line numbers.
- */
-var LineNumbersRenderer = (function (_super) {
-    __extends(LineNumbersRenderer, _super);
-    function LineNumbersRenderer(plugin) {
-        _super.call(this, undefined, { parent_independent: true });
-        this._plugin = plugin;
-        this._top = null;
-        this._top_row = null;
-        this._character_width = null;
-        this._last_row_count = null;
-        // Find gutter plugin, listen to its change event.
-        var manager = this._plugin.poster.plugins;
-        this._gutter = manager.find('gutter')[0];
-        this._gutter.renderer.on('changed', this._gutter_resize, this);
-        // Get row renderer.
-        this._row_renderer = this._plugin.poster.view.row_renderer;
-        // Double buffer.
-        this._text_canvas = new canvas.Canvas();
-        this._tmp_canvas = new canvas.Canvas();
-        this._text_canvas.width = this._gutter.gutter_width;
-        this._tmp_canvas.width = this._gutter.gutter_width;
-        this.height = this.height;
-        // Adjust the gutter size when the number of lines in the document changes.
-        this._plugin.poster.model.on('text_changed', utils.proxy(this._handle_text_change, this));
-        this._plugin.poster.model.on('rows_added', utils.proxy(this._handle_text_change, this));
-        this._plugin.poster.model.on('rows_removed', utils.proxy(this._handle_text_change, this));
-        this._handle_text_change();
-    }
-    Object.defineProperty(LineNumbersRenderer.prototype, "height", {
-        get: function () {
-            return this._canvas.height;
-        },
-        set: function (value) {
-            // Adjust every buffer's size when the height changes.
-            this._canvas.height = value;
-            // The text canvas should be the right height to fit all of the lines
-            // that will be rendered in the base canvas.  This includes the lines
-            // that are partially rendered at the top and bottom of the base canvas.
-            var row_height = this._row_renderer.get_row_height();
-            this._row_height = row_height;
-            this._visible_row_count = Math.ceil(value / row_height) + 1;
-            this._text_canvas.height = this._visible_row_count * row_height;
-            this._tmp_canvas.height = this._text_canvas.height;
-            this.rerender();
-            this.trigger('changed');
-        },
-        enumerable: true,
-        configurable: true
-    });
-    /**
-     * Handles rendering
-     * Only re-render when scrolled vertically.
-     */
-    LineNumbersRenderer.prototype.render = function (scroll) {
-        var top = this._gutter.poster.canvas.scroll_top;
-        if (this._top === null || this._top !== top) {
-            this._top = top;
-            this._render();
-        }
-    };
-    /**
-     * Renders the line numbers
-     */
-    LineNumbersRenderer.prototype._render = function () {
-        // Measure the width of numerical characters if not done yet.
-        if (this._character_width === null) {
-            this._character_width = this._text_canvas.measure_text('0123456789', {
-                font_family: 'monospace',
-                font_size: 14,
-            }) / 10.0;
-            this._handle_text_change();
-        }
-        // Update the text buffer if needed.
-        var top_row = this._row_renderer.get_row_char(0, this._top).row_index;
-        var lines = this._plugin.poster.model._rows.length;
-        if (this._top_row !== top_row) {
-            this._last_row_count = lines;
-            var last_top_row = this._top_row;
-            this._top_row = top_row;
-            // Recycle rows if possible.
-            var row_scroll = this._top_row - last_top_row;
-            var row_delta = Math.abs(row_scroll);
-            if (this._top_row !== null && row_delta < this._visible_row_count) {
-                // Get a snapshot of the text before the scroll.
-                this._tmp_canvas.clear();
-                this._tmp_canvas.draw_image(this._text_canvas, 0, 0);
-                // Render the new rows.
-                this._text_canvas.clear();
-                if (this._top_row < last_top_row) {
-                    // Scrolled up the document (the scrollbar moved up, page down)
-                    this._render_rows(this._top_row, row_delta);
-                }
-                else {
-                    // Scrolled down the document (the scrollbar moved down, page up)
-                    this._render_rows(this._top_row + this._visible_row_count - row_delta, row_delta);
-                }
-                // Use the old content to fill in the rest.
-                this._text_canvas.draw_image(this._tmp_canvas, 0, -row_scroll * this._row_height);
-            }
-            else {
-                // Draw everything.
-                this._text_canvas.clear();
-                this._render_rows(this._top_row, this._visible_row_count);
-            }
-        }
-        // Render the buffer at the correct offset.
-        this._canvas.clear();
-        this._canvas.draw_image(this._text_canvas, 0, this._row_renderer.get_row_top(this._top_row) - this._row_renderer.top);
-    };
-    LineNumbersRenderer.prototype.rerender = function () {
-        // Draw everything.
-        this._character_width = null;
-        this._text_canvas.erase_options_cache();
-        this._text_canvas.clear();
-        this._render_rows(this._top_row, this._visible_row_count);
-        // Render the buffer at the correct offset.
-        this._canvas.clear();
-        this._canvas.draw_image(this._text_canvas, 0, this._row_renderer.get_row_top(this._top_row) - this._row_renderer.top);
-    };
-    /**
-     * Renders a set of line numbers.
-     * @param  {integer} start_row
-     * @param  {integer} num_rows
-     */
-    LineNumbersRenderer.prototype._render_rows = function (start_row, num_rows) {
-        var lines = this._plugin.poster.model._rows.length;
-        for (var i = start_row; i < start_row + num_rows; i++) {
-            if (i < lines) {
-                var y = (i - this._top_row) * this._row_height;
-                if (this._plugin.poster.config.highlight_draw) {
-                    this._text_canvas.draw_rectangle(0, y, this._text_canvas.width, this._row_height, {
-                        fill_color: utils.random_color(),
-                    });
-                }
-                this._text_canvas.draw_text(10, y, String(i + 1), {
-                    font_family: 'monospace',
-                    font_size: 14,
-                    color: this._plugin.poster.style.gutter_text || 'black',
-                });
-            }
-        }
-    };
-    /**
-     * Handles when the number of lines in the editor changes.
-     */
-    LineNumbersRenderer.prototype._handle_text_change = function () {
-        var lines = this._plugin.poster.model._rows.length;
-        var digit_width = Math.max(2, Math.ceil(Math.log(lines + 1) / Math.log(10)) + 1);
-        var char_width = this._character_width || 10.0;
-        this._gutter.gutter_width = digit_width * char_width + 8.0;
-        if (lines !== this._last_row_count) {
-            this.rerender();
-            this.trigger('changed');
-        }
-    };
-    /**
-     * Handles when the gutter is resized
-     */
-    LineNumbersRenderer.prototype._gutter_resize = function () {
-        this._text_canvas.width = this._gutter.gutter_width;
-        this._tmp_canvas.width = this._gutter.gutter_width;
-        this.rerender();
-        this.trigger('changed');
-    };
-    /**
-     * Unregister the event listeners
-     * @param  {Poster} poster
-     * @param  {Gutter} gutter
-     */
-    LineNumbersRenderer.prototype.unregister = function () {
-        this._gutter.off('changed', this._render);
-    };
-    return LineNumbersRenderer;
-})(renderer.RendererBase);
-exports.LineNumbersRenderer = LineNumbersRenderer;
-
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/linenumbers/renderer.js","/plugins/linenumbers")
-},{"../../canvas":7,"../../renderers/renderer":32,"../../utils":40,"1YiZ5S":4,"buffer":1}],26:[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-var utils = require('../utils');
-var pluginbase = require('./plugin');
-var gutter = require('./gutter/gutter');
-var linenumbers = require('./linenumbers/linenumbers');
-/**
- * Plugin manager class
- */
-var PluginManager = (function (_super) {
-    __extends(PluginManager, _super);
-    function PluginManager(poster) {
-        _super.call(this);
-        this._poster = poster;
-        this._plugins = [];
-        // Populate built-in plugin list.
-        this._internal_plugins = {};
-        this._internal_plugins.gutter = gutter.Gutter;
-        this._internal_plugins.linenumbers = linenumbers.LineNumbers;
-    }
-    Object.defineProperty(PluginManager.prototype, "plugins", {
-        get: function () {
-            return [].concat(this._plugins);
-        },
-        enumerable: true,
-        configurable: true
-    });
-    /**
-     * Loads a plugin
-     * @param  {string or PluginBase} plugin
-     * @returns {boolean} success
-     */
-    PluginManager.prototype.load = function (plugin) {
-        if (!(plugin instanceof pluginbase.PluginBase)) {
-            var plugin_class = this._internal_plugins[plugin];
-            if (plugin_class !== undefined) {
-                plugin = new plugin_class();
-            }
-        }
-        if (plugin instanceof pluginbase.PluginBase) {
-            this._plugins.push(plugin);
-            plugin._load(this, this._poster);
-            return true;
-        }
-        return false;
-    };
-    /**
-     * Unloads a plugin
-     * @param  {PluginBase} plugin
-     * @returns {boolean} success
-     */
-    PluginManager.prototype.unload = function (plugin) {
-        var index = this._plugins.indexOf(plugin);
-        if (index != -1) {
-            this._plugins.splice(index, 1);
-            plugin._unload();
-            return true;
-        }
-        return false;
-    };
-    /**
-     * Finds the instance of a plugin.
-     * @param  {string or type} plugin_class - name of internal plugin or plugin class
-     * @return {array} of plugin instances
-     */
-    PluginManager.prototype.find = function (plugin_class) {
-        if (this._internal_plugins[plugin_class] !== undefined) {
-            plugin_class = this._internal_plugins[plugin_class];
-        }
-        var found = [];
-        for (var i = 0; i < this._plugins.length; i++) {
-            if (this._plugins[i] instanceof plugin_class) {
-                found.push(this._plugins[i]);
-            }
-        }
-        return found;
-    };
-    return PluginManager;
-})(utils.PosterClass);
-exports.PluginManager = PluginManager;
-
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/manager.js","/plugins")
-},{"../utils":40,"./gutter/gutter":22,"./linenumbers/linenumbers":24,"./plugin":27,"1YiZ5S":4,"buffer":1}],27:[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-var utils = require('../utils');
-/**
- * Plugin base class
- */
-var PluginBase = (function (_super) {
-    __extends(PluginBase, _super);
-    function PluginBase() {
-        _super.call(this);
-        this.loaded = false;
-        this._renderers = [];
-        this._poster = null;
-    }
-    Object.defineProperty(PluginBase.prototype, "poster", {
-        get: function () {
-            return this._poster;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    /**
-     * Loads the plugin
-     */
-    PluginBase.prototype._load = function (manager, poster) {
-        this._poster = poster;
-        this._manager = manager;
-        this.loaded = true;
-        this.trigger('load');
-    };
-    /**
-     * Unloads this plugin
-     */
-    PluginBase.prototype.unload = function () {
-        this._manager.unload(this);
-    };
-    /**
-     * Trigger unload event
-     */
-    PluginBase.prototype._unload = function () {
-        for (var i = 0; i < this._renderers.length; i++) {
-            this._unregister_renderer(this._renderers[i]);
-        }
-        this.loaded = false;
-        this.trigger('unload');
-    };
-    /**
-     * Registers a renderer
-     * @param  {RendererBase} renderer
-     */
-    PluginBase.prototype.register_renderer = function (renderer) {
-        this._renderers.push(renderer);
-        this.poster.view.add_renderer(renderer);
-    };
-    /**
-     * Unregisters a renderer and removes it from the internal list.
-     * @param  {RendererBase} renderer
-     */
-    PluginBase.prototype.unregister_renderer = function (renderer) {
-        var index = this._renderers.indexOf(renderer);
-        if (index !== -1) {
-            this._renderers.splice(index, 1);
-        }
-        this._unregister_renderer(renderer);
-    };
-    /**
-     * Unregisters a renderer
-     * @param  {RendererBase} renderer
-     */
-    PluginBase.prototype._unregister_renderer = function (renderer) {
-        this.poster.view.remove_renderer(renderer);
-    };
-    return PluginBase;
-})(utils.PosterClass);
-exports.PluginBase = PluginBase;
-
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/plugin.js","/plugins")
-},{"../utils":40,"1YiZ5S":4,"buffer":1}],28:[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-var utils = require('../utils');
-var renderer = require('./renderer');
-var config_mod = require('../config');
+var config_mod = require('../../utils/config');
 var config = config_mod.config;
 /**
  * Groups multiple renderers
@@ -6163,8 +5116,8 @@ var BatchRenderer = (function (_super) {
 })(renderer.RendererBase);
 exports.BatchRenderer = BatchRenderer;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/renderers/batch.js","/renderers")
-},{"../config":9,"../utils":40,"./renderer":32,"1YiZ5S":4,"buffer":1}],29:[function(require,module,exports){
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/batch.js","/draw/renderers")
+},{"../../utils/config":38,"../../utils/utils":40,"./renderer":22,"1YiZ5S":4,"buffer":1}],19:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -6250,8 +5203,8 @@ var ColorRenderer = (function (_super) {
 })(renderer.RendererBase);
 exports.ColorRenderer = ColorRenderer;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/renderers/color.js","/renderers")
-},{"./renderer":32,"1YiZ5S":4,"buffer":1}],30:[function(require,module,exports){
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/color.js","/draw/renderers")
+},{"./renderer":22,"1YiZ5S":4,"buffer":1}],20:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -6261,7 +5214,7 @@ var __extends = this.__extends || function (d, b) {
     d.prototype = new __();
 };
 var animator = require('../animator');
-var utils = require('../utils');
+var utils = require('../../utils/utils');
 var renderer = require('./renderer');
 /**
  * Render document cursors
@@ -6383,8 +5336,8 @@ var CursorsRenderer = (function (_super) {
 })(renderer.RendererBase);
 exports.CursorsRenderer = CursorsRenderer;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/renderers/cursors.js","/renderers")
-},{"../animator":6,"../utils":40,"./renderer":32,"1YiZ5S":4,"buffer":1}],31:[function(require,module,exports){
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/cursors.js","/draw/renderers")
+},{"../../utils/utils":40,"../animator":16,"./renderer":22,"1YiZ5S":4,"buffer":1}],21:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -6393,9 +5346,9 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-var utils = require('../utils');
+var utils = require('../../utils/utils');
 var row = require('./row');
-var config_mod = require('../config');
+var config_mod = require('../../utils/config');
 var config = config_mod.config;
 /**
  * Render the text rows of a DocumentModel.
@@ -6519,8 +5472,8 @@ var HighlightedRowRenderer = (function (_super) {
 })(row.RowRenderer);
 exports.HighlightedRowRenderer = HighlightedRowRenderer;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/renderers/highlighted_row.js","/renderers")
-},{"../config":9,"../utils":40,"./row":33,"1YiZ5S":4,"buffer":1}],32:[function(require,module,exports){
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/highlighted_row.js","/draw/renderers")
+},{"../../utils/config":38,"../../utils/utils":40,"./row":23,"1YiZ5S":4,"buffer":1}],22:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -6530,7 +5483,7 @@ var __extends = this.__extends || function (d, b) {
     d.prototype = new __();
 };
 var canvas = require('../canvas');
-var utils = require('../utils');
+var utils = require('../../utils/utils');
 /**
  * Renders to a canvas
  * @param {Canvas} default_canvas
@@ -6589,8 +5542,8 @@ var RendererBase = (function (_super) {
 })(utils.PosterClass);
 exports.RendererBase = RendererBase;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/renderers/renderer.js","/renderers")
-},{"../canvas":7,"../utils":40,"1YiZ5S":4,"buffer":1}],33:[function(require,module,exports){
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/renderer.js","/draw/renderers")
+},{"../../utils/utils":40,"../canvas":17,"1YiZ5S":4,"buffer":1}],23:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -6600,7 +5553,7 @@ var __extends = this.__extends || function (d, b) {
     d.prototype = new __();
 };
 var canvas = require('../canvas');
-var utils = require('../utils');
+var utils = require('../../utils/utils');
 var renderer = require('./renderer');
 /**
  * Render the text rows of a DocumentModel.
@@ -6987,8 +5940,8 @@ var RowRenderer = (function (_super) {
 })(renderer.RendererBase);
 exports.RowRenderer = RowRenderer;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/renderers/row.js","/renderers")
-},{"../canvas":7,"../utils":40,"./renderer":32,"1YiZ5S":4,"buffer":1}],34:[function(require,module,exports){
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/row.js","/draw/renderers")
+},{"../../utils/utils":40,"../canvas":17,"./renderer":22,"1YiZ5S":4,"buffer":1}],24:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -6997,9 +5950,9 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-var utils = require('../utils');
+var utils = require('../../utils/utils');
 var renderer = require('./renderer');
-var config_mod = require('../config');
+var config_mod = require('../../utils/config');
 var config = config_mod.config;
 /**
  * Render document selection boxes
@@ -7128,8 +6081,8 @@ var SelectionsRenderer = (function (_super) {
 })(renderer.RendererBase);
 exports.SelectionsRenderer = SelectionsRenderer;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/renderers/selections.js","/renderers")
-},{"../config":9,"../utils":40,"./renderer":32,"1YiZ5S":4,"buffer":1}],35:[function(require,module,exports){
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/selections.js","/draw/renderers")
+},{"../../utils/config":38,"../../utils/utils":40,"./renderer":22,"1YiZ5S":4,"buffer":1}],25:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -7139,7 +6092,7 @@ var __extends = this.__extends || function (d, b) {
 };
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var canvas = require('./canvas');
-var utils = require('./utils');
+var utils = require('../utils/utils');
 /**
  * HTML canvas with drawing convinience functions.
  */
@@ -7388,8 +6341,498 @@ var ScrollingCanvas = (function (_super) {
 })(canvas.Canvas);
 exports.ScrollingCanvas = ScrollingCanvas;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/scrolling_canvas.js","/")
-},{"./canvas":7,"./utils":40,"1YiZ5S":4,"buffer":1}],36:[function(require,module,exports){
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/scrolling_canvas.js","/draw")
+},{"../utils/utils":40,"./canvas":17,"1YiZ5S":4,"buffer":1}],26:[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+var scrolling_canvas = require('./draw/scrolling_canvas');
+var document_controller = require('./document_controller');
+var document_model = require('./document_model');
+var document_view = require('./document_view');
+var pluginmanager = require('./plugins/manager');
+var plugin = require('./plugins/plugin');
+var renderer = require('./draw/renderers/renderer');
+var style = require('./styles/style');
+var utils = require('./utils/utils');
+var config_mod = require('./utils/config');
+var prism = require('prismjs');
+var config = config_mod.config;
+/**
+ * Canvas based text editor
+ */
+var Poster = (function (_super) {
+    __extends(Poster, _super);
+    function Poster() {
+        var _this = this;
+        _super.call(this);
+        // Create canvas
+        this.canvas = new scrolling_canvas.ScrollingCanvas();
+        this.el = this.canvas.el; // Convenience
+        this._style = new style.Style();
+        // Create model, controller, and view.
+        this.model = new document_model.DocumentModel();
+        this.controller = new document_controller.DocumentController(this.canvas.el, this.model);
+        this.view = new document_view.DocumentView(this.canvas, this.model, this.controller.cursors, this._style, function () {
+            return _this.controller.clipboard.hidden_input === document.activeElement || _this.canvas.focused;
+        }, function (x, y) { return _this.controller.clipboard.set_position(x, y); });
+        // Load plugins.
+        this.plugins = new pluginmanager.PluginManager(this);
+        this.plugins.load('gutter');
+        this.plugins.load('linenumbers');
+    }
+    Object.defineProperty(Poster.prototype, "style", {
+        get: function () {
+            return this._style;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Poster.prototype, "config", {
+        get: function () {
+            return config;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Poster.prototype, "value", {
+        get: function () {
+            return this.model.text;
+        },
+        set: function (value) {
+            this.model.text = value;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Poster.prototype, "width", {
+        get: function () {
+            return this.view.width;
+        },
+        set: function (value) {
+            this.view.width = value;
+            this.trigger('resized');
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Poster.prototype, "height", {
+        get: function () {
+            return this.view.height;
+        },
+        set: function (value) {
+            this.view.height = value;
+            this.trigger('resized');
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Poster.prototype, "language", {
+        get: function () {
+            return this.view.language;
+        },
+        set: function (value) {
+            this.view.language = value;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    return Poster;
+})(utils.PosterClass);
+window.poster = {
+    Poster: Poster,
+    Canvas: plugin.PluginBase,
+    PluginBase: plugin.PluginBase,
+    RendererBase: renderer.RendererBase,
+    utils: utils
+};
+// Expose prism so the user can load custom language files.
+window.Prism = prism;
+
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/fake_1506270.js","/")
+},{"./document_controller":13,"./document_model":14,"./document_view":15,"./draw/renderers/renderer":22,"./draw/scrolling_canvas":25,"./plugins/manager":31,"./plugins/plugin":32,"./styles/style":35,"./utils/config":38,"./utils/utils":40,"1YiZ5S":4,"buffer":1,"prismjs":5}],27:[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+var plugin = require('../plugin');
+var renderer = require('./renderer');
+/**
+ * Gutter plugin.
+ */
+var Gutter = (function (_super) {
+    __extends(Gutter, _super);
+    function Gutter() {
+        _super.call(this);
+        this.on('load', this._handle_load, this);
+        this.on('unload', this._handle_unload, this);
+        this._gutter_width = 50;
+    }
+    Object.defineProperty(Gutter.prototype, "gutter_width", {
+        // Create a gutter_width property that is adjustable.
+        get: function () {
+            return this._gutter_width;
+        },
+        set: function (value) {
+            this._set_width(value);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Gutter.prototype, "renderer", {
+        get: function () {
+            return this._renderer;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    /**
+     * Sets the gutter's width.
+     * @param {integer} value - width in pixels
+     */
+    Gutter.prototype._set_width = function (value) {
+        if (this._gutter_width !== value) {
+            if (this.loaded) {
+                this.poster.view.row_renderer.margin_left += value - this._gutter_width;
+            }
+            this._gutter_width = value;
+            this.trigger('changed');
+        }
+    };
+    /**
+     * Handles when the plugin is loaded.
+     */
+    Gutter.prototype._handle_load = function () {
+        this.poster.view.row_renderer.margin_left += this._gutter_width;
+        this._renderer = new renderer.GutterRenderer(this);
+        this.register_renderer(this._renderer);
+    };
+    /**
+     * Handles when the plugin is unloaded.
+     */
+    Gutter.prototype._handle_unload = function () {
+        // Remove all listeners to this plugin's changed event.
+        this._renderer.unregister();
+        this.poster.view.row_renderer.margin_left -= this._gutter_width;
+    };
+    return Gutter;
+})(plugin.PluginBase);
+exports.Gutter = Gutter;
+
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/gutter/gutter.js","/plugins/gutter")
+},{"../plugin":32,"./renderer":28,"1YiZ5S":4,"buffer":1}],28:[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+var renderer = require('../../draw/renderers/renderer');
+/**
+ * Renderers the gutter.
+ */
+var GutterRenderer = (function (_super) {
+    __extends(GutterRenderer, _super);
+    function GutterRenderer(gutter) {
+        var _this = this;
+        _super.call(this, undefined, { parent_independent: true });
+        this._gutter = gutter;
+        this._gutter.on('changed', function () {
+            _this._render();
+            _this.trigger('changed');
+        });
+        this._hovering = false;
+    }
+    /**
+     * Handles rendering
+     * Only re-render when scrolled horizontally.
+     */
+    GutterRenderer.prototype.render = function (scroll) {
+        // Scrolled right xor hovering
+        var left = this._gutter.poster.canvas.scroll_left;
+        if ((left > 0) !== this._hovering) {
+            this._hovering = left > 0;
+            this._render();
+        }
+    };
+    /**
+     * Renders the gutter
+     */
+    GutterRenderer.prototype._render = function () {
+        this._canvas.clear();
+        var width = this._gutter.gutter_width;
+        this._canvas.draw_rectangle(0, 0, width, this.height, {
+            fill_color: this._gutter.poster.style.gutter,
+        });
+        // If the gutter is hovering over content, draw a drop shadow.
+        if (this._hovering) {
+            var shadow_width = 15;
+            var gradient = this._canvas.gradient(width, 0, width + shadow_width, 0, this._gutter.poster.style.gutter_shadow || [
+                [0, 'black'],
+                [1, 'transparent']
+            ]);
+            this._canvas.draw_rectangle(width, 0, shadow_width, this.height, {
+                fill_color: gradient,
+                alpha: 0.35,
+            });
+        }
+    };
+    /**
+     * Unregister the event listeners
+     * @param  {Poster} poster
+     * @param  {Gutter} gutter
+     */
+    GutterRenderer.prototype.unregister = function () {
+        this._gutter.off('changed', this._render);
+    };
+    return GutterRenderer;
+})(renderer.RendererBase);
+exports.GutterRenderer = GutterRenderer;
+
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/gutter/renderer.js","/plugins/gutter")
+},{"../../draw/renderers/renderer":22,"1YiZ5S":4,"buffer":1}],29:[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+var plugin = require('../plugin');
+var renderer = require('./renderer');
+/**
+ * Line numbers plugin.
+ */
+var LineNumbers = (function (_super) {
+    __extends(LineNumbers, _super);
+    function LineNumbers() {
+        _super.call(this);
+        this.on('load', this._handle_load, this);
+        this.on('unload', this._handle_unload, this);
+    }
+    /**
+     * Handles when the plugin is loaded.
+     */
+    LineNumbers.prototype._handle_load = function () {
+        this._renderer = new renderer.LineNumbersRenderer(this);
+        this.register_renderer(this._renderer);
+    };
+    /**
+     * Handles when the plugin is unloaded.
+     */
+    LineNumbers.prototype._handle_unload = function () {
+        // Remove all listeners to this plugin's changed event.
+        this._renderer.unregister();
+    };
+    return LineNumbers;
+})(plugin.PluginBase);
+exports.LineNumbers = LineNumbers;
+
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/linenumbers/linenumbers.js","/plugins/linenumbers")
+},{"../plugin":32,"./renderer":30,"1YiZ5S":4,"buffer":1}],30:[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+var renderer = require('../../draw/renderers/renderer');
+var utils = require('../../utils/utils');
+var canvas = require('../../draw/canvas');
+/**
+ * Renderers the line numbers.
+ */
+var LineNumbersRenderer = (function (_super) {
+    __extends(LineNumbersRenderer, _super);
+    function LineNumbersRenderer(plugin) {
+        _super.call(this, undefined, { parent_independent: true });
+        this._plugin = plugin;
+        this._top = null;
+        this._top_row = null;
+        this._character_width = null;
+        this._last_row_count = null;
+        // Find gutter plugin, listen to its change event.
+        var manager = this._plugin.poster.plugins;
+        this._gutter = manager.find('gutter')[0];
+        this._gutter.renderer.on('changed', this._gutter_resize, this);
+        // Get row renderer.
+        this._row_renderer = this._plugin.poster.view.row_renderer;
+        // Double buffer.
+        this._text_canvas = new canvas.Canvas();
+        this._tmp_canvas = new canvas.Canvas();
+        this._text_canvas.width = this._gutter.gutter_width;
+        this._tmp_canvas.width = this._gutter.gutter_width;
+        this.height = this.height;
+        // Adjust the gutter size when the number of lines in the document changes.
+        this._plugin.poster.model.on('text_changed', utils.proxy(this._handle_text_change, this));
+        this._plugin.poster.model.on('rows_added', utils.proxy(this._handle_text_change, this));
+        this._plugin.poster.model.on('rows_removed', utils.proxy(this._handle_text_change, this));
+        this._handle_text_change();
+    }
+    Object.defineProperty(LineNumbersRenderer.prototype, "height", {
+        get: function () {
+            return this._canvas.height;
+        },
+        set: function (value) {
+            // Adjust every buffer's size when the height changes.
+            this._canvas.height = value;
+            // The text canvas should be the right height to fit all of the lines
+            // that will be rendered in the base canvas.  This includes the lines
+            // that are partially rendered at the top and bottom of the base canvas.
+            var row_height = this._row_renderer.get_row_height();
+            this._row_height = row_height;
+            this._visible_row_count = Math.ceil(value / row_height) + 1;
+            this._text_canvas.height = this._visible_row_count * row_height;
+            this._tmp_canvas.height = this._text_canvas.height;
+            this.rerender();
+            this.trigger('changed');
+        },
+        enumerable: true,
+        configurable: true
+    });
+    /**
+     * Handles rendering
+     * Only re-render when scrolled vertically.
+     */
+    LineNumbersRenderer.prototype.render = function (scroll) {
+        var top = this._gutter.poster.canvas.scroll_top;
+        if (this._top === null || this._top !== top) {
+            this._top = top;
+            this._render();
+        }
+    };
+    /**
+     * Renders the line numbers
+     */
+    LineNumbersRenderer.prototype._render = function () {
+        // Measure the width of numerical characters if not done yet.
+        if (this._character_width === null) {
+            this._character_width = this._text_canvas.measure_text('0123456789', {
+                font_family: 'monospace',
+                font_size: 14,
+            }) / 10.0;
+            this._handle_text_change();
+        }
+        // Update the text buffer if needed.
+        var top_row = this._row_renderer.get_row_char(0, this._top).row_index;
+        var lines = this._plugin.poster.model._rows.length;
+        if (this._top_row !== top_row) {
+            this._last_row_count = lines;
+            var last_top_row = this._top_row;
+            this._top_row = top_row;
+            // Recycle rows if possible.
+            var row_scroll = this._top_row - last_top_row;
+            var row_delta = Math.abs(row_scroll);
+            if (this._top_row !== null && row_delta < this._visible_row_count) {
+                // Get a snapshot of the text before the scroll.
+                this._tmp_canvas.clear();
+                this._tmp_canvas.draw_image(this._text_canvas, 0, 0);
+                // Render the new rows.
+                this._text_canvas.clear();
+                if (this._top_row < last_top_row) {
+                    // Scrolled up the document (the scrollbar moved up, page down)
+                    this._render_rows(this._top_row, row_delta);
+                }
+                else {
+                    // Scrolled down the document (the scrollbar moved down, page up)
+                    this._render_rows(this._top_row + this._visible_row_count - row_delta, row_delta);
+                }
+                // Use the old content to fill in the rest.
+                this._text_canvas.draw_image(this._tmp_canvas, 0, -row_scroll * this._row_height);
+            }
+            else {
+                // Draw everything.
+                this._text_canvas.clear();
+                this._render_rows(this._top_row, this._visible_row_count);
+            }
+        }
+        // Render the buffer at the correct offset.
+        this._canvas.clear();
+        this._canvas.draw_image(this._text_canvas, 0, this._row_renderer.get_row_top(this._top_row) - this._row_renderer.top);
+    };
+    LineNumbersRenderer.prototype.rerender = function () {
+        // Draw everything.
+        this._character_width = null;
+        this._text_canvas.erase_options_cache();
+        this._text_canvas.clear();
+        this._render_rows(this._top_row, this._visible_row_count);
+        // Render the buffer at the correct offset.
+        this._canvas.clear();
+        this._canvas.draw_image(this._text_canvas, 0, this._row_renderer.get_row_top(this._top_row) - this._row_renderer.top);
+    };
+    /**
+     * Renders a set of line numbers.
+     * @param  {integer} start_row
+     * @param  {integer} num_rows
+     */
+    LineNumbersRenderer.prototype._render_rows = function (start_row, num_rows) {
+        var lines = this._plugin.poster.model._rows.length;
+        for (var i = start_row; i < start_row + num_rows; i++) {
+            if (i < lines) {
+                var y = (i - this._top_row) * this._row_height;
+                if (this._plugin.poster.config.highlight_draw) {
+                    this._text_canvas.draw_rectangle(0, y, this._text_canvas.width, this._row_height, {
+                        fill_color: utils.random_color(),
+                    });
+                }
+                this._text_canvas.draw_text(10, y, String(i + 1), {
+                    font_family: 'monospace',
+                    font_size: 14,
+                    color: this._plugin.poster.style.gutter_text || 'black',
+                });
+            }
+        }
+    };
+    /**
+     * Handles when the number of lines in the editor changes.
+     */
+    LineNumbersRenderer.prototype._handle_text_change = function () {
+        var lines = this._plugin.poster.model._rows.length;
+        var digit_width = Math.max(2, Math.ceil(Math.log(lines + 1) / Math.log(10)) + 1);
+        var char_width = this._character_width || 10.0;
+        this._gutter.gutter_width = digit_width * char_width + 8.0;
+        if (lines !== this._last_row_count) {
+            this.rerender();
+            this.trigger('changed');
+        }
+    };
+    /**
+     * Handles when the gutter is resized
+     */
+    LineNumbersRenderer.prototype._gutter_resize = function () {
+        this._text_canvas.width = this._gutter.gutter_width;
+        this._tmp_canvas.width = this._gutter.gutter_width;
+        this.rerender();
+        this.trigger('changed');
+    };
+    /**
+     * Unregister the event listeners
+     * @param  {Poster} poster
+     * @param  {Gutter} gutter
+     */
+    LineNumbersRenderer.prototype.unregister = function () {
+        this._gutter.off('changed', this._render);
+    };
+    return LineNumbersRenderer;
+})(renderer.RendererBase);
+exports.LineNumbersRenderer = LineNumbersRenderer;
+
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/linenumbers/renderer.js","/plugins/linenumbers")
+},{"../../draw/canvas":17,"../../draw/renderers/renderer":22,"../../utils/utils":40,"1YiZ5S":4,"buffer":1}],31:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -7398,8 +6841,218 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-var utils = require('./utils');
-var styles = require('./styles/init');
+var utils = require('../utils/utils');
+var pluginbase = require('./plugin');
+var gutter = require('./gutter/gutter');
+var linenumbers = require('./linenumbers/linenumbers');
+/**
+ * Plugin manager class
+ */
+var PluginManager = (function (_super) {
+    __extends(PluginManager, _super);
+    function PluginManager(poster) {
+        _super.call(this);
+        this._poster = poster;
+        this._plugins = [];
+        // Populate built-in plugin list.
+        this._internal_plugins = {};
+        this._internal_plugins.gutter = gutter.Gutter;
+        this._internal_plugins.linenumbers = linenumbers.LineNumbers;
+    }
+    Object.defineProperty(PluginManager.prototype, "plugins", {
+        get: function () {
+            return [].concat(this._plugins);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    /**
+     * Loads a plugin
+     * @param  {string or PluginBase} plugin
+     * @returns {boolean} success
+     */
+    PluginManager.prototype.load = function (plugin) {
+        if (!(plugin instanceof pluginbase.PluginBase)) {
+            var plugin_class = this._internal_plugins[plugin];
+            if (plugin_class !== undefined) {
+                plugin = new plugin_class();
+            }
+        }
+        if (plugin instanceof pluginbase.PluginBase) {
+            this._plugins.push(plugin);
+            plugin._load(this, this._poster);
+            return true;
+        }
+        return false;
+    };
+    /**
+     * Unloads a plugin
+     * @param  {PluginBase} plugin
+     * @returns {boolean} success
+     */
+    PluginManager.prototype.unload = function (plugin) {
+        var index = this._plugins.indexOf(plugin);
+        if (index != -1) {
+            this._plugins.splice(index, 1);
+            plugin._unload();
+            return true;
+        }
+        return false;
+    };
+    /**
+     * Finds the instance of a plugin.
+     * @param  {string or type} plugin_class - name of internal plugin or plugin class
+     * @return {array} of plugin instances
+     */
+    PluginManager.prototype.find = function (plugin_class) {
+        if (this._internal_plugins[plugin_class] !== undefined) {
+            plugin_class = this._internal_plugins[plugin_class];
+        }
+        var found = [];
+        for (var i = 0; i < this._plugins.length; i++) {
+            if (this._plugins[i] instanceof plugin_class) {
+                found.push(this._plugins[i]);
+            }
+        }
+        return found;
+    };
+    return PluginManager;
+})(utils.PosterClass);
+exports.PluginManager = PluginManager;
+
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/manager.js","/plugins")
+},{"../utils/utils":40,"./gutter/gutter":27,"./linenumbers/linenumbers":29,"./plugin":32,"1YiZ5S":4,"buffer":1}],32:[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var utils = require('../utils/utils');
+/**
+ * Plugin base class
+ */
+var PluginBase = (function (_super) {
+    __extends(PluginBase, _super);
+    function PluginBase() {
+        _super.call(this);
+        this.loaded = false;
+        this._renderers = [];
+        this._poster = null;
+    }
+    Object.defineProperty(PluginBase.prototype, "poster", {
+        get: function () {
+            return this._poster;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    /**
+     * Loads the plugin
+     */
+    PluginBase.prototype._load = function (manager, poster) {
+        this._poster = poster;
+        this._manager = manager;
+        this.loaded = true;
+        this.trigger('load');
+    };
+    /**
+     * Unloads this plugin
+     */
+    PluginBase.prototype.unload = function () {
+        this._manager.unload(this);
+    };
+    /**
+     * Trigger unload event
+     */
+    PluginBase.prototype._unload = function () {
+        for (var i = 0; i < this._renderers.length; i++) {
+            this._unregister_renderer(this._renderers[i]);
+        }
+        this.loaded = false;
+        this.trigger('unload');
+    };
+    /**
+     * Registers a renderer
+     * @param  {RendererBase} renderer
+     */
+    PluginBase.prototype.register_renderer = function (renderer) {
+        this._renderers.push(renderer);
+        this.poster.view.add_renderer(renderer);
+    };
+    /**
+     * Unregisters a renderer and removes it from the internal list.
+     * @param  {RendererBase} renderer
+     */
+    PluginBase.prototype.unregister_renderer = function (renderer) {
+        var index = this._renderers.indexOf(renderer);
+        if (index !== -1) {
+            this._renderers.splice(index, 1);
+        }
+        this._unregister_renderer(renderer);
+    };
+    /**
+     * Unregisters a renderer
+     * @param  {RendererBase} renderer
+     */
+    PluginBase.prototype._unregister_renderer = function (renderer) {
+        this.poster.view.remove_renderer(renderer);
+    };
+    return PluginBase;
+})(utils.PosterClass);
+exports.PluginBase = PluginBase;
+
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/plugin.js","/plugins")
+},{"../utils/utils":40,"1YiZ5S":4,"buffer":1}],33:[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+var peacock = require('./peacock');
+exports.styles = {
+    "peacock": peacock,
+};
+
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/styles/init.js","/styles")
+},{"./peacock":34,"1YiZ5S":4,"buffer":1}],34:[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+exports.style = {
+    comment: '#7a7267',
+    string: '#bcd42a',
+    'class-name': '#ede0ce',
+    keyword: '#26A6A6',
+    boolean: '#bcd42a',
+    function: '#ff5d38',
+    operator: '#26A6A6',
+    number: '#bcd42a',
+    ignore: '#cccccc',
+    punctuation: '#ede0ce',
+    cursor: '#f8f8f0',
+    cursor_width: 1.0,
+    cursor_height: 1.1,
+    selection: '#df3d18',
+    selection_unfocused: '#4f1d08',
+    text: '#ede0ce',
+    background: '#2b2a27',
+    gutter: '#2b2a27',
+    gutter_text: '#7a7267',
+    gutter_shadow: [
+        [0, 'black'],
+        [1, 'transparent']
+    ],
+};
+
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/styles/peacock.js","/styles")
+},{"1YiZ5S":4,"buffer":1}],35:[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var utils = require('../utils/utils');
+var styles = require('./init');
 /**
  * Style
  */
@@ -7459,45 +7112,284 @@ var Style = (function (_super) {
 })(utils.PosterClass);
 exports.Style = Style;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/style.js","/")
-},{"./styles/init":37,"./utils":40,"1YiZ5S":4,"buffer":1}],37:[function(require,module,exports){
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/styles/style.js","/styles")
+},{"../utils/utils":40,"./init":33,"1YiZ5S":4,"buffer":1}],36:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-var peacock = require('./peacock');
-exports.styles = {
-    "peacock": peacock,
+// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
 };
+var utils = require('../utils/utils');
+/**
+ * Listens to a model and higlights the text accordingly.
+ * @param {DocumentModel} model
+ */
+var HighlighterBase = (function (_super) {
+    __extends(HighlighterBase, _super);
+    function HighlighterBase(model, row_renderer) {
+        _super.call(this);
+        this._model = model;
+        this._row_renderer = row_renderer;
+        this._queued = null;
+        this.delay = 15; //ms
+        // Bind events.
+        this._row_renderer.on('rows_changed', utils.proxy(this._handle_scroll, this));
+        this._model.on('text_changed', utils.proxy(this._handle_text_change, this));
+        this._model.on('row_changed', utils.proxy(this._handle_text_change, this));
+    }
+    /**
+     * Highlight the document
+     * @return {null}
+     */
+    HighlighterBase.prototype.highlight = function (start_row, end_row) {
+        throw new Error('Not implemented');
+    };
+    /**
+     * Queues a highlight operation.
+     *
+     * If a highlight operation is already queued, don't queue
+     * another one.  This ensures that the highlighting is
+     * frame rate locked.  Highlighting is an expensive operation.
+     * @return {null}
+     */
+    HighlighterBase.prototype._queue_highlighter = function () {
+        var _this = this;
+        if (this._queued === null) {
+            this._queued = setTimeout(function () {
+                _this._model.acquire_tag_event_lock();
+                try {
+                    var visible_rows = _this._row_renderer.get_visible_rows();
+                    var top_row = visible_rows.top_row;
+                    var bottom_row = visible_rows.bottom_row;
+                    _this.highlight(top_row, bottom_row);
+                }
+                finally {
+                    _this._model.release_tag_event_lock();
+                    _this._queued = null;
+                }
+            }, this.delay);
+        }
+    };
+    /**
+     * Handles when the visible row indicies are changed.
+     * @return {null}
+     */
+    HighlighterBase.prototype._handle_scroll = function (start_row, end_row) {
+        this._queue_highlighter();
+    };
+    /**
+     * Handles when the text changes.
+     * @return {null}
+     */
+    HighlighterBase.prototype._handle_text_change = function () {
+        this._queue_highlighter();
+    };
+    return HighlighterBase;
+})(utils.PosterClass);
+exports.HighlighterBase = HighlighterBase;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/styles/init.js","/styles")
-},{"./peacock":38,"1YiZ5S":4,"buffer":1}],38:[function(require,module,exports){
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/syntax/highlighter.js","/syntax")
+},{"../utils/utils":40,"1YiZ5S":4,"buffer":1}],37:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-exports.style = {
-    comment: '#7a7267',
-    string: '#bcd42a',
-    'class-name': '#ede0ce',
-    keyword: '#26A6A6',
-    boolean: '#bcd42a',
-    function: '#ff5d38',
-    operator: '#26A6A6',
-    number: '#bcd42a',
-    ignore: '#cccccc',
-    punctuation: '#ede0ce',
-    cursor: '#f8f8f0',
-    cursor_width: 1.0,
-    cursor_height: 1.1,
-    selection: '#df3d18',
-    selection_unfocused: '#4f1d08',
-    text: '#ede0ce',
-    background: '#2b2a27',
-    gutter: '#2b2a27',
-    gutter_text: '#7a7267',
-    gutter_shadow: [
-        [0, 'black'],
-        [1, 'transparent']
-    ],
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
 };
+var superset = require('../utils/superset');
+var highlighter = require('./highlighter');
+var prism = require('prismjs');
+/**
+ * Listens to a model and highlights the text accordingly.
+ * @param {DocumentModel} model
+ */
+var PrismHighlighter = (function (_super) {
+    __extends(PrismHighlighter, _super);
+    function PrismHighlighter(model, row_renderer) {
+        _super.call(this, model, row_renderer);
+        // Look back and forward this many rows for contextually 
+        // sensitive highlighting.
+        this._row_padding = 30;
+        this._language = null;
+    }
+    Object.defineProperty(PrismHighlighter.prototype, "languages", {
+        get: function () {
+            var languages = [];
+            for (var l in prism.languages) {
+                if (["extend", "insertBefore", "DFS"].indexOf(l) == -1) {
+                    languages.push(l);
+                }
+            }
+            return languages;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    /**
+     * Highlight the document
+     * @return {null}
+     */
+    PrismHighlighter.prototype.highlight = function (start_row, end_row) {
+        var _this = this;
+        // Get the first and last rows that should be highlighted.
+        start_row = Math.max(0, start_row - this._row_padding);
+        end_row = Math.min(this._model._rows.length - 1, end_row + this._row_padding);
+        // Abort if language isn't specified.
+        if (!this._language)
+            return;
+        // Get the text of the rows.
+        var text = this._model.get_text(start_row, 0, end_row, this._model._rows[end_row].length);
+        // Figure out where each tag belongs.
+        var highlights = this._highlight(text); // [start_index, end_index, tag]
+        // Calculate Poster tags
+        highlights.forEach(function (highlight) {
+            // Translate tag character indicies to row, char coordinates.
+            var before_rows = text.substring(0, highlight[0]).split('\n');
+            var group_start_row = start_row + before_rows.length - 1;
+            var group_start_char = before_rows[before_rows.length - 1].length;
+            var after_rows = text.substring(0, highlight[1]).split('\n');
+            var group_end_row = start_row + after_rows.length - 1;
+            var group_end_char = after_rows[after_rows.length - 1].length;
+            while (group_start_char === _this._model._rows[group_start_row].length) {
+                if (group_start_row < group_end_row) {
+                    group_start_row++;
+                    group_start_char = 0;
+                }
+                else {
+                    return;
+                }
+            }
+            while (group_end_char === 0) {
+                if (group_end_row > group_start_row) {
+                    group_end_row--;
+                    group_end_char = _this._model._rows[group_end_row].length;
+                }
+                else {
+                    return;
+                }
+            }
+            // Apply tag if it's not already applied.
+            var tag = highlight[2].toLowerCase();
+            var existing_tags = _this._model.get_tags('syntax', group_start_row, group_start_char, group_end_row, group_end_char);
+            // Make sure the number of tags = number of rows.
+            var correct_count = (existing_tags.length === group_end_row - group_start_row + 1);
+            // Make sure every tag value equals the new value.
+            var correct_values = true;
+            var i;
+            if (correct_count) {
+                for (i = 0; i < existing_tags.length; i++) {
+                    if (existing_tags[i][3] !== tag) {
+                        correct_values = false;
+                        break;
+                    }
+                }
+            }
+            // Check that the start and ends of tags are correct.
+            var correct_ranges = true;
+            if (correct_count && correct_values) {
+                if (existing_tags.length == 1) {
+                    correct_ranges = existing_tags[0][1] === group_start_char && existing_tags[0][2] === group_end_char;
+                }
+                else {
+                    correct_ranges = existing_tags[0][1] <= group_start_char && existing_tags[0][2] >= _this._model._rows[group_start_row].length - 1;
+                    correct_ranges = correct_ranges && existing_tags[existing_tags.length - 1][1] === 0 && existing_tags[existing_tags.length - 1][2] >= group_end_char;
+                    for (i = 1; i < existing_tags.length - 1; i++) {
+                        correct_ranges = correct_ranges && existing_tags[i][1] === 0 && existing_tags[i][2] >= _this._model._rows[existing_tags[i][0]].length - 1;
+                        if (!correct_ranges)
+                            break;
+                    }
+                }
+            }
+            if (!(correct_count && correct_values && correct_ranges)) {
+                _this._model.set_tag(group_start_row, group_start_char, group_end_row, group_end_char, 'syntax', tag);
+            }
+        });
+    };
+    /**
+     * Find each part of text that needs to be highlighted.
+     * @param  {string} text
+     * @return {array} list containing items of the form [start_index, end_index, tag]
+     */
+    PrismHighlighter.prototype._highlight = function (text) {
+        // Tokenize using prism.js
+        var tokens = prism.tokenize(text, this._language);
+        // Convert the tokens into [start_index, end_index, tag]
+        var left = 0;
+        var flatten = function (tokens, prefix) {
+            if (!prefix) {
+                prefix = [];
+            }
+            var flat = [];
+            for (var i = 0; i < tokens.length; i++) {
+                var token = tokens[i];
+                if (token.content) {
+                    flat = flat.concat(flatten([].concat(token.content), prefix.concat(token.type)));
+                }
+                else {
+                    if (prefix.length > 0) {
+                        flat.push([left, left + token.length, prefix.join(' ')]);
+                    }
+                    left += token.length;
+                }
+            }
+            return flat;
+        };
+        var tags = flatten(tokens);
+        // Use a superset to reduce overlapping tags.
+        var set = new superset.Superset();
+        set.set(0, text.length - 1, '');
+        tags.forEach(function (tag) { return set.set(tag[0], tag[1] - 1, tag[2]); });
+        return set.array;
+    };
+    /**
+     * Loads a syntax by language name.
+     * @param  {string or dictionary} language
+     * @return {boolean} success
+     */
+    PrismHighlighter.prototype.load = function (language) {
+        try {
+            // Check if the language exists.
+            if (prism.languages[language] === undefined) {
+                throw new Error('Language does not exist!');
+            }
+            this._language = prism.languages[language];
+            this._queue_highlighter();
+            return true;
+        }
+        catch (e) {
+            console.error('Error loading language', e);
+            this._language = null;
+            return false;
+        }
+    };
+    return PrismHighlighter;
+})(highlighter.HighlighterBase);
+exports.PrismHighlighter = PrismHighlighter;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/styles/peacock.js","/styles")
-},{"1YiZ5S":4,"buffer":1}],39:[function(require,module,exports){
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/syntax/prism.js","/syntax")
+},{"../utils/superset":39,"./highlighter":36,"1YiZ5S":4,"buffer":1,"prismjs":5}],38:[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+var utils = require('./utils');
+exports.config = new utils.PosterClass([
+    'highlight_draw',
+    'highlight_blit',
+    'newline_width',
+    'tab_width',
+    'use_spaces',
+    'history_group_delay',
+]);
+// Set defaults
+exports.config.tab_width = 4;
+exports.config.use_spaces = true;
+exports.config.history_group_delay = 100;
+
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/utils/config.js","/utils")
+},{"./utils":40,"1YiZ5S":4,"buffer":1}],39:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -7604,7 +7496,7 @@ var Superset = (function (_super) {
 })(utils.PosterClass);
 exports.Superset = Superset;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/superset.js","/")
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/utils/superset.js","/utils")
 },{"./utils":40,"1YiZ5S":4,"buffer":1}],40:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
@@ -7870,7 +7762,7 @@ exports.shallow_copy = function (x) {
  * @param  {object} obj - object to hook
  * @param  {string} method - name of the function to hook
  * @param  {function} hook - function to call before the original
- * @return {object} hook reference, object with an `unhook` method
+ * @return hook reference, object with an `unhook` method
  */
 exports.hook = function (obj, method, hook) {
     // If the original has already been hooked, add this hook to the list 
@@ -7993,6 +7885,14 @@ exports.merge = function (objects) {
     }
     return result;
 };
+/**
+ * Convert arguments object to an array of arguments.
+ * @param  {IArguments} arguments_obj - `arguments`
+ */
+exports.args = function (arguments_obj) {
+    return Array.prototype.slice.call(arguments_obj);
+};
+;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/utils.js","/")
-},{"1YiZ5S":4,"buffer":1}]},{},[18])
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/utils/utils.js","/utils")
+},{"1YiZ5S":4,"buffer":1}]},{},[26])
