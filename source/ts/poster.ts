@@ -11,22 +11,23 @@ import style = require('./styles/style');
 import utils = require('./utils/utils');
 import config_mod = require('./utils/config');
 import prism = require('prismjs');
+import iposter = require('i_poster');
 var config = config_mod.config;
 
 /**
  * Canvas based text editor
  */
-class Poster extends utils.PosterClass {
-    public canvas;
-    public el;
-    public model;
-    public controller;
-    public view;
-    public plugins;
+class Poster extends utils.PosterClass implements iposter.IPoster {
+    public canvas: scrolling_canvas.ScrollingCanvas;
+    public el: HTMLDivElement;
+    public model: document_model.DocumentModel;
+    public controller: document_controller.DocumentController;
+    public view: document_view.DocumentView;
+    public plugins: pluginmanager.PluginManager;
     
-    private _style;
+    private _style: style.Style;
 
-    constructor() {
+    public constructor() {
         super();
 
         // Create canvas
@@ -55,41 +56,41 @@ class Poster extends utils.PosterClass {
         this.plugins.load('linenumbers');
     }
 
-    get style() {
+    public get style(): style.Style {
         return this._style;
     }
 
-    get config() {
+    public get config(): utils.PosterClass {
         return config;
     }
 
-    get value() {
+    public get value(): string {
         return this.model.text;
     }
-    set value(value) {
+    public set value(value: string) {
         this.model.text = value;
     }
 
-    get width() {
+    public get width(): number {
         return this.view.width;
     }
-    set width(value) {
+    public set width(value: number) {
         this.view.width = value;
         this.trigger('resized');
     }
 
-    get height() {
+    public get height(): number {
         return this.view.height;
     }
-    set height(value) {
+    public set height(value: number) {
         this.view.height = value;
         this.trigger('resized');
     }
 
-    get language() {
+    public get language(): string {
         return this.view.language;
     }
-    set language(value) {
+    public set language(value: string) {
         this.view.language = value;
     }
 }
