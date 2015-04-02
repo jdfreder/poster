@@ -6,10 +6,11 @@ import utils = require('../utils/utils');
  * Animation helper.
  */
 export class Animator extends utils.PosterClass {
-    public duration;
-    private _start;
+    public duration: number;
 
-    constructor(duration) {
+    private _start: number;
+
+    public constructor(duration: number) {
         super();
         this.duration = duration;
         this._start = Date.now();
@@ -17,17 +18,17 @@ export class Animator extends utils.PosterClass {
 
     /**
      * Get the time in the animation
-     * @return {float} between 0 and 1
+     * @return between 0 and 1
      */
-    time() {
-        var elapsed = Date.now() - this._start;
+    public time(): number {
+        var elapsed: number = Date.now() - this._start;
         return (elapsed % this.duration) / this.duration;
     }
 
     /**
      * Reset the animation progress to 0.
      */
-    reset() {
+    public reset(): void {
         this._start = Date.now();
     }
 }

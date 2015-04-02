@@ -1,8 +1,17 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
 import canvas = require('../canvas');
+import scrolling_canvas = require('../scrolling_canvas');
 import utils = require('../../utils/utils');
+import generics = require('../../utils/generics');
 import renderer = require('./renderer');
+import document_model = require('../../document_model');
+
+export interface IRowRange { 
+    top_row: number; 
+    bottom_row: number; 
+    row_count: number; 
+}
 
 export interface ICharacterCoords {
     row_index: number;
@@ -22,22 +31,22 @@ export interface IRowRenderer {
  * @param {DocumentModel} model instance
  */
 export class RowRenderer extends renderer.RendererBase implements IRowRenderer {
-    protected _model;
-    protected _text_canvas;
-    protected _base_options;
+    protected _model: document_model.DocumentModel;
+    protected _text_canvas: canvas.Canvas;
+    protected _base_options: any;
 
-    private _tmp_canvas;
-    private _scrolling_canvas;
-    private _row_width_counts;
-    private _line_spacing;
-    private _margin_left;
-    private _margin_top;
-    private _visible_row_count;
-    private _last_rendered_offset;
-    private _last_rendered_row;
-    private _last_rendered_row_count;
+    private _tmp_canvas: canvas.Canvas;
+    private _scrolling_canvas: scrolling_canvas.ScrollingCanvas;
+    private _row_width_counts: generics.INumericDictionary<number>;
+    private _line_spacing: number;
+    private _margin_left: number;
+    private _margin_top: number;
+    private _visible_row_count: number;
+    private _last_rendered_offset: number;
+    private _last_rendered_row: number;
+    private _last_rendered_row_count: number;
 
-    constructor(model, scrolling_canvas) {
+    public constructor(model: document_model.DocumentModel, scrolling_canvas: scrolling_canvas.ScrollingCanvas) {
         this._model = model;
         this._visible_row_count = 0;
 
@@ -73,43 +82,43 @@ export class RowRenderer extends renderer.RendererBase implements IRowRenderer {
     }
 
     
-    get width() {
+    public get width(): number {
         return this._canvas.width;
     }
-    set width(value) {
+    public set width(value: number) {
         this._canvas.width = value;
         this._text_canvas.width = value;
         this._tmp_canvas.width = value;
     }
     
-    get height() {
+    public get height(): number {
         return this._canvas.height;
     }
-    set height(value) {
+    public set height(value: number) {
         this._canvas.height = value;
 
         // The text canvas should be the right height to fit all of the lines
         // that will be rendered in the base canvas.  This includes the lines
         // that are partially rendered at the top and bottom of the base canvas.
-        var row_height = this.get_row_height();
+        var row_height: number = this.get_row_height();
         this._visible_row_count = Math.ceil(value/row_height) + 1;
         this._text_canvas.height = this._visible_row_count * row_height;
         this._tmp_canvas.height = this._text_canvas.height;
     }
     
     
-    get margin_left() {
+    public get margin_left(): number {
         return this._margin_left;
     }
-    set margin_left(value) {
+    public set margin_left(value: number) {
         
         // Update internal value.
-        var delta = value - this._margin_left;
+        var delta: number = value - this._margin_left;
         this._margin_left = value;
 
         // Intelligently change the document's width, without causing
         // a complete O(N) width recalculation.
-        var new_counts = {};
+        var new_counts: generics.INumericDictionary<number> = {};
         for (var width in this._row_width_counts) {
             if (this._row_width_counts.hasOwnProperty(width)) {
                 new_counts[width+delta] = this._row_width_counts[width];
@@ -124,10 +133,10 @@ export class RowRenderer extends renderer.RendererBase implements IRowRenderer {
         this.trigger('changed');
     }
     
-    get margin_top() {
+    public get margin_top(): number {
         return this._margin_top;
     }
-    set margin_top(value) {
+    public set margin_top(value: number) {
         // Update the scrollbars.
         this._scrolling_canvas.scroll_height += value - this._margin_top;
 
@@ -144,18 +153,16 @@ export class RowRenderer extends renderer.RendererBase implements IRowRenderer {
      * Render to the canvas
      * Note: This method is called often, so it's important that it's
      * optimized for speed.
-     * @param {dictionary} (optional) scroll - How much the canvas was scrolled.  This
-     *                     is a dictionary of the form {x: float, y: float}
-     * @return {null}
+     * @param [scroll] - How much the canvas was scrolled. 
      */
-    render(scroll?) {
+    public render(scroll?: canvas.IPoint): void {
 
         // If only the y axis was scrolled, blit the good contents and just render
         // what's missing.
-        var partial_redraw = (scroll && scroll.x === 0 && Math.abs(scroll.y) < this._canvas.height);
+        var partial_redraw: boolean = (scroll && scroll.x === 0 && Math.abs(scroll.y) < this._canvas.height);
 
         // Update the text rendering
-        var visible_rows = this.get_visible_rows();
+        var visible_rows: IRowRange = this.get_visible_rows();
         this._render_text_canvas(-this._scrolling_canvas.scroll_left+this._margin_left, visible_rows.top_row, !partial_redraw);
 
         // Copy the text image to this canvas
@@ -167,25 +174,104 @@ export class RowRenderer extends renderer.RendererBase implements IRowRenderer {
     }
 
     /**
+     * Gets the row and character indicies closest to given control space coordinates.
+     * @param cursor_x - x value, 0 is the left of the canvas.
+     * @param cursor_y - y value, 0 is the top of the canvas.
+     */
+    public get_row_char(cursor_x: number, cursor_y: number): ICharacterCoords {
+        var row_index: number = Math.floor((cursor_y - this._margin_top) / this.get_row_height());
+
+        // Find the character index.
+        var widths: number[] = [0];
+        try {
+            for (var length: number=1; length<=this._model._rows[row_index].length; length++) {
+                widths.push(this.measure_partial_row_width(row_index, length));
+            }
+        } catch (e) {
+            // Nom nom nom...
+        }
+        var coords: document_model.IRange = this._model.validate_coords(row_index, utils.find_closest(widths, cursor_x - this._margin_left));
+        return {
+            row_index: coords.start_row,
+            char_index: coords.start_char,
+        };
+    }
+
+    /**
+     * Measures the partial width of a text row.
+     * @param  index
+     * @param  [length] - number of characters
+     * @return width
+     */
+    public measure_partial_row_width(index: number, length?: number): number {
+        if (0 > index || index >= this._model._rows.length) {
+            return 0; 
+        }
+
+        var text: string = this._model._rows[index];
+        text = (length === undefined) ? text : text.substring(0, length);
+
+        return this._canvas.measure_text(text, this._base_options);
+    }
+
+    /**
+     * Measures the height of a text row as if it were rendered.
+     */
+    public get_row_height(index?: number): number {
+        return this._base_options.font_size + this._line_spacing;
+    }
+
+    /**
+     * Gets the top of the row when rendered
+     */
+    public get_row_top(index: number): number {
+        return index * this.get_row_height() + this._margin_top;
+    }
+
+    /**
+     * Gets the visible rows.
+     */
+    public get_visible_rows(): IRowRange {
+
+        // Find the row closest to the scroll top.  If that row is below
+        // the scroll top, use the partially displayed row above it.
+        var top_row: number = Math.max(0, Math.floor((this._scrolling_canvas.scroll_top - this._margin_top)  / this.get_row_height()));
+
+        // Find the row closest to the scroll bottom.  If that row is above
+        // the scroll bottom, use the partially displayed row below it.
+        var row_count: number = Math.ceil(this._canvas.height / this.get_row_height());
+        var bottom_row: number = top_row + row_count;
+
+        // Row count + 1 to include first row.
+        return {top_row: top_row, bottom_row: bottom_row, row_count: row_count+1};
+    }
+
+    /**
+     * Render a single row
+     */
+    protected _render_row(index: number, x: number ,y: number): void {
+        this._text_canvas.draw_text(x, y, this._model._rows[index], this._base_options);
+    }
+
+    /**
      * Render text to the text canvas.
      *
      * Later, the main rendering function can use this rendered text to draw the
      * base canvas.
-     * @param  {float} x_offset - horizontal offset of the text
-     * @param  {integer} top_row
-     * @param  {boolean} force_redraw - redraw the contents even if they are
-     *                                the same as the cached contents.
-     * @return {null}          
+     * @param x_offset - horizontal offset of the text
+     * @param top_row
+     * @param force_redraw - redraw the contents even if they are
+     *                       the same as the cached contents.
      */
-    _render_text_canvas(x_offset, top_row, force_redraw) {
+    private _render_text_canvas(x_offset: number, top_row: number, force_redraw?: boolean) {
 
         // Try to reuse some of the already rendered text if possible.
-        var rendered = false;
-        var row_height = this.get_row_height();
-        var i;
+        var rendered: boolean = false;
+        var row_height: number = this.get_row_height();
+        var i: number;
         if (!force_redraw && this._last_rendered_offset === x_offset) {
-            var last_top = this._last_rendered_row;
-            var scroll = top_row - last_top; // Positive = user scrolling downward.
+            var last_top: number = this._last_rendered_row;
+            var scroll: number = top_row - last_top; // Positive = user scrolling downward.
             if (scroll < this._last_rendered_row_count) {
 
                 // Get a snapshot of the text before the scroll.
@@ -193,8 +279,8 @@ export class RowRenderer extends renderer.RendererBase implements IRowRenderer {
                 this._tmp_canvas.draw_image(this._text_canvas, 0, 0);
 
                 // Render the new text.
-                var saved_rows = this._last_rendered_row_count - Math.abs(scroll);
-                var new_rows = this._visible_row_count - saved_rows;
+                var saved_rows: number = this._last_rendered_row_count - Math.abs(scroll);
+                var new_rows: number = this._visible_row_count - saved_rows;
                 if (scroll > 0) {
                     // Render the bottom.
                     this._text_canvas.clear();
@@ -238,109 +324,26 @@ export class RowRenderer extends renderer.RendererBase implements IRowRenderer {
     }
 
     /**
-     * Gets the row and character indicies closest to given control space coordinates.
-     * @param  {float} cursor_x - x value, 0 is the left of the canvas.
-     * @param  {float} cursor_y - y value, 0 is the top of the canvas.
-     * @return {dictionary} dictionary of the form {row_index, char_index}
-     */
-    get_row_char(cursor_x, cursor_y) {
-        var row_index = Math.floor((cursor_y - this._margin_top) / this.get_row_height());
-
-        // Find the character index.
-        var widths = [0];
-        try {
-            for (var length=1; length<=this._model._rows[row_index].length; length++) {
-                widths.push(this.measure_partial_row_width(row_index, length));
-            }
-        } catch (e) {
-            // Nom nom nom...
-        }
-        var coords = this._model.validate_coords(row_index, utils.find_closest(widths, cursor_x - this._margin_left));
-        return {
-            row_index: coords.start_row,
-            char_index: coords.start_char,
-        };
-    }
-
-    /**
-     * Measures the partial width of a text row.
-     * @param  {integer} index
-     * @param  {integer} (optional) length - number of characters
-     * @return {float} width
-     */
-    measure_partial_row_width(index, length) {
-        if (0 > index || index >= this._model._rows.length) {
-            return 0; 
-        }
-
-        var text = this._model._rows[index];
-        text = (length === undefined) ? text : text.substring(0, length);
-
-        return this._canvas.measure_text(text, this._base_options);
-    }
-
-    /**
      * Measures a strings width.
-     * @param  {string} text - text to measure the width of
-     * @param  {integer} [index] - row index, can be used to apply size sensitive 
-     *                             formatting to the text.
-     * @return {float} width
+     * @param text - text to measure the width of
+     * @param [index] - row index, can be used to apply size sensitive 
+     *        formatting to the text.
      */
-    _measure_text_width(text, index) {
+    private _measure_text_width(text: string, index?: number): number {
         return this._canvas.measure_text(text, this._base_options);
-    }
-
-    /**
-     * Measures the height of a text row as if it were rendered.
-     * @param  {integer} (optional) index
-     * @return {float} height
-     */
-    get_row_height(index?) {
-        return this._base_options.font_size + this._line_spacing;
-    }
-
-    /**
-     * Gets the top of the row when rendered
-     * @param  {integer} index
-     * @return {null}
-     */
-    get_row_top(index) {
-        return index * this.get_row_height() + this._margin_top;
-    }
-
-    /**
-     * Gets the visible rows.
-     * @return {dictionary} dictionary containing information about 
-     *                      the visible rows.  Format {top_row, 
-     *                      bottom_row, row_count}.
-     */
-    get_visible_rows() {
-
-        // Find the row closest to the scroll top.  If that row is below
-        // the scroll top, use the partially displayed row above it.
-        var top_row = Math.max(0, Math.floor((this._scrolling_canvas.scroll_top - this._margin_top)  / this.get_row_height()));
-
-        // Find the row closest to the scroll bottom.  If that row is above
-        // the scroll bottom, use the partially displayed row below it.
-        var row_count = Math.ceil(this._canvas.height / this.get_row_height());
-        var bottom_row = top_row + row_count;
-
-        // Row count + 1 to include first row.
-        return {top_row: top_row, bottom_row: bottom_row, row_count: row_count+1};
     }
 
     /**
      * Handles when the model's value changes
      * Complexity: O(N) for N rows of text.
-     * @return {null}
      */
-    _handle_value_changed() {
+    private _handle_value_changed(): void {
 
         // Calculate the document width.
         this._row_width_counts = {};
-        var document_width = 0;
-        for (var i=0; i<this._model._rows.length; i++) {
-            var width = this._measure_row_width(i) + this._margin_left;
+        var document_width: number = 0;
+        for (var i: number=0; i<this._model._rows.length; i++) {
+            var width: number = this._measure_row_width(i) + this._margin_left;
             document_width = Math.max(width, document_width);
             if (this._row_width_counts[width] === undefined) {
                 this._row_width_counts[width] = 1;
@@ -354,11 +357,10 @@ export class RowRenderer extends renderer.RendererBase implements IRowRenderer {
 
     /**
      * Handles when one of the model's rows change
-     * @return {null}
      */
-    _handle_row_changed(text, index) {
-        var new_width = this._measure_row_width(index) + this._margin_left;
-        var old_width = this._measure_text_width(text, index) + this._margin_left;
+    private _handle_row_changed(text: string, index: number): void {
+        var new_width: number = this._measure_row_width(index) + this._margin_left;
+        var old_width: number = this._measure_text_width(text, index) + this._margin_left;
         if (this._row_width_counts[old_width] == 1) {
             delete this._row_width_counts[old_width];
         } else {
@@ -378,15 +380,12 @@ export class RowRenderer extends renderer.RendererBase implements IRowRenderer {
      * Handles when one or more rows are added to the model
      *
      * Assumes constant row height.
-     * @param  {integer} start
-     * @param  {integer} end
-     * @return {null}
      */
-    _handle_rows_added(start, end) {
+    private _handle_rows_added(start: number, end: number): void {
         this._scrolling_canvas.scroll_height += (end - start + 1) * this.get_row_height();
         
-        for (var i = start; i <= end; i++) { 
-            var new_width = this._measure_row_width(i) + this._margin_left;
+        for (var i: number = start; i <= end; i++) { 
+            var new_width: number = this._measure_row_width(i) + this._margin_left;
             if (this._row_width_counts[new_width] !== undefined) {
                 this._row_width_counts[new_width]++;
             } else {
@@ -401,16 +400,15 @@ export class RowRenderer extends renderer.RendererBase implements IRowRenderer {
      * Handles when one or more rows are removed from the model
      *
      * Assumes constant row height.
-     * @param  {array} rows
-     * @param  {integer} [index]
-     * @return {null}
+     * @param  rows - indicies
+     * @param  [index]
      */
-    _handle_rows_removed(rows, index) {
+    private _handle_rows_removed(rows: string[], index: number) : void{
         // Decrease the scrolling height based on the number of rows removed.
         this._scrolling_canvas.scroll_height -= rows.length * this.get_row_height();
 
-        for (var i = 0; i < rows.length; i++) {
-            var old_width = this._measure_text_width(rows[i], i + index) + this._margin_left;
+        for (var i: number = 0; i < rows.length; i++) {
+            var old_width: number = this._measure_text_width(rows[i], i + index) + this._margin_left;
             if (this._row_width_counts[old_width] == 1) {
                 delete this._row_width_counts[old_width];
             } else {
@@ -422,31 +420,17 @@ export class RowRenderer extends renderer.RendererBase implements IRowRenderer {
     }
 
     /**
-     * Render a single row
-     * @param  {integer} index
-     * @param  {float} x
-     * @param  {float} y
-     * @return {null}
-     */
-    _render_row(index, x ,y) {
-        this._text_canvas.draw_text(x, y, this._model._rows[index], this._base_options);
-    }
-
-    /**
      * Measures the width of a text row as if it were rendered.
-     * @param  {integer} index
-     * @return {float} width
      */
-    _measure_row_width(index) {
+    private _measure_row_width(index: number): number {
         return this.measure_partial_row_width(index, this._model._rows[index].length);
     }
 
     /**
      * Find the largest width in the width row count dictionary.
-     * @return {float} width
      */
-    _find_largest_width() {
-        var values = Object.keys(this._row_width_counts);
+    private _find_largest_width(): number {
+        var values: string[] = Object.keys(this._row_width_counts);
         values.sort((a, b) => parseFloat(b) - parseFloat(a));
         return parseFloat(values[0]);
     }

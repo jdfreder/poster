@@ -2,16 +2,17 @@
 
 import utils = require('../../utils/utils');
 import renderer = require('./renderer');
+import canvas = require('../canvas');
 
 /**
  * Renders to a canvas
  * @param {Canvas} default_canvas
  */
 export class ColorRenderer extends renderer.RendererBase {
-    private _rendered;
-    private _color;
+    private _rendered: boolean;
+    private _color: string;
 
-    constructor() {
+    public constructor() {
         // Create with the option 'parent_independent' to disable
         // parent coordinate translations from being applied by 
         // a batch renderer.
@@ -19,10 +20,10 @@ export class ColorRenderer extends renderer.RendererBase {
         this._rendered = false;   
     }
 
-    get width() {
+    public get width(): number {
         return this._canvas.width;
     }
-    set width(value) {
+    public set width(value: number) {
         this._canvas.width = value;
         this._render();
 
@@ -30,10 +31,10 @@ export class ColorRenderer extends renderer.RendererBase {
         this.trigger('changed');
     }
 
-    get height() {
+    public get height(): number {
         return this._canvas.height;
     }
-    set height(value) {
+    public set height(value: number) {
         this._canvas.height = value;
         this._render();
 
@@ -41,10 +42,10 @@ export class ColorRenderer extends renderer.RendererBase {
         this.trigger('changed');
     }
 
-    get color() {
+    public get color(): string {
         return this._color;
     }
-    set color(value) {
+    public set color(value: string) {
         this._color = value;
         this._render();
 
@@ -54,11 +55,9 @@ export class ColorRenderer extends renderer.RendererBase {
 
     /**
      * Render to the canvas
-     * @param {dictionary} (optional) scroll - How much the canvas was scrolled.  This
-     *                     is a dictionary of the form {x: float, y: float}
-     * @return {null}
+     * @param [scroll] - How much the canvas was scrolled.
      */
-    render(scroll) {
+    public render(scroll?: canvas.IPoint): void {
         if (!this._rendered) {
             this._render();
             this._rendered = true;
@@ -67,9 +66,8 @@ export class ColorRenderer extends renderer.RendererBase {
 
     /**
      * Render a frame.
-     * @return {null}
      */
-    _render() {
+    private _render(): void {
         this._canvas.clear();
         this._canvas.draw_rectangle(0, 0, this._canvas.width, this._canvas.height, {fill_color: this._color});
     }

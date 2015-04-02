@@ -1,9 +1,14 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 
 import animator = require('../animator');
+import canvas = require('../canvas');
+import row = require('./row');
+import cursors_renderer = require('./cursors');
+import cursors_control = require('../../control/cursors');
 import utils = require('../../utils/utils');
 import renderer = require('./renderer');
 import config_mod = require('../../utils/config');
+import style_mod = require('../../styles/style');
 var config = config_mod.config;
 
 /**
@@ -12,18 +17,19 @@ var config = config_mod.config;
  * TODO: Only render visible.
  */
 export class SelectionsRenderer extends renderer.RendererBase {
-    public style;
+    public style: style_mod.Style;
 
-    private _dirty;
-    private _has_focus;
-    private _cursors;
-    private _row_renderer;
-    private _get_visible_rows;
-    private _get_row_height;
-    private _get_row_top;
-    private _measure_partial_row;
+    private _dirty: canvas.IPointPair;
+    private _has_focus: () => boolean;
+    private _cursors: cursors_control.Cursors;
+    private _row_renderer: row.RowRenderer;
 
-    constructor(cursors, style, row_renderer, has_focus, cursors_renderer) {
+    public constructor(cursors: cursors_control.Cursors, 
+        style: style_mod.Style, 
+        row_renderer: row.RowRenderer, 
+        has_focus: () => boolean, 
+        cursors_renderer: cursors_renderer.CursorsRenderer) {
+
         super();
         this._dirty = null;
         this.style = style;
@@ -43,11 +49,6 @@ export class SelectionsRenderer extends renderer.RendererBase {
         config.on('change', rerender);
 
         this._row_renderer = row_renderer;
-        // TODO: Remove the following block.
-        this._get_visible_rows = utils.proxy(row_renderer.get_visible_rows, row_renderer);
-        this._get_row_height = utils.proxy(row_renderer.get_row_height, row_renderer);
-        this._get_row_top = utils.proxy(row_renderer.get_row_top, row_renderer);
-        this._measure_partial_row = utils.proxy(row_renderer.measure_partial_row_width, row_renderer);
 
         // When the cursor is hidden/shown, redraw the selection.
         cursors_renderer.on('toggle', () => {
@@ -61,9 +62,8 @@ export class SelectionsRenderer extends renderer.RendererBase {
      * Render to the canvas
      * Note: This method is called often, so it's important that it's
      * optimized for speed.
-     * @return {null}
      */
-    render(scroll?) {
+    public render(scroll?: canvas.IPoint): void {
         // If old contents exist, remove them.
         if (this._dirty === null || scroll !== undefined) {
             this._canvas.clear();
@@ -79,7 +79,7 @@ export class SelectionsRenderer extends renderer.RendererBase {
         }
 
         // Get newline width.
-        var newline_width = config.newline_width;
+        var newline_width: number = config.newline_width;
         if (newline_width === undefined || newline_width === null) {
             newline_width = 2;
         }
@@ -87,34 +87,34 @@ export class SelectionsRenderer extends renderer.RendererBase {
         // Only render if the canvas has focus.
         this._cursors.cursors.forEach(cursor => {
             // Get the visible rows.
-            var visible_rows = this._get_visible_rows();
+            var visible_rows: row.IRowRange = this._row_renderer.get_visible_rows();
 
             // Draw the selection box.
             if (cursor.start_row !== null && cursor.start_char !== null &&
                 cursor.end_row !== null && cursor.end_char !== null) {
                 
 
-                for (var i = Math.max(cursor.start_row, visible_rows.top_row); 
+                for (var i: number = Math.max(cursor.start_row, visible_rows.top_row); 
                     i <= Math.min(cursor.end_row, visible_rows.bottom_row); 
                     i++) {
 
-                    var left = this._row_renderer.margin_left;
+                    var left: number = this._row_renderer.margin_left;
                     if (i == cursor.start_row && cursor.start_char > 0) {
-                        left += this._measure_partial_row(i, cursor.start_char);
+                        left += this._row_renderer.measure_partial_row_width(i, cursor.start_char);
                     }
 
-                    var selection_color;
+                    var selection_color: string;
                     if (this._has_focus()) {
-                        selection_color = this.style.selection || 'skyblue';
+                        selection_color = <string>this.style.get('selection', 'skyblue');
                     } else {
-                        selection_color = this.style.selection_unfocused || 'gray';
+                        selection_color = <string>this.style.get('selection_unfocused', 'gray');
                     }
 
-                    var width;
+                    var width: number;
                     if (i !== cursor.end_row) {
-                        width = this._measure_partial_row(i) - left + this._row_renderer.margin_left + newline_width;
+                        width = this._row_renderer.measure_partial_row_width(i) - left + this._row_renderer.margin_left + newline_width;
                     } else {
-                        width = this._measure_partial_row(i, cursor.end_char);
+                        width = this._row_renderer.measure_partial_row_width(i, cursor.end_char);
 
                         // If this isn't the first selected row, make sure atleast the newline
                         // is visibily selected at the beginning of the row by making sure that
@@ -127,31 +127,32 @@ export class SelectionsRenderer extends renderer.RendererBase {
                         width = width - left + this._row_renderer.margin_left;
                     }
                     
-                    var block = {
-                        left: left, 
-                        top: this._get_row_top(i), 
+                    var block: canvas.IRectangle = {
+                        x: left, 
+                        y: this._row_renderer.get_row_top(i), 
                         width: width, 
-                        height: this._get_row_height(i)
+                        height: this._row_renderer.get_row_height(i)
                     };
 
                     this._canvas.draw_rectangle(
-                        block.left, block.top, block.width, block.height,
+                        block.x, block.y, block.width, block.height,
                         {
                             fill_color: selection_color,
                         }
                     );
 
                     if (this._dirty===null) {
-                        this._dirty = {};
-                        this._dirty.x1 = block.left;
-                        this._dirty.y1 = block.top;
-                        this._dirty.x2 = block.left + block.width;
-                        this._dirty.y2 = block.top + block.height;
+                        this._dirty = {
+                            x1: block.x,
+                            y1: block.y,
+                            x2: block.x + block.width,
+                            y2: block.y + block.height
+                        }
                     } else {
-                        this._dirty.x1 = Math.min(block.left, this._dirty.x1);
-                        this._dirty.y1 = Math.min(block.top, this._dirty.y1);
-                        this._dirty.x2 = Math.max(block.left + block.width, this._dirty.x2);
-                        this._dirty.y2 = Math.max(block.top + block.height, this._dirty.y2);
+                        this._dirty.x1 = Math.min(block.x, this._dirty.x1);
+                        this._dirty.y1 = Math.min(block.y, this._dirty.y1);
+                        this._dirty.x2 = Math.max(block.x + block.width, this._dirty.x2);
+                        this._dirty.y2 = Math.max(block.y + block.height, this._dirty.y2);
                     }
                 }
             }

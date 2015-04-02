@@ -6,17 +6,17 @@ import utils = require('../utils/utils');
  * HTML canvas with drawing convinience functions.
  */
 export class ScrollingCanvas extends canvas.Canvas {
-    public el;
+    public el: HTMLDivElement;
 
-    private _old_scroll_left;
-    private _old_scroll_top;
-    private _scroll_width;
-    private _scroll_height;
-    private _scroll_bars;
-    private _dummy;
-    private _touch_pane;
+    private _old_scroll_left: number;
+    private _old_scroll_top: number;
+    private _scroll_width: number;
+    private _scroll_height: number;
+    private _scroll_bars: HTMLDivElement;
+    private _dummy: HTMLDivElement;
+    private _touch_pane: HTMLDivElement;
 
-    constructor() {
+    public constructor() {
         super();
         this._bind_events();
         this._old_scroll_left = 0;
@@ -27,15 +27,14 @@ export class ScrollingCanvas extends canvas.Canvas {
         this.height = 300;
     }
 
-
     /**
      * Width of the scrollable canvas area
      */
-    get scroll_width() {
+    public get scroll_width(): number {
         // Get
         return this._scroll_width || 0;
     }
-    set scroll_width(value) {
+    public set scroll_width(value: number) {
         // Set
         this._scroll_width = value;
         this._move_dummy(this._scroll_width, this._scroll_height || 0);
@@ -44,11 +43,11 @@ export class ScrollingCanvas extends canvas.Canvas {
     /**
      * Height of the scrollable canvas area.
      */
-    get scroll_height() {
+    public get scroll_height(): number {
         // Get
         return this._scroll_height || 0;
     }
-    set scroll_height(value) {
+    public set scroll_height(value: number) {
         // Set
         this._scroll_height = value;
         this._move_dummy(this._scroll_width || 0, this._scroll_height);
@@ -57,11 +56,11 @@ export class ScrollingCanvas extends canvas.Canvas {
     /**
      * Top most pixel in the scrolled window.
      */
-    get scroll_top() {
+    public get scroll_top(): number {
         // Get
         return this._scroll_bars.scrollTop;
     }
-    set scroll_top(value) {
+    public set scroll_top(value: number) {
         // Set
         this._scroll_bars.scrollTop = value;
         this._handle_scroll();
@@ -70,11 +69,11 @@ export class ScrollingCanvas extends canvas.Canvas {
     /**
      * Left most pixel in the scrolled window.
      */
-    get scroll_left() {
+    public get scroll_left(): number {
         // Get
         return this._scroll_bars.scrollLeft;
     }
-    set scroll_left(value) {
+    public set scroll_left(value: number) {
         // Set
         this._scroll_bars.scrollLeft = value;
         this._handle_scroll();
@@ -82,13 +81,12 @@ export class ScrollingCanvas extends canvas.Canvas {
 
     /**
      * Height of the canvas
-     * @return {float}
      */
-    get height() { 
+    public get height(): number { 
         return this._canvas.height / 2; 
     }
-    set height(value) {
-        this._canvas.setAttribute('height', value * 2);
+    public set height(value: number) {
+        this._canvas.setAttribute('height', String(value * 2));
         this.el.setAttribute('style', 'width: ' + this.width + 'px; height: ' + value + 'px;');
 
         this.trigger('resize', {height: value});
@@ -100,13 +98,12 @@ export class ScrollingCanvas extends canvas.Canvas {
 
     /**
      * Width of the canvas
-     * @return {float}
      */
-    get width() { 
+    public get width(): number { 
         return this._canvas.width / 2; 
     }
-    set width(value) {
-        this._canvas.setAttribute('width', value * 2);
+    public set width(value: number) {
+        this._canvas.setAttribute('width', String(value * 2));
         this.el.setAttribute('style', 'width: ' + value + 'px; height: ' + this.height + 'px;');
 
         this.trigger('resize', {width: value});
@@ -118,9 +115,8 @@ export class ScrollingCanvas extends canvas.Canvas {
 
     /**
      * Is the canvas or related elements focused?
-     * @return {boolean}
      */
-    get focused() {
+    public get focused(): boolean {
         return document.activeElement === this.el ||
             document.activeElement === this._scroll_bars ||
             document.activeElement === this._dummy ||
@@ -129,27 +125,38 @@ export class ScrollingCanvas extends canvas.Canvas {
 
     /**
      * Causes the canvas contents to be redrawn.
-     * @return {null}
      */
-    redraw(scroll?) {
+    public redraw(scroll?: canvas.IPoint): void {
         this.clear();
         this.trigger('redraw', scroll);
     }
 
     /**
+     * Transform an x value based on scroll position.
+     * @param x
+     * @param [inverse] - perform inverse transformation
+     */
+    public tx(x: number, inverse?: boolean): number { return x - (inverse?-1:1) * this.scroll_left; }
+
+    /**
+     * Transform a y value based on scroll position.
+     * @param y
+     * @param [inverse] - perform inverse transformation
+     */
+    public ty(y: number, inverse?: boolean): number { return y - (inverse?-1:1) * this.scroll_top; }
+
+    /**
      * Layout the elements for the canvas.
      * Creates `this.el`
-     * 
-     * @return {null}
      */
-    _layout() {
-        canvas.Canvas.prototype._layout.call(this);
+    protected _layout(): void {
+        super._layout();
         // Change the canvas class so it's not hidden.
         this._canvas.setAttribute('class', 'canvas');
 
         this.el = document.createElement('div');
         this.el.setAttribute('class', 'poster scroll-window');
-        this.el.setAttribute('tabindex', 0);
+        this.el.setAttribute('tabindex', '0');
         this._scroll_bars = document.createElement('div');
         this._scroll_bars.setAttribute('class', 'scroll-bars');
         this._touch_pane = document.createElement('div');
@@ -165,9 +172,8 @@ export class ScrollingCanvas extends canvas.Canvas {
 
     /**
      * Bind to the events of the canvas.
-     * @return {null}
      */
-    _bind_events() {
+    private _bind_events(): void {
 
         // Trigger scroll and redraw events on scroll.
         this._scroll_bars.onscroll = e => {
@@ -190,9 +196,9 @@ export class ScrollingCanvas extends canvas.Canvas {
     /**
      * Handles when the canvas is scrolled.
      */
-    _handle_scroll() {
+    private _handle_scroll(): void {
         if (this._old_scroll_top !== undefined && this._old_scroll_left !== undefined) {
-            var scroll = {
+            var scroll: canvas.IPoint = {
                 x: this.scroll_left - this._old_scroll_left,
                 y: this.scroll_top - this._old_scroll_top,
             };
@@ -206,9 +212,9 @@ export class ScrollingCanvas extends canvas.Canvas {
 
     /**
      * Queries to see if redraw is okay, and then redraws if it is.
-     * @return {boolean} true if redraw happened.
+     * @return true if redraw happened.
      */
-    _try_redraw(scroll?) {
+    private _try_redraw(scroll?: canvas.IPoint): boolean {
         if (this._query_redraw()) {
             this.redraw(scroll);
             return true;
@@ -218,38 +224,19 @@ export class ScrollingCanvas extends canvas.Canvas {
 
     /**
      * Trigger the 'query_redraw' event.
-     * @return {boolean} true if control should redraw itself.
+     * @return true if control should redraw itself.
      */
-    _query_redraw() {
+    private _query_redraw(): boolean {
         return this.trigger('query_redraw').every(x => x); 
     }
 
     /**
      * Moves the dummy element that causes the scrollbar to appear.
-     * @param  {float} x
-     * @param  {float} y
-     * @return {null}
      */
-    _move_dummy(x, y) {
+    private _move_dummy(x: number, y: number): void {
         this._dummy.setAttribute('style', 'left: ' + String(x) + 'px; top: ' + String(y) + 'px;');
         this._touch_pane.setAttribute('style', 
             'width: ' + String(Math.max(x, this._scroll_bars.clientWidth)) + 'px; ' +
             'height: ' + String(Math.max(y, this._scroll_bars.clientHeight)) + 'px;');
     }
-
-    /**
-     * Transform an x value based on scroll position.
-     * @param  {float} x
-     * @param  {boolean} inverse - perform inverse transformation
-     * @return {float}
-     */
-    _tx(x, inverse) { return x - (inverse?-1:1) * this.scroll_left; }
-
-    /**
-     * Transform a y value based on scroll position.
-     * @param  {float} y
-     * @param  {boolean} inverse - perform inverse transformation
-     * @return {float}
-     */
-    _ty(y, inverse) { return y - (inverse?-1:1) * this.scroll_top; }
 }

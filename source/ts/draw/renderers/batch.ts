@@ -3,6 +3,7 @@
 import utils = require('../../utils/utils');
 import renderer = require('./renderer');
 import config_mod = require('../../utils/config');
+import canvas = require('../canvas');
 var config = config_mod.config;
 
 /**
@@ -11,10 +12,10 @@ var config = config_mod.config;
  * @param {Canvas} canvas
  */
 export class BatchRenderer extends renderer.RendererBase {
-    private _render_lock;
-    private _renderers;
+    private _render_lock: boolean;
+    private _renderers: renderer.RendererBase[];
 
-    constructor(renderers, canvas) {
+    public constructor(renderers, canvas) {
         super(canvas);
         this._render_lock = false;
         this._renderers = renderers;
@@ -23,26 +24,26 @@ export class BatchRenderer extends renderer.RendererBase {
         // the full image by copying them all again.
         this._renderers.forEach(renderer => {
             renderer.on('changed', () => {
-                var rendered_region = renderer._canvas.rendered_region;
+                var rendered_region = renderer.canvas.rendered_region;
                 this._copy_renderers(rendered_region);
             });
         });
     }
 
-    get width() {
+    public get width(): number {
         return this._canvas.width;
     }
-    set width(value) {
+    public set width(value: number) {
         this._canvas.width = value;
         this._renderers.forEach(function(renderer) {
             renderer.width = value;
         });
     }
 
-    get height() {
+    public get height(): number {
         return this._canvas.height;
     }
-    set height(value) {
+    public set height(value: number) {
         this._canvas.height = value;
         this._renderers.forEach(function(renderer) {
             renderer.height = value;
@@ -52,10 +53,10 @@ export class BatchRenderer extends renderer.RendererBase {
     /**
      * Adds a renderer
      */
-    add_renderer(renderer) {
+    public add_renderer(renderer: renderer.RendererBase): void {
         this._renderers.push(renderer);
         renderer.on('changed', () => {
-            var rendered_region = renderer._canvas.rendered_region;
+            var rendered_region = renderer.canvas.rendered_region;
             this._copy_renderers(rendered_region);
         });
     }
@@ -63,7 +64,7 @@ export class BatchRenderer extends renderer.RendererBase {
     /**
      * Removes a renderer
      */
-    remove_renderer(renderer) {
+    public remove_renderer(renderer: renderer.RendererBase): void {
         var index = this._renderers.indexOf(renderer);
         if (index !== -1) {
             this._renderers.splice(index, 1);
@@ -73,11 +74,9 @@ export class BatchRenderer extends renderer.RendererBase {
 
     /**
      * Render to the canvas
-     * @param {dictionary} (optional) scroll - How much the canvas was scrolled.  This
-     *                     is a dictionary of the form {x: float, y: float}
-     * @return {null}
+     * @param [scroll] - How much the canvas was scrolled.
      */
-    render(scroll) {
+    public render(scroll?: canvas.IPoint): void {
         if (!this._render_lock) {
             try {
                 this._render_lock = true;
@@ -86,28 +85,28 @@ export class BatchRenderer extends renderer.RendererBase {
 
                     // Apply the rendering coordinate transforms of the parent.
                     if (!renderer.options.parent_independent) {
-                        renderer._canvas._tx = utils.proxy(this._canvas._tx, this._canvas);
-                        renderer._canvas._ty = utils.proxy(this._canvas._ty, this._canvas);
+                        renderer.canvas.tx = utils.proxy(this._canvas.tx, this._canvas);
+                        renderer.canvas.ty = utils.proxy(this._canvas.ty, this._canvas);
                     }
                 });
 
                 // Tell each renderer to render and keep track of the region
                 // that has freshly rendered contents.
-                var rendered_region = null;
+                var rendered_region: canvas.IRectangle = null;
                 this._renderers.forEach(renderer => {
                      // Tell the renderer to render itself.
                     renderer.render(scroll);
 
-                    var new_region = renderer._canvas.rendered_region;
+                    var new_region: canvas.IRectangle = renderer.canvas.rendered_region;
                     if (rendered_region===null) {
                         rendered_region = new_region;
                     } else if (new_region !== null) {
                         
                         // Calculate the sum of the two dirty regions.
-                        var x1 = rendered_region.x;
-                        var x2 = rendered_region.x + rendered_region.width;
-                        var y1 = rendered_region.y;
-                        var y2 = rendered_region.y + rendered_region.height;
+                        var x1: number = rendered_region.x;
+                        var x2: number = rendered_region.x + rendered_region.width;
+                        var y1: number = rendered_region.y;
+                        var y2: number = rendered_region.y + rendered_region.height;
                         
                         x1 = Math.min(x1, new_region.x);
                         x2 = Math.max(x2, new_region.x + new_region.width);
@@ -131,9 +130,8 @@ export class BatchRenderer extends renderer.RendererBase {
 
     /**
      * Copies all the renderer layers to the canvas.
-     * @return {null}
      */
-    _copy_renderers(region) {
+    private _copy_renderers(region: canvas.IRectangle): void {
         this._canvas.clear(region);
         this._renderers.forEach(renderer => this._copy_renderer(renderer, region));
 
@@ -145,15 +143,13 @@ export class BatchRenderer extends renderer.RendererBase {
 
     /**
      * Copy a renderer to the canvas.
-     * @param  {RendererBase} renderer
-     * @param  {object} (optional) region 
      */
-    _copy_renderer(renderer, region) {
+    private _copy_renderer(renderer: renderer.RendererBase, region?: canvas.IRectangle) {
         if (region) {
 
             // Copy a region.
             this._canvas.draw_image(
-                renderer._canvas, 
+                renderer.canvas, 
                 region.x, region.y, region.width, region.height,
                 region);
 
@@ -161,7 +157,7 @@ export class BatchRenderer extends renderer.RendererBase {
 
             // Copy the entire image.
             this._canvas.draw_image(
-                renderer._canvas, 
+                renderer.canvas, 
                 this.left, 
                 this.top, 
                 this._canvas.width, 

@@ -8,45 +8,47 @@ import utils = require('../../utils/utils');
  * @param {Canvas} default_canvas
  */
 export class RendererBase extends utils.PosterClass {
-    public options;
+    public options: any;
 
-    protected _canvas;
+    protected _canvas: canvas.Canvas;
 
-    constructor(default_canvas?, options?) {
+    public constructor(default_canvas?: canvas.Canvas, options?: any) {
         super();
-        this.options = options || {};
         this._canvas = default_canvas ? default_canvas : new canvas.Canvas();
+        this.options = options || {};
     }
 
-    get width() {
+    public get canvas(): canvas.Canvas {
+        return this._canvas;
+    }
+
+    public get width(): number {
         return this._canvas.width;
     }
-    set width(value) {
+    public set width(value: number) {
         this._canvas.width = value;
     }
     
-    get height() {
+    public get height(): number {
         return this._canvas.height;
     }
-    set height(value) {
+    public set height(value: number) {
         this._canvas.height = value;
     }
     
-    get top() {
-        return -this._canvas._ty(0);
+    public get top(): number {
+        return -this._canvas.ty(0);
     }
 
-    get left() {
-        return -this._canvas._tx(0);
+    public get left(): number {
+        return -this._canvas.tx(0);
     }
 
     /**
      * Render to the canvas
-     * @param {dictionary} (optional) scroll - How much the canvas was scrolled.  This
-     *                     is a dictionary of the form {x: float, y: float}
-     * @return {null}
+     * @param [scroll] - How much the canvas was scrolled
      */
-    render(scroll?) {
+    public render(scroll?: canvas.IPoint): void {
         throw new Error('Not implemented');
     }
 }

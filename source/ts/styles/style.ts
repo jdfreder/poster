@@ -38,6 +38,13 @@ export class Style extends utils.PosterClass {
     }
 
     /**
+     * Gets a style attribute.
+     */
+    public get(key: string, default_value?: any): any {
+        return this[key] !== undefined ? this[key] : default_value;
+    }
+
+    /**
      * Load a rendering style
      * @param  {string or dictionary} style - name of the built-in style 
      *         or style dictionary itself.

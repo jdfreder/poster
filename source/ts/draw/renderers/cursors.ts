@@ -3,6 +3,10 @@
 import animator = require('../animator');
 import utils = require('../../utils/utils');
 import renderer = require('./renderer');
+import canvas = require('../canvas');
+import control_cursors = require('../../control/cursors');
+import style_mod = require('../../styles/style');
+import row = require('./row');
 
 /**
  * Render document cursors
@@ -10,34 +14,24 @@ import renderer = require('./renderer');
  * TODO: Only render visible.
  */
 export class CursorsRenderer extends renderer.RendererBase {
-    public style;
+    public style: style_mod.Style;
 
-    private _has_focus;
-    private _cursors;
-    private _last_drawn_cursors;
-    private _row_renderer;
-    private _get_visible_rows;
-    private _get_row_height;
-    private _get_row_top;
-    private _measure_partial_row;
-    private _blink_animator;
-    private _fps;
-    private _last_rendered;
-    private _was_focused;
+    private _has_focus: ()=>boolean;
+    private _cursors: control_cursors.Cursors;
+    private _last_drawn_cursors: canvas.IRectangle[];
+    private _row_renderer: row.RowRenderer;
+    private _blink_animator: animator.Animator;
+    private _fps: number;
+    private _last_rendered: number;
+    private _was_focused: boolean;
 
-    constructor(cursors, style, row_renderer, has_focus) {
+    public constructor(cursors: control_cursors.Cursors, style: style_mod.Style, row_renderer: row.RowRenderer, has_focus: ()=>boolean) {
         super();
         this.style = style;
         this._has_focus = has_focus;
         this._cursors = cursors;
         this._last_drawn_cursors = [];
-
         this._row_renderer = row_renderer;
-        // TODO: Remove the following block.
-        this._get_visible_rows = utils.proxy(row_renderer.get_visible_rows, row_renderer);
-        this._get_row_height = utils.proxy(row_renderer.get_row_height, row_renderer);
-        this._get_row_top = utils.proxy(row_renderer.get_row_top, row_renderer);
-        this._measure_partial_row = utils.proxy(row_renderer.measure_partial_row_width, row_renderer);
         
         this._blink_animator = new animator.Animator(1000);
         this._fps = 2;
@@ -60,9 +54,8 @@ export class CursorsRenderer extends renderer.RendererBase {
      * Render to the canvas
      * Note: This method is called often, so it's important that it's
      * optimized for speed.
-     * @return {null}
      */
-    render(scroll?) {
+    public render(scroll?: canvas.IPoint): void {
 
         // Remove the previously drawn cursors, if any.
         if (scroll !== undefined) {
@@ -88,23 +81,23 @@ export class CursorsRenderer extends renderer.RendererBase {
         if (this._has_focus() && this._blink_animator.time() < 0.5) {
             this._cursors.cursors.forEach(cursor => {
                 // Get the visible rows.
-                var visible_rows = this._get_visible_rows();
+                var visible_rows: row.IRowRange = this._row_renderer.get_visible_rows();
 
                 // If a cursor doesn't have a position, render it at the
                 // beginning of the document.
-                var row_index = cursor.primary_row || 0;
-                var char_index = cursor.primary_char || 0;
+                var row_index: number = cursor.primary_row || 0;
+                var char_index: number = cursor.primary_char || 0;
 
                 // Draw the cursor.
-                var height = this._get_row_height(row_index);
-                var multiplier = this.style.cursor_height || 1.0;
-                var offset = (height - (multiplier*height)) / 2;
+                var height: number = this._row_renderer.get_row_height(row_index);
+                var multiplier: number = <number>this.style.get('cursor_height', 1.0);
+                var offset: number = (height - (multiplier*height)) / 2;
                 height *= multiplier;
                 if (visible_rows.top_row <= row_index && row_index <= visible_rows.bottom_row) {
-                    var cursor_box = {
-                        x: char_index === 0 ? this._row_renderer.margin_left : this._measure_partial_row(row_index, char_index) + this._row_renderer.margin_left,
-                        y: this._get_row_top(row_index) + offset,
-                        width: this.style.cursor_width===undefined ? 1.0 : this.style.cursor_width,
+                    var cursor_box: canvas.IRectangle = {
+                        x: char_index === 0 ? this._row_renderer.margin_left : this._row_renderer.measure_partial_row_width(row_index, char_index) + this._row_renderer.margin_left,
+                        y: this._row_renderer.get_row_top(row_index) + offset,
+                        width: <number>this.style.get('cursor_width', 1.0),
                         height: height,
                     };
                     this._last_drawn_cursors.push(cursor_box);
@@ -115,7 +108,7 @@ export class CursorsRenderer extends renderer.RendererBase {
                         cursor_box.width, 
                         cursor_box.height, 
                         {
-                            fill_color: this.style.cursor || 'back',
+                            fill_color: <string>this.style.get('cursor', 'back'),
                         }
                     );
                 }   
@@ -126,12 +119,11 @@ export class CursorsRenderer extends renderer.RendererBase {
 
     /**
      * Clock for rendering the cursor.
-     * @return {null}
      */
-    _render_clock() {
+    private _render_clock(): void {
         // If the canvas is focused, redraw.
         if (this._has_focus()) {
-            var first_render = !this._was_focused;
+            var first_render: boolean = !this._was_focused;
             this._was_focused = true;
             this.render();
             // Tell parent layer this one has changed.

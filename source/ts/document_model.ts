@@ -3,6 +3,13 @@
 import utils = require('./utils/utils');
 import superset = require('./utils/superset');
 
+export interface IRange {
+    start_row: number;
+    start_char: number;
+    end_row: number;
+    end_char: number;
+}
+
 /**
  * Model containing all of the document's data (text).
  */
@@ -345,7 +352,7 @@ export class DocumentModel extends utils.PosterClass {
      * @return {dictionary} dictionary containing validated coordinates {start_row, 
      *                      start_char, end_row, end_char}
      */
-    validate_coords(start_row, start_char, end_row, end_char) {
+    validate_coords(start_row, start_char, end_row?, end_char?): IRange {
 
         // Make sure the values aren't undefined.
         if (start_row === undefined) start_row = 0;

@@ -352,6 +352,22 @@ export var compare_arrays = function(x, y) {
 };
 
 /**
+ * Compare two objects by contents for equality.
+ */
+export var compare_objects = function(x: any, y: any): boolean {
+    // Make sure the objects have the same keys.
+    var keys: string[] = Object.keys(x); 
+    if (!compare_arrays(keys, Object.keys(y))) return false;
+    
+    // Compare the values.
+    for (var i=0; i<keys.length; i++) {
+        var key: string = keys[i];
+        if (x[key] !== y[key]) return false;
+    }
+    return true;
+};
+
+/**
  * Find all the occurances of a regular expression inside a string.
  * @param  {string} text - string to look in
  * @param  {string} re - regular expression to find

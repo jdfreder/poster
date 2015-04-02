@@ -1,53 +1,226 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 import utils = require('../utils/utils');
+import generics = require('../utils/generics');
 import config_mod = require('../utils/config');
 var config = config_mod.config;
+
+export interface IPoint {
+    x: number;
+    y: number;
+}
+
+export interface IRectangle extends IPoint {
+    width: number;
+    height: number;
+}
+
+export interface IPointPair {
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+}
+
+export class CompositeOperationEnum {
+    public constructor(public value: string) { }
+    public toString(): string { return this.value; }
+    // Possible values.
+    static source_over = new CompositeOperationEnum('source-over');
+    static source_atop = new CompositeOperationEnum('source-atop');
+    static source_in = new CompositeOperationEnum('source-in');
+    static source_out = new CompositeOperationEnum('source-out');
+    static destination_over = new CompositeOperationEnum('destination-over');
+    static destination_atop = new CompositeOperationEnum('destination-atop');
+    static destination_in = new CompositeOperationEnum('destination-in');
+    static destination_out = new CompositeOperationEnum('destination-out');
+    static lighter = new CompositeOperationEnum('lighter');
+    static copy = new CompositeOperationEnum('copy');
+    static xor = new CompositeOperationEnum('xor');
+}
+
+export class TextAlignmentEnum {
+    public constructor(public value: string) { }
+    public toString(): string { return this.value; }
+    // Possible values.
+    static start = new TextAlignmentEnum('start');
+    static end = new TextAlignmentEnum('end');
+    static center = new TextAlignmentEnum('center');
+    static left = new TextAlignmentEnum('left');
+    static right = new TextAlignmentEnum('right');
+}
+
+export class TextBaselineEnum {
+    public constructor(public value: string) { }
+    public toString(): string { return this.value; }
+    // Possible values.
+    static alphabetic = new TextBaselineEnum('alphabetic');
+    static top = new TextBaselineEnum('top');
+    static hanging = new TextBaselineEnum('hanging');
+    static middle = new TextBaselineEnum('middle');
+    static ideographic = new TextBaselineEnum('ideographic');
+    static bottom = new TextBaselineEnum('bottom');
+}
+
+export class LineCapEnum {
+    public constructor(public value: string) { }
+    public toString(): string { return this.value; }
+    // Possible values.
+    static butt = new LineCapEnum('butt');
+    static round = new LineCapEnum('round');
+    static square = new LineCapEnum('square');
+}
+
+export class LineJoinEnum {
+    public constructor(public value: string) { }
+    public toString(): string { return this.value; }
+    // Possible values.
+    static bevel = new LineJoinEnum('bevel');
+    static round = new LineJoinEnum('round');
+    static miter = new LineJoinEnum('miter');
+}
+
+export interface IDrawOptions {
+    /**
+     * Opacity (0-1)
+     */
+    alpha?: number;
+
+    /**
+     * Color to stroke and fill the shape.  Lower priority to 
+     * line_color and fill_color.
+     */
+    color?: string; // TODO: Support gradient
+
+    /**
+     * How new images are drawn onto an existing image.
+     */
+    composite_operation?: CompositeOperationEnum;
+    
+    /**
+     * NOTE: The API will automatically set this depending on
+     * the other DrawOptions.  Whether or not the shape should 
+     * be filled.
+     */
+    fill?: boolean;
+
+    /**
+     * Color to fill the shape.
+     * To generate a gradient for use here, see `Canvas.gradient`.
+     */
+    fill_color?: string | CanvasGradient;
+
+    font_style?: string;
+    font_variant?: string;
+    font_weight?: string;
+    font_size?: number; // px
+    font_family?: string;
+
+    /**
+     * End cap style for lines.
+     */
+    line_cap?: LineCapEnum;
+
+    /**
+     * How to render where two lines meet.
+     */
+    line_join?: LineJoinEnum;
+
+    /**
+     * How thick lines are.
+     */
+    line_width?: number;
+
+    /**
+     * Max length of miters.
+     */
+    line_miter_limit?: number;
+
+    /**
+     * Color of the line.
+     */
+    line_color?: string; // TODO: Support gradient
+
+    /**
+     * NOTE: The API will automatically set this depending on
+     * the other DrawOptions.  Whether or not the shape should 
+     * be stroked.
+     */
+    stroke?: boolean;
+
+    /**
+     * Horizontal alignment of text.
+     */
+    text_align?: TextAlignmentEnum;
+
+    /**
+     * Vertical alignment of text.
+     */
+    text_baseline?: TextBaselineEnum;
+}
+
+interface ICanvasOptions {
+    font?: string;
+    globalAlpha?: number;
+    globalCompositeOperation?: string;
+    lineCap?: string;
+    lineJoin?: string;
+    lineWidth?: number;
+    miterLimit?: number;
+    textAlign?: string;
+    textBaseline?: string;
+}
 
 /**
  * HTML canvas with drawing convinience functions.
  */
 export class Canvas extends utils.PosterClass {
-    
-    public context;
-    
-    protected _canvas;
+    protected _canvas: HTMLCanvasElement;
+    protected _context: CanvasRenderingContext2D;
 
-    private _rendered_region;
-    private _last_set_options;
-    private _text_size_cache;
-    private _text_size_array;
-    private _text_size_cache_size;
-    private _font_height;
-    private _cached_timestamp;
-    private _modified;
-    private _cached_region;
-    private _cached_image;
+    private _rendered_region: IPointPair;
+    private _last_set_options: ICanvasOptions;
+    private _text_size_cache: generics.IDictionary<number>;
+    private _text_size_array: string[];
+    private _text_size_cache_size: number = 1000;
+    private _font_height: number;
+    private _cached_timestamp: number;
+    private _modified: number;
+    private _cached_region: IPointPair;
+    private _cached_image: ImageData;
 
-    constructor() {
-        this._rendered_region = [null, null, null, null]; // x1,y1,x2,y2
-
+    public constructor() {
         super();
+
+        this._rendered_region = {
+            x1: null, 
+            y1: null, 
+            x2: null, 
+            y2: null
+        };
+
         this._layout();
         this._last_set_options = {};
 
         this._text_size_cache = {};
         this._text_size_array = [];
-        this._text_size_cache_size = 1000;
 
         // Set default size.
         this.width = 400;
         this.height = 300;
     }
 
+    public get context(): CanvasRenderingContext2D {
+        return this._context;
+    }
+
     /**
      * Height of the canvas
-     * @return {float}
      */
-    get height() { 
+    public get height(): number { 
         return this._canvas.height / 2; 
     }
-    set height(value) {
-        this._canvas.setAttribute('height', value * 2);
+    public set height(value: number) {
+        this._canvas.setAttribute('height', String(value * 2));
         
         // Stretch the image for retina support.
         this.scale(2,2);
@@ -56,13 +229,12 @@ export class Canvas extends utils.PosterClass {
 
     /**
      * Width of the canvas
-     * @return {float}
      */
-    get width() { 
+    public get width(): number { 
         return this._canvas.width / 2; 
     }
-    set width(value) {
-        this._canvas.setAttribute('width', value * 2);
+    public set width(value: number) {
+        this._canvas.setAttribute('width', String(value * 2));
         
         // Stretch the image for retina support.
         this.scale(2,2);
@@ -71,40 +243,41 @@ export class Canvas extends utils.PosterClass {
 
     /**
      * Region of the canvas that has been rendered to
-     * @return {dictionary} dictionary describing a rectangle {x,y,width,height}
-     *                      null if canvas has changed since last check
+     * @return null if canvas has changed since last check
      */
-    get rendered_region() {
+    public get rendered_region(): IRectangle {
         return this.get_rendered_region(true);
     }
 
     /**
-     * Layout the elements for the canvas.
-     * Creates `this.el`
+     * HTML 5 Canvas element
      */
-    _layout() {
-        this._canvas = document.createElement('canvas');
-        this._canvas.setAttribute('class', 'poster hidden-canvas');
-        this.context = this._canvas.getContext('2d');
-            
-        // Stretch the image for retina support.
-        this.scale(2,2);
+    public get canvas(): HTMLCanvasElement {
+        return this._canvas;
     }
 
     /**
      * Gets the region of the canvas that has been rendered to.
-     * @param  {boolean} (optional) reset - resets the region.
+     * @param  [reset] - resets the region.
      */
-    get_rendered_region(reset) {
+    public get_rendered_region(reset: boolean): IRectangle {
         var rendered_region = this._rendered_region;
         if (rendered_region[0] === null) return null;
 
-        if (reset) this._rendered_region = [null, null, null, null];
+        if (reset) {
+            this._rendered_region = {
+                x1: null, 
+                y1: null, 
+                x2: null, 
+                y2: null
+            };
+        }
+
         return {
-            x: this._tx(rendered_region[0], true),
-            y: this._ty(rendered_region[1], true),
-            width: (this._tx(rendered_region[2]) - this._tx(rendered_region[0])), 
-            height: (this._ty(rendered_region[3]) - this._ty(rendered_region[1])),
+            x: this.tx(rendered_region[0], true),
+            y: this.ty(rendered_region[1], true),
+            width: (this.tx(rendered_region[2]) - this.tx(rendered_region[0])), 
+            height: (this.ty(rendered_region[3]) - this.ty(rendered_region[1])),
         };
     }
 
@@ -120,21 +293,16 @@ export class Canvas extends utils.PosterClass {
      * continue to be used.  Clearing the cache makes Poster attempt to reload that
      * font.
      */
-    erase_options_cache() {
+    public erase_options_cache(): void {
         this._last_set_options = {};
     }
 
     /**
      * Draws a rectangle
-     * @param  {float} x
-     * @param  {float} y
-     * @param  {float} width
-     * @param  {float} height
-     * @param  {dictionary} options, see _apply_options() for details
      */
-    draw_rectangle(x, y, width, height, options) {
-        var tx = this._tx(x);
-        var ty = this._ty(y);
+    public draw_rectangle(x: number, y: number, width: number, height: number, options: IDrawOptions): void {
+        var tx: number = this.tx(x);
+        var ty: number = this.ty(y);
         this.context.beginPath();
         this.context.rect(tx, ty, width, height);
         this._do_draw(options);
@@ -143,14 +311,10 @@ export class Canvas extends utils.PosterClass {
 
     /**
      * Draws a circle
-     * @param  {float} x
-     * @param  {float} y
-     * @param  {float} r
-     * @param  {dictionary} options, see _apply_options() for details
      */
-    draw_circle(x, y, r, options) {
-        var tx = this._tx(x);
-        var ty = this._ty(y);
+    public draw_circle(x: number, y: number, r: number, options: IDrawOptions): void {
+        var tx: number = this.tx(x);
+        var ty: number = this.ty(y);
         this.context.beginPath();
         this.context.arc(tx, ty, r, 0, 2 * Math.PI);
         this._do_draw(options);
@@ -159,48 +323,37 @@ export class Canvas extends utils.PosterClass {
 
     /**
      * Draws an image
-     * @param  {img element} img
-     * @param  {float} x
-     * @param  {float} y
-     * @param  {float} (optional) width
-     * @param  {float} (optional) height
-     * @param  {object} (optional) clip_bounds - Where to clip from the source.
      */
-    draw_image(img, x, y, width, height, clip_bounds) {
-        var tx = this._tx(x);
-        var ty = this._ty(y);
+    public draw_image(img: HTMLCanvasElement|Canvas, x: number, y: number, width?: number, height?: number, clip_bounds?: IRectangle): void {
+        var tx: number = this.tx(x);
+        var ty: number = this.ty(y);
         width = width || img.width;
         height = height || img.height;
-        img = img._canvas ? img._canvas : img;
+        var html_img: HTMLCanvasElement = (<any>img).canvas ? (<Canvas><any>img).canvas : <HTMLCanvasElement><any>img;
         if (clip_bounds) {
             // Horizontally offset the image operation by one pixel along each 
             // border to eliminate the strange white l&r border artifacts.
-            var hoffset = 1;
-            this.context.drawImage(img, 
-                (this._tx(clip_bounds.x) - hoffset) * 2, // Retina support
-                this._ty(clip_bounds.y) * 2, // Retina support
+            var hoffset: number = 1;
+            this.context.drawImage(html_img, 
+                (this.tx(clip_bounds.x) - hoffset) * 2, // Retina support
+                this.ty(clip_bounds.y) * 2, // Retina support
                 (clip_bounds.width + 2*hoffset) * 2, // Retina support
                 clip_bounds.height * 2, // Retina support
                 tx-hoffset, ty, width + 2*hoffset, height);
         } else {
-            this.context.drawImage(img, tx, ty, width, height);
+            this.context.drawImage(html_img, tx, ty, width, height);
         }
         this._touch(tx, ty, tx + width, ty + height);
     }
 
     /**
      * Draws a line
-     * @param  {float} x1
-     * @param  {float} y1
-     * @param  {float} x2
-     * @param  {float} y2
-     * @param  {dictionary} options, see _apply_options() for details
      */
-    draw_line(x1, y1, x2, y2, options) {
-        var tx1 = this._tx(x1);
-        var ty1 = this._ty(y1);
-        var tx2 = this._tx(x2);
-        var ty2 = this._ty(y2);
+    public draw_line(x1: number, y1: number, x2: number, y2: number, options: IDrawOptions): void {
+        var tx1: number = this.tx(x1);
+        var ty1: number = this.ty(y1);
+        var tx2: number = this.tx(x2);
+        var ty2: number = this.ty(y2);
         this.context.beginPath();
         this.context.moveTo(tx1, ty1);
         this.context.lineTo(tx2, ty2);
@@ -210,28 +363,25 @@ export class Canvas extends utils.PosterClass {
 
     /**
      * Draws a poly line
-     * @param  {array} points - array of points.  Each point is
-     *                          an array itself, of the form [x, y] 
-     *                          where x and y are floating point
-     *                          values.
-     * @param  {dictionary} options, see _apply_options() for details
+     * @param  points - array of points.  Each point is an array itself, of the 
+     *                  form [x, y] where x and y are floating point values.
      */
-    draw_polyline(points, options) {
+    public draw_polyline(points: number[][], options: IDrawOptions): void {
         if (points.length < 2) {
             throw new Error('Poly line must have atleast two points.');
         } else {
             this.context.beginPath();
-            var point = points[0];
-            this.context.moveTo(this._tx(point[0]), this._ty(point[1]));
+            var point: number[] = points[0];
+            this.context.moveTo(this.tx(point[0]), this.ty(point[1]));
 
-            var minx = this.width;
-            var miny = this.height;
-            var maxx = 0;
-            var maxy = 0;
-            for (var i = 1; i < points.length; i++) {
+            var minx: number = this.width;
+            var miny: number = this.height;
+            var maxx: number = 0;
+            var maxy: number = 0;
+            for (var i: number = 1; i < points.length; i++) {
                 point = points[i];
-                var tx = this._tx(point[0]);
-                var ty = this._ty(point[1]);
+                var tx: number = this.tx(point[0]);
+                var ty: number = this.ty(point[1]);
                 this.context.lineTo(tx, ty);
 
                 minx = Math.min(tx, minx);
@@ -246,14 +396,10 @@ export class Canvas extends utils.PosterClass {
 
     /**
      * Draws a text string
-     * @param  {float} x
-     * @param  {float} y
-     * @param  {string} text string or callback that resolves to a string.
-     * @param  {dictionary} options, see _apply_options() for details
      */
-    draw_text(x, y, text, options) {
-        var tx = this._tx(x);
-        var ty = this._ty(y);
+    public draw_text(x: number, y: number, text: string, options: IDrawOptions): void {
+        var tx: number = this.tx(x);
+        var ty: number = this.ty(y);
         text = this._process_tabs(text);
         options = this._apply_options(options);
         // 'fill' the text by default when neither a stroke or fill 
@@ -274,23 +420,18 @@ export class Canvas extends utils.PosterClass {
 
     /**
      * Get's a chunk of the canvas as a raw image.
-     * @param  {float} (optional) x
-     * @param  {float} (optional) y
-     * @param  {float} (optional) width
-     * @param  {float} (optional) height
-     * @return {image} canvas image data
      */
-    get_raw_image(x, y, width, height) {
+    public get_raw_image(x: number, y: number, width: number, height: number): ImageData {
         console.warn('get_raw_image image is slow, use canvas references instead with draw_image');
         if (x===undefined) {
             x = 0;
         } else {
-            x = this._tx(x);
+            x = this.tx(x);
         }
         if (y===undefined) {
             y = 0;
         } else {
-            y = this._ty(y);
+            y = this.ty(y);
         }
         if (width === undefined) width = this.width;
         if (height === undefined) height = this.height;
@@ -302,8 +443,13 @@ export class Canvas extends utils.PosterClass {
         height = 2 * height;
         
         // Update the cached image if it's not the requested one.
-        var region = [x, y, width, height];
-        if (!(this._cached_timestamp === this._modified && utils.compare_arrays(region, this._cached_region))) {
+        var region = {
+            x1: x, 
+            y1: y, 
+            x2: width, 
+            y2: height
+        };
+        if (!(this._cached_timestamp === this._modified && utils.compare_objects(region, this._cached_region))) {
             this._cached_image = this.context.getImageData(x, y, width, height);
             this._cached_timestamp = this._modified;
             this._cached_region = region;
@@ -315,27 +461,20 @@ export class Canvas extends utils.PosterClass {
 
     /**
      * Put's a raw image on the canvas somewhere.
-     * @param  {float} x
-     * @param  {float} y
-     * @return {image} canvas image data
      */
-    put_raw_image(img, x, y) {
+    public put_raw_image(img: ImageData, x: number, y: number): void {
         console.warn('put_raw_image image is slow, use draw_image instead');
-        var tx = this._tx(x);
-        var ty = this._ty(y);
+        var tx: number = this.tx(x);
+        var ty: number = this.ty(y);
         // Multiply by two for pixel doubling.
         var ret = this.context.putImageData(img, tx*2, ty*2);
         this._touch(tx, ty, this.width, this.height); // Don't know size of image
-        return ret;
     }
 
     /**
      * Measures the width of a text string.
-     * @param  {string} text
-     * @param  {dictionary} options, see _apply_options() for details
-     * @return {float} width
      */
-    measure_text(text, options) {
+    public measure_text(text: string, options: IDrawOptions): number {
         options = this._apply_options(options);
         text = this._process_tabs(text);
 
@@ -346,7 +485,7 @@ export class Canvas extends utils.PosterClass {
 
             // Remove the oldest item in the array if the cache is too large.
             while (this._text_size_array.length > this._text_size_cache_size) {
-                var oldest = this._text_size_array.shift();
+                var oldest: string = this._text_size_array.shift();
                 delete this._text_size_cache[oldest];
             }
         }
@@ -357,15 +496,15 @@ export class Canvas extends utils.PosterClass {
 
     /**
      * Create a linear gradient
-     * @param  {float} x1
-     * @param  {float} y1
-     * @param  {float} x2
-     * @param  {float} y2
-     * @param  {array} color_stops - array of [float, color] pairs
+     * @param x1
+     * @param y1
+     * @param x2
+     * @param y2
+     * @param color_stops - array of [float, color] pairs
      */
-    gradient(x1, y1, x2, y2, color_stops) {
-        var gradient = this.context.createLinearGradient(x1, y1, x2, y2);
-        for (var i = 0; i < color_stops.length; i++) {
+    public gradient(x1:  number, y1:  number, x2:  number, y2:  number, color_stops: [number, string][]): CanvasGradient {
+        var gradient: CanvasGradient = this.context.createLinearGradient(x1, y1, x2, y2);
+        for (var i: number = 0; i < color_stops.length; i++) {
             gradient.addColorStop(color_stops[i][0], color_stops[i][1]);
         }
         return gradient;
@@ -373,12 +512,11 @@ export class Canvas extends utils.PosterClass {
 
     /**
      * Clear's the canvas.
-     * @param  {object} (optional) region, {x,y,width,height}
      */
-    clear(region?) {
+    public clear(region?: IRectangle): void {
         if (region) {
-            var tx = this._tx(region.x);
-            var ty = this._ty(region.y);
+            var tx = this.tx(region.x);
+            var ty = this.ty(region.y);
             this.context.clearRect(tx, ty, region.width, region.height);
             this._touch(tx, ty, tx + region.width, ty + region.height);
         } else {
@@ -389,20 +527,43 @@ export class Canvas extends utils.PosterClass {
 
     /**
      * Scale the current drawing.
-     * @param  {float} x
-     * @param  {float} y  
      */
-    scale(x, y) {
+    public scale(x: number, y: number): void {
         this.context.scale(x, y);
         this._touch();
     }
 
     /**
-     * Finishes the drawing operation using the set of provided options.
-     * @param  {dictionary} (optional) dictionary that 
-     *  resolves to a dictionary.
+     * Transform an x value before rendering.
+     * @param x
+     * @param [inverse] - perform inverse transformation
      */
-    _do_draw(options) {
+    public tx(x: number, inverse?: boolean): number { return x; }
+
+    /**
+     * Transform a y value before rendering.
+     * @param y
+     * @param [inverse] - perform inverse transformation
+     */
+    public ty(y: number, inverse?: boolean): number { return y; }
+
+    /**
+     * Layout the elements for the canvas.
+     * Creates `this.el`
+     */
+    protected _layout(): void {
+        this._canvas = document.createElement('canvas');
+        this._canvas.setAttribute('class', 'poster hidden-canvas');
+        this._context = this._canvas.getContext('2d');
+            
+        // Stretch the image for retina support.
+        this.scale(2,2);
+    }
+
+    /**
+     * Finishes the drawing operation using the set of provided options.
+     */
+    private _do_draw(options?: IDrawOptions): void {
         options = this._apply_options(options);
 
         // Only fill if a fill is defined.
@@ -418,51 +579,18 @@ export class Canvas extends utils.PosterClass {
 
     /**
      * Applies a dictionary of drawing options to the pen.
-     * @param  {dictionary} options
-     *      alpha {float} Opacity (0-1)
-     *      composite_operation {string} How new images are 
-     *          drawn onto an existing image.  Possible values
-     *          are `source-over`, `source-atop`, `source-in`, 
-     *          `source-out`, `destination-over`, 
-     *          `destination-atop`, `destination-in`, 
-     *          `destination-out`, `lighter`, `copy`, or `xor`.
-     *      line_cap {string} End cap style for lines.
-     *          Possible values are 'butt', 'round', or 'square'.
-     *      line_join {string} How to render where two lines
-     *          meet.  Possible values are 'bevel', 'round', or
-     *          'miter'.
-     *      line_width {float} How thick lines are.
-     *      line_miter_limit {float} Max length of miters.
-     *      line_color {string} Color of the line.
-     *      fill_color {string} Color to fill the shape.
-     *      color {string} Color to stroke and fill the shape.
-     *          Lower priority to line_color and fill_color.
-     *      font_style {string}
-     *      font_variant {string}
-     *      font_weight {string}
-     *      font_size {string}
-     *      font_family {string}
-     *      text_align {string} Horizontal alignment of text.  
-     *          Possible values are `start`, `end`, `center`,
-     *          `left`, or `right`.
-     *      text_baseline {string} Vertical alignment of text.
-     *          Possible values are `alphabetic`, `top`, 
-     *          `hanging`, `middle`, `ideographic`, or 
-     *          `bottom`.
-     * @return {dictionary} options, resolved.
      */
-    _apply_options(options?: any) {
+    private _apply_options(options?: IDrawOptions): IDrawOptions {
         options = options || {};
-        options = utils.resolve_callable(options);
 
         // Special options.
-        var set_options: any = {};
+        var set_options: ICanvasOptions = {};
         set_options.globalAlpha = (options.alpha===undefined ? 1.0 : options.alpha);
-        set_options.globalCompositeOperation = options.composite_operation || 'source-over';
+        set_options.globalCompositeOperation = (options.composite_operation || CompositeOperationEnum.source_over).toString();
         
         // Line style.
-        set_options.lineCap = options.line_cap || 'butt';
-        set_options.lineJoin = options.line_join || 'bevel';
+        set_options.lineCap = (options.line_cap || LineCapEnum.butt).toString();
+        set_options.lineJoin = (options.line_join || LineJoinEnum.bevel).toString();
         set_options.lineWidth = options.line_width===undefined ? 1.0 : options.line_width;
         set_options.miterLimit = options.line_miter_limit===undefined ? 10 : options.line_miter_limit;
         this.context.strokeStyle = options.line_color || options.color || 'black'; // TODO: Support gradient
@@ -494,8 +622,8 @@ export class Canvas extends utils.PosterClass {
         set_options.font = font;
 
         // Text style.
-        set_options.textAlign = options.text_align || 'left';
-        set_options.textBaseline = options.text_baseline || 'top';
+        set_options.textAlign = (options.text_align || TextAlignmentEnum.left).toString();
+        set_options.textBaseline = (options.text_baseline || TextBaselineEnum.top).toString();
 
         // TODO: Support shadows.
         
@@ -523,13 +651,18 @@ export class Canvas extends utils.PosterClass {
      * Update the timestamp that the canvas was modified and
      * the region that has contents rendered to it.
      */
-    _touch(x1?, y1?, x2?, y2?) {
+    private _touch(x1?: number, y1?: number, x2?: number, y2?: number): void {
         this._modified = Date.now();
 
-        var all_undefined = (x1===undefined && y1===undefined && x2===undefined && y2===undefined);
-        var one_nan = (isNaN(x1*x2*y1*y2));
+        var all_undefined: boolean = (x1===undefined && y1===undefined && x2===undefined && y2===undefined);
+        var one_nan: boolean = (isNaN(x1*x2*y1*y2));
         if (one_nan || all_undefined) {
-            this._rendered_region = [0, 0, this.width, this.height];
+            this._rendered_region = {
+                x1: 0, 
+                y1: 0, 
+                x2: this.width, 
+                y2: this.height
+            };
             return;
         }
 
@@ -542,35 +675,17 @@ export class Canvas extends utils.PosterClass {
             }
         };
 
-        this._rendered_region[0] = comparitor(this._rendered_region[0], comparitor(x1, x2, Math.min), Math.min);
-        this._rendered_region[1] = comparitor(this._rendered_region[1], comparitor(y1, y2, Math.min), Math.min);
-        this._rendered_region[2] = comparitor(this._rendered_region[2], comparitor(x1, x2, Math.max), Math.max);
-        this._rendered_region[3] = comparitor(this._rendered_region[3], comparitor(y1, y2, Math.max), Math.max);
+        this._rendered_region.x1 = comparitor(this._rendered_region.x1, comparitor(x1, x2, Math.min), Math.min);
+        this._rendered_region.y1 = comparitor(this._rendered_region.y1, comparitor(y1, y2, Math.min), Math.min);
+        this._rendered_region.x2 = comparitor(this._rendered_region.x2, comparitor(x1, x2, Math.max), Math.max);
+        this._rendered_region.y2 = comparitor(this._rendered_region.y2, comparitor(y1, y2, Math.max), Math.max);
     }
-
-    /**
-     * Transform an x value before rendering.
-     * @param  {float} x
-     * @param  {boolean} inverse - perform inverse transformation
-     * @return {float}
-     */
-    _tx(x, inverse?) { return x; }
-
-    /**
-     * Transform a y value before rendering.
-     * @param  {float} y
-     * @param  {boolean} inverse - perform inverse transformation
-     * @return {float}
-     */
-    _ty(y, inverse?) { return y; }
 
     /**
      * Convert tab characters to the config defined number of space 
      * characters for rendering.
-     * @param  {string} s - input string
-     * @return {string} output string
      */
-    _process_tabs(s) {
+    private _process_tabs(s: string): string {
         var space_tab = '';
         for (var i = 0; i < (config.tab_width || 1); i++) {
             space_tab += ' ';
