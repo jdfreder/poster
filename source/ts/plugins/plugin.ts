@@ -2,7 +2,7 @@
 
 import utils = require('../utils/utils');
 import generics = require('../utils/generics');
-import renderer = require('../draw/renderers/base');
+import renderer = require('../draw/renderers/renderer');
 import iposter = require('../i_poster');
 import plugin_manager = require('./manager');
 
@@ -55,7 +55,7 @@ export class PluginBase extends utils.PosterClass {
     /**
      * Loads the plugin
      */
-    public handle_load(manager: plugin_manager.PluginManager, poster: i_poster.IPoster): void {
+    public handle_load(manager: plugin_manager.PluginManager, poster: iposter.IPoster): void {
         this._poster = poster;
         this._manager = manager;
         this.loaded = true;

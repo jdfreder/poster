@@ -1,6 +1,8 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 import renderer = require('../../draw/renderers/renderer');
 import utils = require('../../utils/utils');
+import gutter_mod = require('./gutter');
+import canvas = require('../../draw/canvas');
 
 /**
  * Renderers the gutter.
@@ -9,7 +11,7 @@ export class GutterRenderer extends renderer.RendererBase {
     private _gutter;
     private _hovering;
 
-    constructor(gutter) {
+    public constructor(gutter: gutter_mod.Gutter) {
         super(undefined, {parent_independent: true});
         this._gutter  = gutter;
         this._gutter.on('changed', () => {
@@ -23,7 +25,7 @@ export class GutterRenderer extends renderer.RendererBase {
      * Handles rendering
      * Only re-render when scrolled horizontally.
      */
-    render(scroll) {
+    public render(scroll: canvas.IPoint): void {
         // Scrolled right xor hovering
         var left = this._gutter.poster.canvas.scroll_left;
         if ((left > 0) !== this._hovering) {
@@ -33,9 +35,16 @@ export class GutterRenderer extends renderer.RendererBase {
     }
 
     /**
+     * Unregister the event listeners
+     */
+    public unregister(): void {
+        this._gutter.off('changed', this._render);
+    }
+
+    /**
      * Renders the gutter
      */
-    _render() {
+    private _render(): void {
         this._canvas.clear();
         var width = this._gutter.gutter_width;
         this._canvas.draw_rectangle(
@@ -63,14 +72,5 @@ export class GutterRenderer extends renderer.RendererBase {
             );
 
         }
-    }
-
-    /**
-     * Unregister the event listeners
-     * @param  {Poster} poster
-     * @param  {Gutter} gutter
-     */
-    unregister() {
-        this._gutter.off('changed', this._render);
     }
 }

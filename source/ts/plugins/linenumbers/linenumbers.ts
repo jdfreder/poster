@@ -7,7 +7,7 @@ import renderer = require('./renderer');
  * Line numbers plugin.
  */
 export class LineNumbers extends plugin.PluginBase {
-    private _renderer;
+    private _renderer: renderer.LineNumbersRenderer;
     
     constructor() {
         super();
@@ -18,7 +18,7 @@ export class LineNumbers extends plugin.PluginBase {
     /**
      * Handles when the plugin is loaded.
      */
-    _handle_load() {
+    _handle_load(): void {
         this._renderer = new renderer.LineNumbersRenderer(this);
         this.register_renderer(this._renderer);
     }
@@ -26,7 +26,7 @@ export class LineNumbers extends plugin.PluginBase {
     /**
      * Handles when the plugin is unloaded.
      */
-    _handle_unload() {
+    _handle_unload(): void {
         // Remove all listeners to this plugin's changed event.
         this._renderer.unregister();
     }

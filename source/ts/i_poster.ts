@@ -5,6 +5,7 @@ import document_model = require('./document_model');
 import document_view = require('./document_view');
 import style = require('./styles/style');
 import utils = require('./utils/utils');
+import plugin_manager = require('./plugins/manager');
 
 /**
  * Canvas based text editor
@@ -15,9 +16,9 @@ export interface IPoster {
     model: document_model.DocumentModel;
     controller: document_controller.DocumentController;
     view: document_view.DocumentView;
-    plugins: any;
+    plugins: plugin_manager.PluginManager;
     style: style.Style;
-    config: utils.PosterClass;
+    config: any;
     value: string;
     width: number;
     height: number;

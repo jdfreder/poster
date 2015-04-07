@@ -7,10 +7,10 @@ import renderer = require('./renderer');
  * Gutter plugin.
  */
 export class Gutter extends plugin.PluginBase {
-    private _gutter_width;
-    private _renderer;
+    private _gutter_width: number;
+    private _renderer: renderer.GutterRenderer;
     
-    constructor() {
+    public constructor() {
         super();
         this.on('load', this._handle_load, this);
         this.on('unload', this._handle_unload, this);
@@ -19,22 +19,22 @@ export class Gutter extends plugin.PluginBase {
     }
 
     // Create a gutter_width property that is adjustable.
-    get gutter_width() {
+    public get gutter_width(): number {
         return this._gutter_width;
     }
-    set gutter_width(value) {
+    public set gutter_width(value: number) {
         this._set_width(value);
     }
 
-    get renderer() {
+    public get renderer(): renderer.GutterRenderer {
         return this._renderer;
     }
 
     /**
      * Sets the gutter's width.
-     * @param {integer} value - width in pixels
+     * @param value - width in pixels
      */
-    _set_width(value) {
+    private _set_width(value: number): void {
         if (this._gutter_width !== value) {
             if (this.loaded) {
                 this.poster.view.row_renderer.margin_left += value - this._gutter_width;
@@ -47,7 +47,7 @@ export class Gutter extends plugin.PluginBase {
     /**
      * Handles when the plugin is loaded.
      */
-    _handle_load() {
+    private _handle_load(): void {
         this.poster.view.row_renderer.margin_left += this._gutter_width;
         this._renderer = new renderer.GutterRenderer(this);
         this.register_renderer(this._renderer);
@@ -56,7 +56,7 @@ export class Gutter extends plugin.PluginBase {
     /**
      * Handles when the plugin is unloaded.
      */
-    _handle_unload() {
+    private _handle_unload(): void {
         // Remove all listeners to this plugin's changed event.
         this._renderer.unregister();
         this.poster.view.row_renderer.margin_left -= this._gutter_width;
