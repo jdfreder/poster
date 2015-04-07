@@ -12,7 +12,7 @@ import generics = require('../utils/generics');
  */
 export class PluginManager extends utils.PosterClass {
     private _poster: iposter.IPoster;
-    private _internal_plugins: generics.IDictionary<generics.IClass<any>>;
+    private _internal_plugins: generics.IDictionary<generics.IClass<pluginbase.PluginBase>>;
     private _plugins: pluginbase.PluginBase[];
 
     constructor(poster: iposter.IPoster) {
@@ -24,7 +24,6 @@ export class PluginManager extends utils.PosterClass {
         this._internal_plugins = {};
         this._internal_plugins['gutter'] = gutter.Gutter;
         this._internal_plugins['linenumbers'] = linenumbers.LineNumbers;
-        this.load(gutter.Gutter); // TODO: Remove me.
     }
 
     /**
@@ -76,7 +75,7 @@ export class PluginManager extends utils.PosterClass {
      * @return {array} of plugin instances
      */
     find(plugin_class: string);
-    find(plugin_class: generics.IClass<any>);
+    find(plugin_class: generics.IClass<pluginbase.PluginBase>);
     find(plugin_class: any): pluginbase.PluginBase[] {
         if (this._internal_plugins[plugin_class] !== undefined) {
             plugin_class = this._internal_plugins[plugin_class];

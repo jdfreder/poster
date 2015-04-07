@@ -18,7 +18,7 @@ export interface IPoster {
     view: document_view.DocumentView;
     plugins: plugin_manager.PluginManager;
     style: style.Style;
-    config: any;
+    config: utils.PosterClass;
     value: string;
     width: number;
     height: number;

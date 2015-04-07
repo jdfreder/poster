@@ -1,4 +1,5 @@
-export var style = {
+import generics = require('../utils/generics');
+export var style: generics.IDictionary<any> = {
     comment: '#7a7267',
     string: '#bcd42a',
     'class-name': '#ede0ce',

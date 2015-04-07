@@ -172,7 +172,7 @@ export class LineNumbersRenderer extends renderer.RendererBase {
         for (var i: number = start_row; i < start_row + num_rows; i++) {
             if (i < lines) {
                 var y: number = (i - this._top_row) * this._row_height;
-                if (this._plugin.poster.config.highlight_draw) {
+                if (this._plugin.poster.config.get('highlight_draw', false)) {
                     this._text_canvas.draw_rectangle(0, y, this._text_canvas.width, this._row_height, {
                         fill_color: utils.random_color(),
                     });
@@ -181,7 +181,7 @@ export class LineNumbersRenderer extends renderer.RendererBase {
                 this._text_canvas.draw_text(10, y, String(i+1), {
                     font_family: 'monospace',
                     font_size: 14,
-                    color: this._plugin.poster.style.gutter_text || 'black',
+                    color: this._plugin.poster.style.get('gutter_text', 'black'),
                 });
             }
         }

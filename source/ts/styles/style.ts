@@ -1,13 +1,13 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-
 import utils = require('../utils/utils');
+import generics = require('../utils/generics');
 import styles = require('./init');
 
 /**
  * Style
  */
 export class Style extends utils.PosterClass {
-    constructor() {
+    public constructor() {
         super([
             'comment',
             'string',
@@ -38,19 +38,14 @@ export class Style extends utils.PosterClass {
     }
 
     /**
-     * Gets a style attribute.
-     */
-    public get(key: string, default_value?: any): any {
-        return this[key] !== undefined ? this[key] : default_value;
-    }
-
-    /**
      * Load a rendering style
-     * @param  {string or dictionary} style - name of the built-in style 
+     * @param  style - name of the built-in style 
      *         or style dictionary itself.
-     * @return {boolean} success
+     * @return success
      */
-    load(style) {
+    public load(style: string): boolean;
+    public load(style: generics.IDictionary<any>): boolean;
+    public load(style: any): boolean {
         try {
             // Load the style if it's built-in.
             if (styles.styles[style]) {
