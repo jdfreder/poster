@@ -4,7 +4,7 @@ import document_controller = require('./document_controller');
 import document_model = require('./document_model');
 import document_view = require('./document_view');
 import style = require('./styles/style');
-import utils = require('./utils/utils');
+import config = require('./utils/config');
 import plugin_manager = require('./plugins/manager');
 
 /**
@@ -18,7 +18,7 @@ export interface IPoster {
     view: document_view.DocumentView;
     plugins: plugin_manager.PluginManager;
     style: style.Style;
-    config: utils.PosterClass;
+    config: config.Config;
     value: string;
     width: number;
     height: number;

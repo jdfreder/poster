@@ -12,7 +12,7 @@ import utils = require('./utils/utils');
 import config_mod = require('./utils/config');
 import prism = require('prismjs');
 import iposter = require('i_poster');
-var config = config_mod.config;
+var config: config_mod.Config = config_mod.config;
 
 /**
  * Canvas based text editor
@@ -60,7 +60,7 @@ class Poster extends utils.PosterClass implements iposter.IPoster {
         return this._style;
     }
 
-    public get config(): utils.PosterClass {
+    public get config(): config_mod.Config {
         return config;
     }
 

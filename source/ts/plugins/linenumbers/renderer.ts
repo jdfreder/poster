@@ -172,7 +172,7 @@ export class LineNumbersRenderer extends renderer.RendererBase {
         for (var i: number = start_row; i < start_row + num_rows; i++) {
             if (i < lines) {
                 var y: number = (i - this._top_row) * this._row_height;
-                if (this._plugin.poster.config.get('highlight_draw', false)) {
+                if (this._plugin.poster.config.highlight_draw) {
                     this._text_canvas.draw_rectangle(0, y, this._text_canvas.width, this._row_height, {
                         fill_color: utils.random_color(),
                     });

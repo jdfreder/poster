@@ -49,14 +49,6 @@ export class PosterClass {
             configurable: true
         });
     }
-
-    /**
-     * Get the value of a property of this instance.
-     */
-    get(name: string, default_value?: any): any {
-        return this[name] !== undefined ? this[name] : default_value;
-    }
-
     /**
      * Register an event listener
      * @param  {string} event

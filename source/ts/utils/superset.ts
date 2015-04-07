@@ -2,18 +2,20 @@
 
 import utils = require('./utils');
 
+export interface IState extends Array<any> { 0: number; 1: number; 2: any; }
+
 /**
  * Superset
  */
 export class Superset extends utils.PosterClass {
-    private _array;
+    private _array: IState[];
     
-    constructor() {
+    public constructor() {
         super();
         this._array = [];
     }
         
-    get array() {
+    public get array(): IState[] {
         this._clean();
         return this._array;
     }
@@ -21,40 +23,40 @@ export class Superset extends utils.PosterClass {
     /**
      * Clears the set
      */
-    clear() {
+    public clear(): void {
         utils.clear_array(this._array);
     }
 
     /**
      * Set the state of a region.
-     * @param {integer} start - index, inclusive
-     * @param {integer} stop - index, inclusive
-     * @param {object} state
+     * @param start - index, inclusive
+     * @param stop - index, inclusive
+     * @param state
      */
-    set(start, stop, state) {
+    public set(start: number, stop: number, state: any): void {
         this._set(start, stop, state, 0);
     }
 
     /**
      * Set the state of a region.
-     * @param {integer} start - index, inclusive
-     * @param {integer} stop - index, inclusive
-     * @param {object} state
-     * @param {integer} integer - current recursion index
+     * @param start - index, inclusive
+     * @param stop - index, inclusive
+     * @param state
+     * @param index - current recursion index
      */
-    _set(start, stop, state, index) {
+    private _set(start: number, stop: number, state: any, index: number): void {
         // Make sure start and stop are in correct order.
         if (start > stop) {
             return;
         }
-        var ns = start;
-        var ne = stop;
+        var ns: number = start;
+        var ne: number = stop;
 
         // Handle intersections.
         for (; index < this._array.length; index++) {
-            var s = this._array[index][0];
-            var e = this._array[index][1];
-            var old_state = this._array[index][2];
+            var s: number = this._array[index][0];
+            var e: number = this._array[index][1];
+            var old_state: any = this._array[index][2];
             if (ns <= e && ne >= s) {
                 this._array.splice(index, 1);
                 // keep
@@ -76,12 +78,8 @@ export class Superset extends utils.PosterClass {
 
     /**
      * Inserts an entry.
-     * @param  {integer} index
-     * @param  {integer} start
-     * @param  {integer} end  
-     * @param  {object} state
      */
-    _insert(index, start, end, state) {
+    private _insert(index: number, start: number, end: number, state: any) {
         if (start > end) return;
         this._array.splice(index, 0, [start, end, state]);
     }
@@ -89,7 +87,7 @@ export class Superset extends utils.PosterClass {
     /**
      * Joins consequtive states.
      */
-    _clean() {
+    private _clean(): void {
 
         // Sort.
         this._array.sort((a, b) => a[0] - b[0]);
