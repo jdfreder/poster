@@ -1,4 +1,13 @@
 declare module "prismjs" {
-    var x: any;
+    interface IToken {
+        content: string;
+        type: string;
+        length: number;
+    }
+    
+    var x: {
+        languages: string[];
+        tokenize: (text: string, language: any) => IToken[];
+    };
     export = x;
 }

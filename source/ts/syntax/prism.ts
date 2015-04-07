@@ -2,18 +2,26 @@
 ///<reference path="./prism.d.ts"/>
 import utils = require('../utils/utils');
 import superset = require('../utils/superset');
+import document_model = require('../document_model');
+import row = require('../draw/renderers/row');
 import highlighter = require('./highlighter');
 import prism = require('prismjs');
+
+interface IToken {
+    content: string;
+    type: string;
+    length: number;
+}
 
 /**
  * Listens to a model and highlights the text accordingly.
  * @param {DocumentModel} model
  */
 export class PrismHighlighter extends highlighter.HighlighterBase {
-    public _row_padding;
-    public _language;
+    private _row_padding: number;
+    private _language: any;
 
-    constructor(model, row_renderer) {
+    public constructor(model: document_model.DocumentModel, row_renderer: row.RowRenderer) {
         super(model, row_renderer);
 
         // Look back and forward this many rows for contextually 
@@ -22,7 +30,7 @@ export class PrismHighlighter extends highlighter.HighlighterBase {
         this._language = null;
     }
 
-    get languages() {
+    public get languages(): string[] {
         var languages = [];
         for (var l in prism.languages) {
             if (["extend", "insertBefore", "DFS"].indexOf(l) == -1) {
@@ -34,9 +42,8 @@ export class PrismHighlighter extends highlighter.HighlighterBase {
 
     /**
      * Highlight the document
-     * @return {null}
      */
-    highlight(start_row, end_row) {
+    public highlight(start_row: number, end_row: number): void {
         // Get the first and last rows that should be highlighted.
         start_row = Math.max(0, start_row - this._row_padding);
         end_row = Math.min(this._model._rows.length - 1, end_row + this._row_padding);
@@ -45,21 +52,21 @@ export class PrismHighlighter extends highlighter.HighlighterBase {
         if (!this._language) return;
         
         // Get the text of the rows.
-        var text = this._model.get_text(start_row, 0, end_row, this._model._rows[end_row].length);
+        var text: string = this._model.get_text(start_row, 0, end_row, this._model._rows[end_row].length);
 
         // Figure out where each tag belongs.
-        var highlights = this._highlight(text); // [start_index, end_index, tag]
+        var highlights: ([number, number, string])[] = this._highlight(text); // [start_index, end_index, tag]
         
         // Calculate Poster tags
         highlights.forEach(highlight => {
 
             // Translate tag character indicies to row, char coordinates.
-            var before_rows = text.substring(0, highlight[0]).split('\n');
-            var group_start_row = start_row + before_rows.length - 1;
-            var group_start_char = before_rows[before_rows.length - 1].length;
-            var after_rows = text.substring(0, highlight[1]).split('\n');
-            var group_end_row = start_row + after_rows.length - 1;
-            var group_end_char = after_rows[after_rows.length - 1].length;
+            var before_rows: string[] = text.substring(0, highlight[0]).split('\n');
+            var group_start_row: number = start_row + before_rows.length - 1;
+            var group_start_char: number = before_rows[before_rows.length - 1].length;
+            var after_rows: string[] = text.substring(0, highlight[1]).split('\n');
+            var group_end_row: number = start_row + after_rows.length - 1;
+            var group_end_char: number = after_rows[after_rows.length - 1].length;
 
             // New lines can't be highlighted.
             while (group_start_char === this._model._rows[group_start_row].length) {
@@ -80,15 +87,15 @@ export class PrismHighlighter extends highlighter.HighlighterBase {
             }
 
             // Apply tag if it's not already applied.
-            var tag = highlight[2].toLowerCase();
-            var existing_tags = this._model.get_tags('syntax', group_start_row, group_start_char, group_end_row, group_end_char);
+            var tag: string = highlight[2].toLowerCase();
+            var existing_tags: ([number, number, number, string])[] = this._model.get_tags('syntax', group_start_row, group_start_char, group_end_row, group_end_char);
             
             // Make sure the number of tags = number of rows.
-            var correct_count = (existing_tags.length === group_end_row - group_start_row + 1);
+            var correct_count: boolean = (existing_tags.length === group_end_row - group_start_row + 1);
 
             // Make sure every tag value equals the new value.
-            var correct_values = true;
-            var i;
+            var correct_values: boolean = true;
+            var i: number;
             if (correct_count) {
                 for (i = 0; i < existing_tags.length; i++) {
                     if (existing_tags[i][3] !== tag) {
@@ -99,7 +106,7 @@ export class PrismHighlighter extends highlighter.HighlighterBase {
             }
 
             // Check that the start and ends of tags are correct.
-            var correct_ranges = true;
+            var correct_ranges: boolean = true;
             if (correct_count&&correct_values) {
                 if (existing_tags.length==1) {
                     correct_ranges = existing_tags[0][1] === group_start_char && existing_tags[0][2] === group_end_char;
@@ -125,22 +132,42 @@ export class PrismHighlighter extends highlighter.HighlighterBase {
     }
 
     /**
-     * Find each part of text that needs to be highlighted.
-     * @param  {string} text
-     * @return {array} list containing items of the form [start_index, end_index, tag]
+     * Loads a syntax by language name.
+     * @return success
      */
-    _highlight(text) {
+    public load(language: string): boolean;
+    public load(language: any): boolean {
+        try {
+            // Check if the language exists.
+            if (prism.languages[language] === undefined) {
+                throw new Error('Language does not exist!');
+            }
+            this._language = prism.languages[language];
+            this._queue_highlighter();
+            return true;
+        } catch (e) {
+            console.error('Error loading language', e);
+            this._language = null;
+            return false;
+        }
+    }
+
+    /**
+     * Find each part of text that needs to be highlighted.
+     * @return list containing items of the form [start_index, end_index, tag]
+     */
+    private _highlight(text: string): ([number, number, string])[] {
 
         // Tokenize using prism.js
-        var tokens = prism.tokenize(text, this._language);
+        var tokens: IToken[] = prism.tokenize(text, this._language);
 
         // Convert the tokens into [start_index, end_index, tag]
-        var left = 0;
+        var left: number = 0;
         var flatten = function(tokens, prefix?) {
             if (!prefix) { prefix = []; }
-            var flat = [];
+            var flat: ([number, number, string])[] = [];
             for (var i = 0; i < tokens.length; i++) {
-                var token = tokens[i];
+                var token: IToken = tokens[i];
                 if (token.content) {
                     flat = flat.concat(flatten([].concat(token.content), prefix.concat(token.type)));
                 } else {
@@ -159,26 +186,5 @@ export class PrismHighlighter extends highlighter.HighlighterBase {
         set.set(0, text.length-1, '');
         tags.forEach(tag => set.set(tag[0], tag[1]-1, tag[2]));
         return set.array;
-    }
-
-    /**
-     * Loads a syntax by language name.
-     * @param  {string or dictionary} language
-     * @return {boolean} success
-     */
-    load(language) {
-        try {
-            // Check if the language exists.
-            if (prism.languages[language] === undefined) {
-                throw new Error('Language does not exist!');
-            }
-            this._language = prism.languages[language];
-            this._queue_highlighter();
-            return true;
-        } catch (e) {
-            console.error('Error loading language', e);
-            this._language = null;
-            return false;
-        }
     }
 }
