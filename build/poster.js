@@ -2079,589 +2079,7 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-var utils = require('./utils');
-/**
- * Animation helper.
- */
-var Animator = (function (_super) {
-    __extends(Animator, _super);
-    function Animator(duration) {
-        _super.call(this);
-        this.duration = duration;
-        this._start = Date.now();
-    }
-    /**
-     * Get the time in the animation
-     * @return {float} between 0 and 1
-     */
-    Animator.prototype.time = function () {
-        var elapsed = Date.now() - this._start;
-        return (elapsed % this.duration) / this.duration;
-    };
-    /**
-     * Reset the animation progress to 0.
-     */
-    Animator.prototype.reset = function () {
-        this._start = Date.now();
-    };
-    return Animator;
-})(utils.PosterClass);
-exports.Animator = Animator;
-
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/animator.js","/")
-},{"./utils":40,"1YiZ5S":4,"buffer":1}],7:[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var utils = require('./utils');
-var config_mod = require('./config');
-var config = config_mod.config;
-/**
- * HTML canvas with drawing convinience functions.
- */
-var Canvas = (function (_super) {
-    __extends(Canvas, _super);
-    function Canvas() {
-        this._rendered_region = [null, null, null, null]; // x1,y1,x2,y2
-        _super.call(this);
-        this._layout();
-        this._last_set_options = {};
-        this._text_size_cache = {};
-        this._text_size_array = [];
-        this._text_size_cache_size = 1000;
-        // Set default size.
-        this.width = 400;
-        this.height = 300;
-    }
-    Object.defineProperty(Canvas.prototype, "height", {
-        /**
-         * Height of the canvas
-         * @return {float}
-         */
-        get: function () {
-            return this._canvas.height / 2;
-        },
-        set: function (value) {
-            this._canvas.setAttribute('height', value * 2);
-            // Stretch the image for retina support.
-            this.scale(2, 2);
-            this._touch();
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(Canvas.prototype, "width", {
-        /**
-         * Width of the canvas
-         * @return {float}
-         */
-        get: function () {
-            return this._canvas.width / 2;
-        },
-        set: function (value) {
-            this._canvas.setAttribute('width', value * 2);
-            // Stretch the image for retina support.
-            this.scale(2, 2);
-            this._touch();
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(Canvas.prototype, "rendered_region", {
-        /**
-         * Region of the canvas that has been rendered to
-         * @return {dictionary} dictionary describing a rectangle {x,y,width,height}
-         *                      null if canvas has changed since last check
-         */
-        get: function () {
-            return this.get_rendered_region(true);
-        },
-        enumerable: true,
-        configurable: true
-    });
-    /**
-     * Layout the elements for the canvas.
-     * Creates `this.el`
-     */
-    Canvas.prototype._layout = function () {
-        this._canvas = document.createElement('canvas');
-        this._canvas.setAttribute('class', 'poster hidden-canvas');
-        this.context = this._canvas.getContext('2d');
-        // Stretch the image for retina support.
-        this.scale(2, 2);
-    };
-    /**
-     * Gets the region of the canvas that has been rendered to.
-     * @param  {boolean} (optional) reset - resets the region.
-     */
-    Canvas.prototype.get_rendered_region = function (reset) {
-        var rendered_region = this._rendered_region;
-        if (rendered_region[0] === null)
-            return null;
-        if (reset)
-            this._rendered_region = [null, null, null, null];
-        return {
-            x: this._tx(rendered_region[0], true),
-            y: this._ty(rendered_region[1], true),
-            width: (this._tx(rendered_region[2]) - this._tx(rendered_region[0])),
-            height: (this._ty(rendered_region[3]) - this._ty(rendered_region[1])),
-        };
-    };
-    /**
-     * Erases the cached rendering options.
-     *
-     * This should be called if a font is not rendering properly.  A font may not
-     * render properly if it was was used within Poster before it was loaded by the
-     * browser. i.e. If font 'FontA' is used within Poster, but hasn't been loaded
-     * yet by the browser, Poster will use a temporary font instead of 'FontA'.
-     * Because Poster is unaware of when fonts are loaded (TODO attempt to fix this)
-     * by the browser, once 'FontA' is actually loaded, the temporary font will
-     * continue to be used.  Clearing the cache makes Poster attempt to reload that
-     * font.
-     */
-    Canvas.prototype.erase_options_cache = function () {
-        this._last_set_options = {};
-    };
-    /**
-     * Draws a rectangle
-     * @param  {float} x
-     * @param  {float} y
-     * @param  {float} width
-     * @param  {float} height
-     * @param  {dictionary} options, see _apply_options() for details
-     */
-    Canvas.prototype.draw_rectangle = function (x, y, width, height, options) {
-        var tx = this._tx(x);
-        var ty = this._ty(y);
-        this.context.beginPath();
-        this.context.rect(tx, ty, width, height);
-        this._do_draw(options);
-        this._touch(tx, ty, tx + width, ty + height);
-    };
-    /**
-     * Draws a circle
-     * @param  {float} x
-     * @param  {float} y
-     * @param  {float} r
-     * @param  {dictionary} options, see _apply_options() for details
-     */
-    Canvas.prototype.draw_circle = function (x, y, r, options) {
-        var tx = this._tx(x);
-        var ty = this._ty(y);
-        this.context.beginPath();
-        this.context.arc(tx, ty, r, 0, 2 * Math.PI);
-        this._do_draw(options);
-        this._touch(tx - r, ty - r, tx + r, ty + r);
-    };
-    /**
-     * Draws an image
-     * @param  {img element} img
-     * @param  {float} x
-     * @param  {float} y
-     * @param  {float} (optional) width
-     * @param  {float} (optional) height
-     * @param  {object} (optional) clip_bounds - Where to clip from the source.
-     */
-    Canvas.prototype.draw_image = function (img, x, y, width, height, clip_bounds) {
-        var tx = this._tx(x);
-        var ty = this._ty(y);
-        width = width || img.width;
-        height = height || img.height;
-        img = img._canvas ? img._canvas : img;
-        if (clip_bounds) {
-            // Horizontally offset the image operation by one pixel along each 
-            // border to eliminate the strange white l&r border artifacts.
-            var hoffset = 1;
-            this.context.drawImage(img, (this._tx(clip_bounds.x) - hoffset) * 2, this._ty(clip_bounds.y) * 2, (clip_bounds.width + 2 * hoffset) * 2, clip_bounds.height * 2, tx - hoffset, ty, width + 2 * hoffset, height);
-        }
-        else {
-            this.context.drawImage(img, tx, ty, width, height);
-        }
-        this._touch(tx, ty, tx + width, ty + height);
-    };
-    /**
-     * Draws a line
-     * @param  {float} x1
-     * @param  {float} y1
-     * @param  {float} x2
-     * @param  {float} y2
-     * @param  {dictionary} options, see _apply_options() for details
-     */
-    Canvas.prototype.draw_line = function (x1, y1, x2, y2, options) {
-        var tx1 = this._tx(x1);
-        var ty1 = this._ty(y1);
-        var tx2 = this._tx(x2);
-        var ty2 = this._ty(y2);
-        this.context.beginPath();
-        this.context.moveTo(tx1, ty1);
-        this.context.lineTo(tx2, ty2);
-        this._do_draw(options);
-        this._touch(tx1, ty1, tx2, ty2);
-    };
-    /**
-     * Draws a poly line
-     * @param  {array} points - array of points.  Each point is
-     *                          an array itself, of the form [x, y]
-     *                          where x and y are floating point
-     *                          values.
-     * @param  {dictionary} options, see _apply_options() for details
-     */
-    Canvas.prototype.draw_polyline = function (points, options) {
-        if (points.length < 2) {
-            throw new Error('Poly line must have atleast two points.');
-        }
-        else {
-            this.context.beginPath();
-            var point = points[0];
-            this.context.moveTo(this._tx(point[0]), this._ty(point[1]));
-            var minx = this.width;
-            var miny = this.height;
-            var maxx = 0;
-            var maxy = 0;
-            for (var i = 1; i < points.length; i++) {
-                point = points[i];
-                var tx = this._tx(point[0]);
-                var ty = this._ty(point[1]);
-                this.context.lineTo(tx, ty);
-                minx = Math.min(tx, minx);
-                miny = Math.min(ty, miny);
-                maxx = Math.max(tx, maxx);
-                maxy = Math.max(ty, maxy);
-            }
-            this._do_draw(options);
-            this._touch(minx, miny, maxx, maxy);
-        }
-    };
-    /**
-     * Draws a text string
-     * @param  {float} x
-     * @param  {float} y
-     * @param  {string} text string or callback that resolves to a string.
-     * @param  {dictionary} options, see _apply_options() for details
-     */
-    Canvas.prototype.draw_text = function (x, y, text, options) {
-        var tx = this._tx(x);
-        var ty = this._ty(y);
-        text = this._process_tabs(text);
-        options = this._apply_options(options);
-        // 'fill' the text by default when neither a stroke or fill 
-        // is defined.  Otherwise only fill if a fill is defined.
-        if (options.fill || !options.stroke) {
-            this.context.fillText(text, tx, ty);
-        }
-        // Only stroke if a stroke is defined.
-        if (options.stroke) {
-            this.context.strokeText(text, tx, ty);
-        }
-        // Mark the region as dirty.
-        var width = this.measure_text(text, options);
-        var height = this._font_height;
-        this._touch(tx, ty, tx + width, ty + height);
-    };
-    /**
-     * Get's a chunk of the canvas as a raw image.
-     * @param  {float} (optional) x
-     * @param  {float} (optional) y
-     * @param  {float} (optional) width
-     * @param  {float} (optional) height
-     * @return {image} canvas image data
-     */
-    Canvas.prototype.get_raw_image = function (x, y, width, height) {
-        console.warn('get_raw_image image is slow, use canvas references instead with draw_image');
-        if (x === undefined) {
-            x = 0;
-        }
-        else {
-            x = this._tx(x);
-        }
-        if (y === undefined) {
-            y = 0;
-        }
-        else {
-            y = this._ty(y);
-        }
-        if (width === undefined)
-            width = this.width;
-        if (height === undefined)
-            height = this.height;
-        // Multiply by two for pixel doubling.
-        x = 2 * x;
-        y = 2 * y;
-        width = 2 * width;
-        height = 2 * height;
-        // Update the cached image if it's not the requested one.
-        var region = [x, y, width, height];
-        if (!(this._cached_timestamp === this._modified && utils.compare_arrays(region, this._cached_region))) {
-            this._cached_image = this.context.getImageData(x, y, width, height);
-            this._cached_timestamp = this._modified;
-            this._cached_region = region;
-        }
-        // Return the cached image.
-        return this._cached_image;
-    };
-    /**
-     * Put's a raw image on the canvas somewhere.
-     * @param  {float} x
-     * @param  {float} y
-     * @return {image} canvas image data
-     */
-    Canvas.prototype.put_raw_image = function (img, x, y) {
-        console.warn('put_raw_image image is slow, use draw_image instead');
-        var tx = this._tx(x);
-        var ty = this._ty(y);
-        // Multiply by two for pixel doubling.
-        var ret = this.context.putImageData(img, tx * 2, ty * 2);
-        this._touch(tx, ty, this.width, this.height); // Don't know size of image
-        return ret;
-    };
-    /**
-     * Measures the width of a text string.
-     * @param  {string} text
-     * @param  {dictionary} options, see _apply_options() for details
-     * @return {float} width
-     */
-    Canvas.prototype.measure_text = function (text, options) {
-        options = this._apply_options(options);
-        text = this._process_tabs(text);
-        // Cache the size if it's not already cached.
-        if (this._text_size_cache[text] === undefined) {
-            this._text_size_cache[text] = this.context.measureText(text).width;
-            this._text_size_array.push(text);
-            while (this._text_size_array.length > this._text_size_cache_size) {
-                var oldest = this._text_size_array.shift();
-                delete this._text_size_cache[oldest];
-            }
-        }
-        // Use the cached size.
-        return this._text_size_cache[text];
-    };
-    /**
-     * Create a linear gradient
-     * @param  {float} x1
-     * @param  {float} y1
-     * @param  {float} x2
-     * @param  {float} y2
-     * @param  {array} color_stops - array of [float, color] pairs
-     */
-    Canvas.prototype.gradient = function (x1, y1, x2, y2, color_stops) {
-        var gradient = this.context.createLinearGradient(x1, y1, x2, y2);
-        for (var i = 0; i < color_stops.length; i++) {
-            gradient.addColorStop(color_stops[i][0], color_stops[i][1]);
-        }
-        return gradient;
-    };
-    /**
-     * Clear's the canvas.
-     * @param  {object} (optional) region, {x,y,width,height}
-     */
-    Canvas.prototype.clear = function (region) {
-        if (region) {
-            var tx = this._tx(region.x);
-            var ty = this._ty(region.y);
-            this.context.clearRect(tx, ty, region.width, region.height);
-            this._touch(tx, ty, tx + region.width, ty + region.height);
-        }
-        else {
-            this.context.clearRect(0, 0, this.width, this.height);
-            this._touch();
-        }
-    };
-    /**
-     * Scale the current drawing.
-     * @param  {float} x
-     * @param  {float} y
-     */
-    Canvas.prototype.scale = function (x, y) {
-        this.context.scale(x, y);
-        this._touch();
-    };
-    /**
-     * Finishes the drawing operation using the set of provided options.
-     * @param  {dictionary} (optional) dictionary that
-     *  resolves to a dictionary.
-     */
-    Canvas.prototype._do_draw = function (options) {
-        options = this._apply_options(options);
-        // Only fill if a fill is defined.
-        if (options.fill) {
-            this.context.fill();
-        }
-        // Stroke by default, if no stroke or fill is defined.  Otherwise
-        // only stroke if a stroke is defined.
-        if (options.stroke || !options.fill) {
-            this.context.stroke();
-        }
-    };
-    /**
-     * Applies a dictionary of drawing options to the pen.
-     * @param  {dictionary} options
-     *      alpha {float} Opacity (0-1)
-     *      composite_operation {string} How new images are
-     *          drawn onto an existing image.  Possible values
-     *          are `source-over`, `source-atop`, `source-in`,
-     *          `source-out`, `destination-over`,
-     *          `destination-atop`, `destination-in`,
-     *          `destination-out`, `lighter`, `copy`, or `xor`.
-     *      line_cap {string} End cap style for lines.
-     *          Possible values are 'butt', 'round', or 'square'.
-     *      line_join {string} How to render where two lines
-     *          meet.  Possible values are 'bevel', 'round', or
-     *          'miter'.
-     *      line_width {float} How thick lines are.
-     *      line_miter_limit {float} Max length of miters.
-     *      line_color {string} Color of the line.
-     *      fill_color {string} Color to fill the shape.
-     *      color {string} Color to stroke and fill the shape.
-     *          Lower priority to line_color and fill_color.
-     *      font_style {string}
-     *      font_variant {string}
-     *      font_weight {string}
-     *      font_size {string}
-     *      font_family {string}
-     *      text_align {string} Horizontal alignment of text.
-     *          Possible values are `start`, `end`, `center`,
-     *          `left`, or `right`.
-     *      text_baseline {string} Vertical alignment of text.
-     *          Possible values are `alphabetic`, `top`,
-     *          `hanging`, `middle`, `ideographic`, or
-     *          `bottom`.
-     * @return {dictionary} options, resolved.
-     */
-    Canvas.prototype._apply_options = function (options) {
-        options = options || {};
-        options = utils.resolve_callable(options);
-        // Special options.
-        var set_options = {};
-        set_options.globalAlpha = (options.alpha === undefined ? 1.0 : options.alpha);
-        set_options.globalCompositeOperation = options.composite_operation || 'source-over';
-        // Line style.
-        set_options.lineCap = options.line_cap || 'butt';
-        set_options.lineJoin = options.line_join || 'bevel';
-        set_options.lineWidth = options.line_width === undefined ? 1.0 : options.line_width;
-        set_options.miterLimit = options.line_miter_limit === undefined ? 10 : options.line_miter_limit;
-        this.context.strokeStyle = options.line_color || options.color || 'black'; // TODO: Support gradient
-        options.stroke = (options.line_color !== undefined || options.line_width !== undefined);
-        // Fill style.
-        this.context.fillStyle = options.fill_color || options.color || 'red'; // TODO: Support gradient
-        options.fill = options.fill_color !== undefined;
-        // Font style.
-        var pixels = function (x) {
-            if (x !== undefined && x !== null) {
-                if (!isNaN(x)) {
-                    return String(x) + 'px';
-                }
-                else {
-                    return x;
-                }
-            }
-            else {
-                return null;
-            }
-        };
-        var font_style = options.font_style || '';
-        var font_variant = options.font_variant || '';
-        var font_weight = options.font_weight || '';
-        this._font_height = options.font_size || 12;
-        var font_size = pixels(this._font_height);
-        var font_family = options.font_family || 'Arial';
-        var font = font_style + ' ' + font_variant + ' ' + font_weight + ' ' + font_size + ' ' + font_family;
-        set_options.font = font;
-        // Text style.
-        set_options.textAlign = options.text_align || 'left';
-        set_options.textBaseline = options.text_baseline || 'top';
-        // TODO: Support shadows.
-        // Empty the measure text cache if the font is changed.
-        if (set_options.font !== this._last_set_options.font) {
-            this._text_size_cache = {};
-            this._text_size_array = [];
-        }
-        for (var key in set_options) {
-            if (set_options.hasOwnProperty(key)) {
-                if (this._last_set_options[key] !== set_options[key]) {
-                    this._last_set_options[key] = set_options[key];
-                    this.context[key] = set_options[key];
-                }
-            }
-        }
-        return options;
-    };
-    /**
-     * Update the timestamp that the canvas was modified and
-     * the region that has contents rendered to it.
-     */
-    Canvas.prototype._touch = function (x1, y1, x2, y2) {
-        this._modified = Date.now();
-        var all_undefined = (x1 === undefined && y1 === undefined && x2 === undefined && y2 === undefined);
-        var one_nan = (isNaN(x1 * x2 * y1 * y2));
-        if (one_nan || all_undefined) {
-            this._rendered_region = [0, 0, this.width, this.height];
-            return;
-        }
-        // Set the render region.
-        var comparitor = function (old_value, new_value, comparison) {
-            if (old_value === null || old_value === undefined || new_value === null || new_value === undefined) {
-                return new_value;
-            }
-            else {
-                return comparison.call(undefined, old_value, new_value);
-            }
-        };
-        this._rendered_region[0] = comparitor(this._rendered_region[0], comparitor(x1, x2, Math.min), Math.min);
-        this._rendered_region[1] = comparitor(this._rendered_region[1], comparitor(y1, y2, Math.min), Math.min);
-        this._rendered_region[2] = comparitor(this._rendered_region[2], comparitor(x1, x2, Math.max), Math.max);
-        this._rendered_region[3] = comparitor(this._rendered_region[3], comparitor(y1, y2, Math.max), Math.max);
-    };
-    /**
-     * Transform an x value before rendering.
-     * @param  {float} x
-     * @param  {boolean} inverse - perform inverse transformation
-     * @return {float}
-     */
-    Canvas.prototype._tx = function (x, inverse) {
-        return x;
-    };
-    /**
-     * Transform a y value before rendering.
-     * @param  {float} y
-     * @param  {boolean} inverse - perform inverse transformation
-     * @return {float}
-     */
-    Canvas.prototype._ty = function (y, inverse) {
-        return y;
-    };
-    /**
-     * Convert tab characters to the config defined number of space
-     * characters for rendering.
-     * @param  {string} s - input string
-     * @return {string} output string
-     */
-    Canvas.prototype._process_tabs = function (s) {
-        var space_tab = '';
-        for (var i = 0; i < (config.tab_width || 1); i++) {
-            space_tab += ' ';
-        }
-        return s.replace(/\t/g, space_tab);
-    };
-    return Canvas;
-})(utils.PosterClass);
-exports.Canvas = Canvas;
-
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/canvas.js","/")
-},{"./config":9,"./utils":40,"1YiZ5S":4,"buffer":1}],8:[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-var utils = require('./utils');
+var utils = require('../utils/utils');
 /**
  * Eventful clipboard support
  *
@@ -2679,17 +2097,17 @@ var Clipboard = (function (_super) {
         // Create a textbox that's hidden.
         this.hidden_input = document.createElement('textarea');
         this.hidden_input.setAttribute('class', 'poster hidden-clipboard');
-        this.hidden_input.setAttribute('x-palm-disable-auto-cap', true);
+        this.hidden_input.setAttribute('x-palm-disable-auto-cap', 'true');
         this.hidden_input.setAttribute('wrap', 'off');
         this.hidden_input.setAttribute('autocorrect', 'off');
         this.hidden_input.setAttribute('autocapitalize', 'off');
-        this.hidden_input.setAttribute('spellcheck', false);
+        this.hidden_input.setAttribute('spellcheck', 'false');
         el.appendChild(this.hidden_input);
         this._bind_events();
     }
     /**
      * Set what will be copied when the user copies.
-     * @param {string} text
+     * @param text
      */
     Clipboard.prototype.set_clippable = function (text) {
         this._clippable = text;
@@ -2698,15 +2116,14 @@ var Clipboard = (function (_super) {
     };
     /**
      * Move the textarea to a point.
-     * @param {number} x
-     * @param {number} y
+     * @param x
+     * @param y
      */
     Clipboard.prototype.set_position = function (x, y) {
         this.hidden_input.setAttribute('style', 'left: ' + String(x) + 'px; top: ' + String(y) + 'px;');
     };
     /**
      * Focus the hidden text area.
-     * @return {null}
      */
     Clipboard.prototype._focus = function () {
         this.hidden_input.focus();
@@ -2714,7 +2131,6 @@ var Clipboard = (function (_super) {
     };
     /**
      * Handle when the user pastes into the textbox.
-     * @return {null}
      */
     Clipboard.prototype._handle_paste = function (e) {
         var pasted = e.clipboardData.getData(e.clipboardData.types[0]);
@@ -2723,7 +2139,6 @@ var Clipboard = (function (_super) {
     };
     /**
      * Bind events of the hidden textbox.
-     * @return {null}
      */
     Clipboard.prototype._bind_events = function () {
         var _this = this;
@@ -2757,26 +2172,8 @@ var Clipboard = (function (_super) {
 })(utils.PosterClass);
 exports.Clipboard = Clipboard;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/clipboard.js","/")
-},{"./utils":40,"1YiZ5S":4,"buffer":1}],9:[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var utils = require('./utils');
-exports.config = new utils.PosterClass([
-    'highlight_draw',
-    'highlight_blit',
-    'newline_width',
-    'tab_width',
-    'use_spaces',
-    'history_group_delay',
-]);
-// Set defaults
-exports.config.tab_width = 4;
-exports.config.use_spaces = true;
-exports.config.history_group_delay = 100;
-
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/config.js","/")
-},{"./utils":40,"1YiZ5S":4,"buffer":1}],10:[function(require,module,exports){
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/clipboard.js","/control")
+},{"../utils/utils":40,"1YiZ5S":4,"buffer":1}],7:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -2785,11 +2182,12 @@ var __extends = this.__extends || function (d, b) {
     d.prototype = new __();
 };
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var keymap = require('./events/map');
+var keymap = require('./map');
 var register = keymap.Map.register;
-var utils = require('./utils');
-var config_mod = require('./config');
+var utils = require('../utils/utils');
+var config_mod = require('../utils/config');
 var config = config_mod.config;
+;
 /**
  * Input cursor.
  */
@@ -2851,7 +2249,6 @@ var Cursor = (function (_super) {
     };
     /**
      * Gets the state of the cursor.
-     * @return {object} state
      */
     Cursor.prototype.get_state = function () {
         return {
@@ -2864,8 +2261,8 @@ var Cursor = (function (_super) {
     };
     /**
      * Sets the state of the cursor.
-     * @param {object} state
-     * @param {boolean} [historical] - Defaults to true.  Whether this should be recorded in history.
+     * @param state
+     * @param [historical] - Defaults to true.  Whether this should be recorded in history.
      */
     Cursor.prototype.set_state = function (state, historical) {
         if (state) {
@@ -2884,12 +2281,11 @@ var Cursor = (function (_super) {
     };
     /**
      * Moves the primary cursor a given offset.
-     * @param  {integer} x
-     * @param  {integer} y
-     * @param  {boolean} (optional) hop=false - hop to the other side of the
+     * @param  x
+     * @param  y
+     * @param  (optional) hop=false - hop to the other side of the
      *                   selected region if the primary is on the opposite of the
      *                   direction of motion.
-     * @return {null}
      */
     Cursor.prototype.move_primary = function (x, y, hop) {
         if (hop) {
@@ -2959,8 +2355,6 @@ var Cursor = (function (_super) {
     };
     /**
      * Walk the primary cursor in a direction until a not-text character is found.
-     * @param  {integer} direction
-     * @return {null}
      */
     Cursor.prototype.word_primary = function (direction) {
         // Make sure direction is 1 or -1.
@@ -3006,7 +2400,6 @@ var Cursor = (function (_super) {
     };
     /**
      * Select all of the text.
-     * @return {null}
      */
     Cursor.prototype.select_all = function () {
         this.primary_row = this._model._rows.length - 1;
@@ -3017,7 +2410,6 @@ var Cursor = (function (_super) {
     };
     /**
      * Move the primary cursor to the line end.
-     * @return {null}
      */
     Cursor.prototype.primary_goto_end = function () {
         // Get the start of the actual content, skipping the whitespace.
@@ -3035,7 +2427,6 @@ var Cursor = (function (_super) {
     };
     /**
      * Move the primary cursor to the line start.
-     * @return {null}
      */
     Cursor.prototype.primary_goto_start = function () {
         // Get the start of the actual content, skipping the whitespace.
@@ -3052,8 +2443,6 @@ var Cursor = (function (_super) {
     };
     /**
      * Selects a word at the given location.
-     * @param {integer} row_index
-     * @param {integer} char_index
      */
     Cursor.prototype.select_word = function (row_index, char_index) {
         this.set_both(row_index, char_index);
@@ -3063,8 +2452,6 @@ var Cursor = (function (_super) {
     };
     /**
      * Set the primary cursor position
-     * @param {integer} row_index
-     * @param {integer} char_index
      */
     Cursor.prototype.set_primary = function (row_index, char_index) {
         this.primary_row = row_index;
@@ -3076,8 +2463,6 @@ var Cursor = (function (_super) {
     };
     /**
      * Set the secondary cursor position
-     * @param {integer} row_index
-     * @param {integer} char_index
      */
     Cursor.prototype.set_secondary = function (row_index, char_index) {
         this.secondary_row = row_index;
@@ -3086,8 +2471,6 @@ var Cursor = (function (_super) {
     };
     /**
      * Sets both the primary and secondary cursor positions
-     * @param {integer} row_index
-     * @param {integer} char_index
      */
     Cursor.prototype.set_both = function (row_index, char_index) {
         this.primary_row = row_index;
@@ -3101,15 +2484,16 @@ var Cursor = (function (_super) {
     };
     /**
      * Handles when a key is pressed.
-     * @param  {Event} e - original key press event.
-     * @return {null}
+     * @param  e - original event.
+     * @return was the event handled.
      */
     Cursor.prototype.keypress = function (e) {
+        var _this = this;
         var char_code = e.which || e.keyCode;
         var char_typed = String.fromCharCode(char_code);
         this.remove_selected();
         this._historical(function () {
-            this._model_add_text(this.primary_row, this.primary_char, char_typed);
+            _this._model_add_text(_this.primary_row, _this.primary_char, char_typed);
         });
         this.move_primary(1, 0);
         this._reset_secondary();
@@ -3117,18 +2501,19 @@ var Cursor = (function (_super) {
     };
     /**
      * Indent
-     * @param  {Event} e - original key press event.
-     * @return {null}
+     * @param  e - original event.
+     * @return was the event handled.
      */
     Cursor.prototype.indent = function (e) {
+        var _this = this;
         var indent = this._make_indents()[0];
         this._historical(function () {
-            if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
-                this._model_add_text(this.primary_row, this.primary_char, indent);
+            if (_this.primary_row == _this.secondary_row && _this.primary_char == _this.secondary_char) {
+                _this._model_add_text(_this.primary_row, _this.primary_char, indent);
             }
             else {
-                for (var row = this.start_row; row <= this.end_row; row++) {
-                    this._model_add_text(row, 0, indent);
+                for (var row = _this.start_row; row <= _this.end_row; row++) {
+                    _this._model_add_text(row, 0, indent);
                 }
             }
         });
@@ -3140,23 +2525,24 @@ var Cursor = (function (_super) {
     };
     /**
      * Unindent
-     * @param  {Event} e - original key press event.
-     * @return {null}
+     * @param  e - original event.
+     * @return was the event handled.
      */
     Cursor.prototype.unindent = function (e) {
+        var _this = this;
         var indents = this._make_indents();
         var removed_start = 0;
         var removed_end = 0;
         // If no text is selected, remove the indent preceding the
         // cursor if it exists.
         this._historical(function () {
-            if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
+            if (_this.primary_row == _this.secondary_row && _this.primary_char == _this.secondary_char) {
                 for (var i = 0; i < indents.length; i++) {
                     var indent = indents[i];
-                    if (this.primary_char >= indent.length) {
-                        var before = this._model.get_text(this.primary_row, this.primary_char - indent.length, this.primary_row, this.primary_char);
+                    if (_this.primary_char >= indent.length) {
+                        var before = _this._model.get_text(_this.primary_row, _this.primary_char - indent.length, _this.primary_row, _this.primary_char);
                         if (before == indent) {
-                            this._model_remove_text(this.primary_row, this.primary_char - indent.length, this.primary_row, this.primary_char);
+                            _this._model_remove_text(_this.primary_row, _this.primary_char - indent.length, _this.primary_row, _this.primary_char);
                             removed_start = indent.length;
                             removed_end = indent.length;
                             break;
@@ -3165,15 +2551,15 @@ var Cursor = (function (_super) {
                 }
             }
             else {
-                for (var row = this.start_row; row <= this.end_row; row++) {
+                for (var row = _this.start_row; row <= _this.end_row; row++) {
                     for (var i = 0; i < indents.length; i++) {
                         var indent = indents[i];
-                        if (this._model._rows[row].length >= indent.length) {
-                            if (this._model._rows[row].substring(0, indent.length) == indent) {
-                                this._model_remove_text(row, 0, row, indent.length);
-                                if (row == this.start_row)
+                        if (_this._model._rows[row].length >= indent.length) {
+                            if (_this._model._rows[row].substring(0, indent.length) == indent) {
+                                _this._model_remove_text(row, 0, row, indent.length);
+                                if (row == _this.start_row)
                                     removed_start = indent.length;
-                                if (row == this.end_row)
+                                if (row == _this.end_row)
                                     removed_end = indent.length;
                                 break;
                             }
@@ -3200,9 +2586,11 @@ var Cursor = (function (_super) {
     };
     /**
      * Insert a newline
-     * @return {null}
+     * @param  e - original event.
+     * @return was the event handled.
      */
     Cursor.prototype.newline = function (e) {
+        var _this = this;
         this.remove_selected();
         // Get the blank space at the begining of the line.
         var line_text = this._model.get_text(this.primary_row, 0, this.primary_row, this.primary_char);
@@ -3213,7 +2601,7 @@ var Cursor = (function (_super) {
         }
         var indent = line_text.substring(0, left);
         this._historical(function () {
-            this._model_add_text(this.primary_row, this.primary_char, '\n' + indent);
+            _this._model_add_text(_this.primary_row, _this.primary_char, '\n' + indent);
         });
         this.primary_row += 1;
         this.primary_char = indent.length;
@@ -3223,13 +2611,14 @@ var Cursor = (function (_super) {
     };
     /**
      * Insert text
-     * @param  {string} text
-     * @return {null}
+     * @param text
+     * @return successful.
      */
     Cursor.prototype.insert_text = function (text) {
+        var _this = this;
         this.remove_selected();
         this._historical(function () {
-            this._model_add_text(this.primary_row, this.primary_char, text);
+            _this._model_add_text(_this.primary_row, _this.primary_char, text);
         });
         // Move cursor to the end.
         if (text.indexOf('\n') == -1) {
@@ -3246,13 +2635,12 @@ var Cursor = (function (_super) {
     };
     /**
      * Paste text
-     * @param  {string} text
-     * @return {null}
      */
     Cursor.prototype.paste = function (text) {
+        var _this = this;
         if (this._copied_row === text) {
             this._historical(function () {
-                this._model_add_row(this.primary_row, text);
+                _this._model_add_row(_this.primary_row, text);
             });
             this.primary_row++;
             this.secondary_row++;
@@ -3264,14 +2652,15 @@ var Cursor = (function (_super) {
     };
     /**
      * Remove the selected text
-     * @return {boolean} true if text was removed.
+     * @return true if text was removed.
      */
     Cursor.prototype.remove_selected = function () {
+        var _this = this;
         if (this.primary_row !== this.secondary_row || this.primary_char !== this.secondary_char) {
             var row_index = this.start_row;
             var char_index = this.start_char;
             this._historical(function () {
-                this._model_remove_text(this.start_row, this.start_char, this.end_row, this.end_char);
+                _this._model_remove_text(_this.start_row, _this.start_char, _this.end_row, _this.end_char);
             });
             this.primary_row = row_index;
             this.primary_char = char_index;
@@ -3283,7 +2672,7 @@ var Cursor = (function (_super) {
     };
     /**
      * Gets the selected text.
-     * @return {string} selected text
+     * @return selected text
      */
     Cursor.prototype.get = function () {
         if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
@@ -3295,7 +2684,7 @@ var Cursor = (function (_super) {
     };
     /**
      * Cuts the selected text.
-     * @return {string} selected text
+     * @return selected text
      */
     Cursor.prototype.cut = function () {
         var text = this.get();
@@ -3313,7 +2702,7 @@ var Cursor = (function (_super) {
     };
     /**
      * Copies the selected text.
-     * @return {string} selected text
+     * @return selected text
      */
     Cursor.prototype.copy = function () {
         var text = this.get();
@@ -3327,7 +2716,7 @@ var Cursor = (function (_super) {
     };
     /**
      * Delete forward, typically called by `delete` keypress.
-     * @return {null}
+     * @return success
      */
     Cursor.prototype.delete_forward = function () {
         if (!this.remove_selected()) {
@@ -3338,7 +2727,7 @@ var Cursor = (function (_super) {
     };
     /**
      * Delete backward, typically called by `backspace` keypress.
-     * @return {null}
+     * @return success
      */
     Cursor.prototype.delete_backward = function () {
         if (!this.remove_selected()) {
@@ -3349,7 +2738,7 @@ var Cursor = (function (_super) {
     };
     /**
      * Delete one word backwards.
-     * @return {boolean} success
+     * @return success
      */
     Cursor.prototype.delete_word_left = function () {
         if (!this.remove_selected()) {
@@ -3374,7 +2763,7 @@ var Cursor = (function (_super) {
     };
     /**
      * Delete one word forwards.
-     * @return {boolean} success
+     * @return success
      */
     Cursor.prototype.delete_word_right = function () {
         if (!this.remove_selected()) {
@@ -3400,7 +2789,6 @@ var Cursor = (function (_super) {
     };
     /**
      * Reset the secondary cursor to the value of the primary.
-     * @return {[type]} [description]
      */
     Cursor.prototype._reset_secondary = function () {
         this.secondary_row = this.primary_row;
@@ -3409,9 +2797,6 @@ var Cursor = (function (_super) {
     };
     /**
      * Adds text to the model while keeping track of the history.
-     * @param  {integer} row_index
-     * @param  {integer} char_index
-     * @param  {string} text
      */
     Cursor.prototype._model_add_text = function (row_index, char_index, text) {
         var lines = text.split('\n');
@@ -3420,10 +2805,6 @@ var Cursor = (function (_super) {
     };
     /**
      * Removes text from the model while keeping track of the history.
-     * @param  {integer} start_row
-     * @param  {integer} start_char
-     * @param  {integer} end_row
-     * @param  {integer} end_char
      */
     Cursor.prototype._model_remove_text = function (start_row, start_char, end_row, end_char) {
         var text = this._model.get_text(start_row, start_char, end_row, end_char);
@@ -3432,8 +2813,6 @@ var Cursor = (function (_super) {
     };
     /**
      * Adds a row of text while keeping track of the history.
-     * @param  {integer} row_index
-     * @param  {string} text
      */
     Cursor.prototype._model_add_row = function (row_index, text) {
         this._push_history('_model_add_row', [row_index, text], '_model_remove_row', [row_index], config.history_group_delay || 100);
@@ -3441,7 +2820,6 @@ var Cursor = (function (_super) {
     };
     /**
      * Removes a row of text while keeping track of the history.
-     * @param  {integer} row_index
      */
     Cursor.prototype._model_remove_row = function (row_index) {
         this._push_history('_model_remove_row', [row_index], '_model_add_row', [row_index, this._model._rows[row_index]], config.history_group_delay || 100);
@@ -3449,7 +2827,7 @@ var Cursor = (function (_super) {
     };
     /**
      * Record the before and after positions of the cursor for history.
-     * @param  {function} f - executes with `this` context
+     * @param  f - executes with `this` context
      */
     Cursor.prototype._historical = function (f) {
         this._start_historical_move();
@@ -3476,7 +2854,6 @@ var Cursor = (function (_super) {
     /**
      * Makes a list of indentation strings used to indent one level,
      * ordered by usage preference.
-     * @return {string}
      */
     Cursor.prototype._make_indents = function () {
         var indents = [];
@@ -3493,7 +2870,6 @@ var Cursor = (function (_super) {
     };
     /**
      * Registers an action API with the map
-     * @return {null}
      */
     Cursor.prototype._register_api = function () {
         var _this = this;
@@ -3586,8 +2962,8 @@ var Cursor = (function (_super) {
 })(utils.PosterClass);
 exports.Cursor = Cursor;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/cursor.js","/")
-},{"./config":9,"./events/map":16,"./utils":40,"1YiZ5S":4,"buffer":1}],11:[function(require,module,exports){
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/cursor.js","/control")
+},{"../utils/config":38,"../utils/utils":40,"./map":11,"1YiZ5S":4,"buffer":1}],8:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -3596,10 +2972,10 @@ var __extends = this.__extends || function (d, b) {
     d.prototype = new __();
 };
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var keymap = require('./events/map');
+var keymap = require('./map');
 var register = keymap.Map.register;
 var cursor = require('./cursor');
-var utils = require('./utils');
+var utils = require('../utils/utils');
 /**
  * Manages one or more cursors
  */
@@ -3612,7 +2988,6 @@ var Cursors = (function (_super) {
         this.cursors = [];
         this._selecting_text = false;
         this._clipboard = clipboard;
-        this._active_cursor = null;
         this._history = history;
         // Create initial cursor.
         this.create(undefined, false);
@@ -3632,28 +3007,15 @@ var Cursors = (function (_super) {
         this._clipboard.on('paste', utils.proxy(this._handle_paste, this));
     }
     /**
-     * Handles history proxy events for individual cursors.
-     * @param  {integer} cursor_index
-     * @param  {string} function_name
-     * @param  {array} function_params
-     */
-    Cursors.prototype._cursor_proxy = function (cursor_index, function_name, function_params) {
-        if (cursor_index < this.cursors.length) {
-            var cursor = this.cursors[cursor_index];
-            cursor[function_name].apply(cursor, function_params);
-        }
-    };
-    /**
      * Creates a cursor and manages it.
-     * @param {object} [state] state to apply to the new cursor.
-     * @param {boolean} [reversable] - defaults to true, is action reversable.
-     * @return {Cursor} cursor
+     * @param [state] state to apply to the new cursor.
+     * @param [reversable] - defaults to true, is action reversable.
      */
     Cursors.prototype.create = function (state, reversable) {
         var _this = this;
         // Record this action in history.
         if (reversable === undefined || reversable === true) {
-            this._history.push_action('cursors.create', arguments, 'cursors.pop', []);
+            this._history.push_action('cursors.create', utils.args(arguments), 'cursors.pop', []);
         }
         // Create a proxying history method for the cursor itself.
         var index = this.cursors.length;
@@ -3664,7 +3026,8 @@ var Cursors = (function (_super) {
         var new_cursor = new cursor.Cursor(this._model, history_proxy);
         this.cursors.push(new_cursor);
         // Set the initial properties of the cursor.
-        new_cursor.set_state(state, false);
+        if (state)
+            new_cursor.set_state(state, false);
         // Listen for cursor change events.
         new_cursor.on('change', function () {
             _this.trigger('change', new_cursor);
@@ -3683,7 +3046,7 @@ var Cursors = (function (_super) {
     };
     /**
      * Remove the last cursor.
-     * @returns {Cursor} last cursor or null
+     * @returns last cursor or null
      */
     Cursors.prototype.pop = function () {
         if (this.cursors.length > 1) {
@@ -3700,25 +3063,86 @@ var Cursors = (function (_super) {
         return null;
     };
     /**
+     * Starts selecting text from mouse coordinates.
+     * @param e - mouse event containing the coordinates.
+     */
+    Cursors.prototype.start_selection = function (e) {
+        var x = e.offsetX;
+        var y = e.offsetY;
+        this._selecting_text = true;
+        if (this.get_row_char) {
+            var location = this.get_row_char(x, y);
+            this.cursors[0].set_both(location.row_index, location.char_index);
+        }
+    };
+    /**
+     * Finalizes the selection of text.
+     */
+    Cursors.prototype.end_selection = function () {
+        this._selecting_text = false;
+    };
+    /**
+     * Sets the endpoint of text selection from mouse coordinates.
+     * @param  e - mouse event containing the coordinates.
+     */
+    Cursors.prototype.set_selection = function (e) {
+        var x = e.offsetX;
+        var y = e.offsetY;
+        if (this._selecting_text && this.get_row_char) {
+            var location = this.get_row_char(x, y);
+            this.cursors[this.cursors.length - 1].set_primary(location.row_index, location.char_index);
+        }
+    };
+    /**
+     * Sets the endpoint of text selection from mouse coordinates.
+     * Different than set_selection because it doesn't need a call
+     * to start_selection to work.
+     * @param e - mouse event containing the coordinates.
+     */
+    Cursors.prototype.start_set_selection = function (e) {
+        this._selecting_text = true;
+        this.set_selection(e);
+    };
+    /**
+     * Selects a word at the given mouse coordinates.
+     * @param e - mouse event containing the coordinates.
+     */
+    Cursors.prototype.select_word = function (e) {
+        var x = e.offsetX;
+        var y = e.offsetY;
+        if (this.get_row_char) {
+            var location = this.get_row_char(x, y);
+            this.cursors[this.cursors.length - 1].select_word(location.row_index, location.char_index);
+        }
+    };
+    /**
+     * Handles history proxy events for individual cursors.
+     * @param cursor_index
+     * @param function_name
+     * @param function_params
+     */
+    Cursors.prototype._cursor_proxy = function (cursor_index, function_name, function_params) {
+        if (cursor_index < this.cursors.length) {
+            var cursor = this.cursors[cursor_index];
+            cursor[function_name].apply(cursor, function_params);
+        }
+    };
+    /**
      * Handles when the selected text is copied to the clipboard.
-     * @param  {string} text - by val text that was cut
-     * @return {null}
+     * @param text - by val text that was cut
      */
     Cursors.prototype._handle_copy = function (text) {
         this.cursors.forEach(function (cursor) { return cursor.copy(); });
     };
     /**
      * Handles when the selected text is cut to the clipboard.
-     * @param  {string} text - by val text that was cut
-     * @return {null}
+     * @param text - by val text that was cut
      */
     Cursors.prototype._handle_cut = function (text) {
         this.cursors.forEach(function (cursor) { return cursor.cut(); });
     };
     /**
      * Handles when text is pasted into the document.
-     * @param  {string} text
-     * @return {null}
      */
     Cursors.prototype._handle_paste = function (text) {
         // If the modulus of the number of cursors and the number of pasted lines
@@ -3736,7 +3160,6 @@ var Cursors = (function (_super) {
     };
     /**
      * Update the clippable text based on new selection.
-     * @return {null}
      */
     Cursors.prototype._update_selection = function () {
         // Copy all of the selected text.
@@ -3745,627 +3168,13 @@ var Cursors = (function (_super) {
         // Make the copied text clippable.
         this._clipboard.set_clippable(selections.join('\n'));
     };
-    /**
-     * Starts selecting text from mouse coordinates.
-     * @param  {MouseEvent} e - mouse event containing the coordinates.
-     * @return {null}
-     */
-    Cursors.prototype.start_selection = function (e) {
-        var x = e.offsetX;
-        var y = e.offsetY;
-        this._selecting_text = true;
-        if (this.get_row_char) {
-            var location = this.get_row_char(x, y);
-            this.cursors[0].set_both(location.row_index, location.char_index);
-        }
-    };
-    /**
-     * Finalizes the selection of text.
-     * @return {null}
-     */
-    Cursors.prototype.end_selection = function () {
-        this._selecting_text = false;
-    };
-    /**
-     * Sets the endpoint of text selection from mouse coordinates.
-     * @param  {MouseEvent} e - mouse event containing the coordinates.
-     * @return {null}
-     */
-    Cursors.prototype.set_selection = function (e) {
-        var x = e.offsetX;
-        var y = e.offsetY;
-        if (this._selecting_text && this.get_row_char) {
-            var location = this.get_row_char(x, y);
-            this.cursors[this.cursors.length - 1].set_primary(location.row_index, location.char_index);
-        }
-    };
-    /**
-     * Sets the endpoint of text selection from mouse coordinates.
-     * Different than set_selection because it doesn't need a call
-     * to start_selection to work.
-     * @param  {MouseEvent} e - mouse event containing the coordinates.
-     * @return {null}
-     */
-    Cursors.prototype.start_set_selection = function (e) {
-        this._selecting_text = true;
-        this.set_selection(e);
-    };
-    /**
-     * Selects a word at the given mouse coordinates.
-     * @param  {MouseEvent} e - mouse event containing the coordinates.
-     * @return {null}
-     */
-    Cursors.prototype.select_word = function (e) {
-        var x = e.offsetX;
-        var y = e.offsetY;
-        if (this.get_row_char) {
-            var location = this.get_row_char(x, y);
-            this.cursors[this.cursors.length - 1].select_word(location.row_index, location.char_index);
-        }
-    };
     return Cursors;
 })(utils.PosterClass);
 exports.Cursors = Cursors;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/cursors.js","/")
-},{"./cursor":10,"./events/map":16,"./utils":40,"1YiZ5S":4,"buffer":1}],12:[function(require,module,exports){
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/cursors.js","/control")
+},{"../utils/utils":40,"./cursor":7,"./map":11,"1YiZ5S":4,"buffer":1}],9:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-var utils = require('./utils');
-var normalizer = require('./events/normalizer');
-var keymap = require('./events/map');
-var default_keymap = require('./events/default');
-var cursors = require('./cursors');
-var clipboard = require('./clipboard');
-var history = require('./history');
-/**
- * Controller for a DocumentModel.
- */
-var DocumentController = (function (_super) {
-    __extends(DocumentController, _super);
-    function DocumentController(el, model) {
-        _super.call(this);
-        this.clipboard = new clipboard.Clipboard(el);
-        this.normalizer = new normalizer.Normalizer();
-        this.normalizer.listen_to(el);
-        this.normalizer.listen_to(this.clipboard.hidden_input);
-        this.map = new keymap.Map(this.normalizer);
-        this.map.map(default_keymap.map);
-        this.history = new history.History(this.map);
-        this.cursors = new cursors.Cursors(model, this.clipboard, this.history);
-    }
-    return DocumentController;
-})(utils.PosterClass);
-exports.DocumentController = DocumentController;
-
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/document_controller.js","/")
-},{"./clipboard":8,"./cursors":11,"./events/default":15,"./events/map":16,"./events/normalizer":17,"./history":21,"./utils":40,"1YiZ5S":4,"buffer":1}],13:[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-var utils = require('./utils');
-var superset = require('./superset');
-/**
- * Model containing all of the document's data (text).
- */
-var DocumentModel = (function (_super) {
-    __extends(DocumentModel, _super);
-    function DocumentModel() {
-        _super.call(this);
-        this._rows = [];
-        this._row_tags = [];
-        this._tag_lock = 0;
-        this._pending_tag_events = false;
-    }
-    Object.defineProperty(DocumentModel.prototype, "rows", {
-        get: function () {
-            // Return a shallow copy of the array so it cannot be modified.
-            return [].concat(this._rows);
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(DocumentModel.prototype, "text", {
-        get: function () {
-            return this._get_text();
-        },
-        set: function (value) {
-            this._set_text(value);
-        },
-        enumerable: true,
-        configurable: true
-    });
-    /**
-     * Acquire a lock on tag events
-     *
-     * Prevents tag events from firing.
-     * @return {integer} lock count
-     */
-    DocumentModel.prototype.acquire_tag_event_lock = function () {
-        return this._tag_lock++;
-    };
-    /**
-     * Release a lock on tag events
-     * @return {integer} lock count
-     */
-    DocumentModel.prototype.release_tag_event_lock = function () {
-        this._tag_lock--;
-        if (this._tag_lock < 0) {
-            this._tag_lock = 0;
-        }
-        if (this._tag_lock === 0 && this._pending_tag_events) {
-            this._pending_tag_events = false;
-            this.trigger_tag_events();
-        }
-        return this._tag_lock;
-    };
-    /**
-     * Triggers the tag change events.
-     * @return {null}
-     */
-    DocumentModel.prototype.trigger_tag_events = function (rows) {
-        if (this._tag_lock === 0) {
-            this.trigger('tags_changed', this._pending_tag_events_rows);
-            this._pending_tag_events_rows = undefined;
-        }
-        else {
-            this._pending_tag_events = true;
-            if (this._pending_tag_events_rows) {
-                this._pending_tag_events_rows = this._pending_tag_events_rows.concat(rows);
-            }
-            else {
-                this._pending_tag_events_rows = rows;
-            }
-        }
-    };
-    /**
-     * Sets a 'tag' on the text specified.
-     * @param {integer} start_row - row the tag starts on
-     * @param {integer} start_char - index, in the row, of the first tagged character
-     * @param {integer} end_row - row the tag ends on
-     * @param {integer} end_char - index, in the row, of the last tagged character
-     * @param {string} tag_name
-     * @param {any} tag_value - overrides any previous tags
-     */
-    DocumentModel.prototype.set_tag = function (start_row, start_char, end_row, end_char, tag_name, tag_value) {
-        var coords = this.validate_coords.apply(this, arguments);
-        var rows = [];
-        for (var row = coords.start_row; row <= coords.end_row; row++) {
-            // Make sure the superset is defined for the row/tag_name pair.
-            var row_tags = this._row_tags[row];
-            if (row_tags[tag_name] === undefined) {
-                row_tags[tag_name] = new superset.Superset();
-            }
-            // Get the start and end char indicies.
-            var s = coords.start_char;
-            var e = coords.end_char;
-            if (row > coords.start_row)
-                s = 0;
-            if (row < coords.end_row)
-                e = this._rows[row].length - 1;
-            // Set the value for the range.
-            row_tags[tag_name].set(s, e, tag_value);
-            rows.push(row);
-        }
-        this.trigger_tag_events(rows);
-    };
-    /**
-     * Removed all of the tags on the document.
-     * @param  {integer} start_row
-     * @param  {integer} end_row
-     * @return {null}
-     */
-    DocumentModel.prototype.clear_tags = function (start_row, end_row) {
-        start_row = start_row !== undefined ? start_row : 0;
-        end_row = end_row !== undefined ? end_row : this._row_tags.length - 1;
-        var rows = [];
-        for (var i = start_row; i <= end_row; i++) {
-            this._row_tags[i] = {};
-            rows.push(i);
-        }
-        this.trigger_tag_events(rows);
-    };
-    /**
-     * Get the tag value applied to the character.
-     * @param  {string} tag_name
-     * @param  {integer} row_index
-     * @param  {integer} char_index
-     * @return {object} value or undefined
-     */
-    DocumentModel.prototype.get_tag_value = function (tag_name, row_index, char_index) {
-        // Loop through the tags on this row.
-        var row_tags = this._row_tags[row_index][tag_name];
-        if (row_tags !== undefined) {
-            var tag_array = row_tags.array;
-            for (var i = 0; i < tag_array.length; i++) {
-                // Check if within.
-                if (tag_array[i][0] <= char_index && char_index <= tag_array[i][1]) {
-                    return tag_array[i][2];
-                }
-            }
-        }
-        return undefined;
-    };
-    /**
-     * Get the tag value ranges applied to the specific range.
-     * @param  {string} tag_name
-     * @param  {integer} start_row
-     * @param  {integer} start_char
-     * @param  {integer} end_row
-     * @param  {integer} end_char
-     * @return {array} array of tag value ranges ([row_index, start_char, end_char, tag_value])
-     */
-    DocumentModel.prototype.get_tags = function (tag_name, start_row, start_char, end_row, end_char) {
-        var coords = this.validate_coords.call(this, start_row, start_char, end_row, end_char);
-        var values = [];
-        for (var row = coords.start_row; row <= coords.end_row; row++) {
-            // Get the start and end char indicies.
-            var s = coords.start_char;
-            var e = coords.end_char;
-            if (row > coords.start_row)
-                s = 0;
-            if (row < coords.end_row)
-                e = this._rows[row].length - 1;
-            // Loop through the tags on this row.
-            var row_tags = this._row_tags[row][tag_name];
-            if (row_tags !== undefined) {
-                var tag_array = row_tags.array;
-                for (var i = 0; i < tag_array.length; i++) {
-                    var ns = tag_array[i][0];
-                    var ne = tag_array[i][1];
-                    // Check if the areas insersect.
-                    if (ns <= e && ne >= s) {
-                        values.push([row, ns, ne, tag_array[i][2]]);
-                    }
-                }
-            }
-        }
-        return values;
-    };
-    /**
-     * Adds text efficiently somewhere in the document.
-     * @param {integer} row_index
-     * @param {integer} char_index
-     * @param {string} text
-     */
-    DocumentModel.prototype.add_text = function (row_index, char_index, text) {
-        var coords = this.validate_coords.apply(this, Array.prototype.slice.call(arguments, 0, 2));
-        var old_text = this._rows[coords.start_row];
-        // If the text has a new line in it, just re-set
-        // the rows list.
-        if (text.indexOf('\n') != -1) {
-            var new_rows = [];
-            if (coords.start_row > 0) {
-                new_rows = this._rows.slice(0, coords.start_row);
-            }
-            var old_row_start = old_text.substring(0, coords.start_char);
-            var old_row_end = old_text.substring(coords.start_char);
-            var split_text = text.split('\n');
-            new_rows.push(old_row_start + split_text[0]);
-            if (split_text.length > 2) {
-                new_rows = new_rows.concat(split_text.slice(1, split_text.length - 1));
-            }
-            new_rows.push(split_text[split_text.length - 1] + old_row_end);
-            if (coords.start_row + 1 < this._rows.length) {
-                new_rows = new_rows.concat(this._rows.slice(coords.start_row + 1));
-            }
-            this._rows = new_rows;
-            this._resized_rows();
-            this.trigger('row_changed', old_text, coords.start_row);
-            this.trigger('rows_added', coords.start_row + 1, coords.start_row + split_text.length - 1);
-            this.trigger('changed');
-        }
-        else {
-            this._rows[coords.start_row] = old_text.substring(0, coords.start_char) + text + old_text.substring(coords.start_char);
-            this.trigger('row_changed', old_text, coords.start_row);
-            this.trigger('changed');
-        }
-    };
-    /**
-     * Removes a block of text from the document
-     * @param  {integer} start_row
-     * @param  {integer} start_char
-     * @param  {integer} end_row
-     * @param  {integer} end_char
-     * @return {null}
-     */
-    DocumentModel.prototype.remove_text = function (start_row, start_char, end_row, end_char) {
-        var coords = this.validate_coords.apply(this, arguments);
-        var old_text = this._rows[coords.start_row];
-        if (coords.start_row == coords.end_row) {
-            this._rows[coords.start_row] = this._rows[coords.start_row].substring(0, coords.start_char) + this._rows[coords.start_row].substring(coords.end_char);
-        }
-        else {
-            this._rows[coords.start_row] = this._rows[coords.start_row].substring(0, coords.start_char) + this._rows[coords.end_row].substring(coords.end_char);
-        }
-        if (coords.end_row - coords.start_row > 0) {
-            var rows_removed = this._rows.splice(coords.start_row + 1, coords.end_row - coords.start_row);
-            this._resized_rows();
-            // If there are more deleted rows than rows remaining, it
-            // is faster to run a calculation on the remaining rows than
-            // to run it on the rows removed.
-            if (rows_removed.length > this._rows.length) {
-                this.trigger('text_changed');
-                this.trigger('changed');
-            }
-            else {
-                this.trigger('row_changed', old_text, coords.start_row);
-                this.trigger('rows_removed', rows_removed);
-                this.trigger('changed');
-            }
-        }
-        else if (coords.end_row == coords.start_row) {
-            this.trigger('row_changed', old_text, coords.start_row);
-            this.trigger('changed');
-        }
-    };
-    /**
-     * Remove a row from the document.
-     * @param  {integer} row_index
-     * @return {null}
-     */
-    DocumentModel.prototype.remove_row = function (row_index) {
-        if (0 < row_index && row_index < this._rows.length) {
-            var rows_removed = this._rows.splice(row_index, 1);
-            this._resized_rows();
-            this.trigger('rows_removed', rows_removed);
-            this.trigger('changed');
-        }
-    };
-    /**
-     * Gets a chunk of text.
-     * @param  {integer} start_row
-     * @param  {integer} start_char
-     * @param  {integer} end_row
-     * @param  {integer} end_char
-     * @return {string}
-     */
-    DocumentModel.prototype.get_text = function (start_row, start_char, end_row, end_char) {
-        var coords = this.validate_coords.apply(this, arguments);
-        if (coords.start_row == coords.end_row) {
-            return this._rows[coords.start_row].substring(coords.start_char, coords.end_char);
-        }
-        else {
-            var text = [];
-            text.push(this._rows[coords.start_row].substring(coords.start_char));
-            if (coords.end_row - coords.start_row > 1) {
-                for (var i = coords.start_row + 1; i < coords.end_row; i++) {
-                    text.push(this._rows[i]);
-                }
-            }
-            text.push(this._rows[coords.end_row].substring(0, coords.end_char));
-            return text.join('\n');
-        }
-    };
-    /**
-     * Add a row to the document
-     * @param {integer} row_index
-     * @param {string} text - new row's text
-     */
-    DocumentModel.prototype.add_row = function (row_index, text) {
-        var new_rows = [];
-        if (row_index > 0) {
-            new_rows = this._rows.slice(0, row_index);
-        }
-        new_rows.push(text);
-        if (row_index < this._rows.length) {
-            new_rows = new_rows.concat(this._rows.slice(row_index));
-        }
-        this._rows = new_rows;
-        this._resized_rows();
-        this.trigger('rows_added', row_index, row_index);
-        this.trigger('changed');
-    };
-    /**
-     * Validates row, character coordinates in the document.
-     * @param  {integer} start_row
-     * @param  {integer} start_char
-     * @param  {integer} (optional) end_row
-     * @param  {integer} (optional) end_char
-     * @return {dictionary} dictionary containing validated coordinates {start_row,
-     *                      start_char, end_row, end_char}
-     */
-    DocumentModel.prototype.validate_coords = function (start_row, start_char, end_row, end_char) {
-        // Make sure the values aren't undefined.
-        if (start_row === undefined)
-            start_row = 0;
-        if (start_char === undefined)
-            start_char = 0;
-        if (end_row === undefined)
-            end_row = start_row;
-        if (end_char === undefined)
-            end_char = start_char;
-        // Make sure the values are within the bounds of the contents.
-        if (this._rows.length === 0) {
-            start_row = 0;
-            start_char = 0;
-            end_row = 0;
-            end_char = 0;
-        }
-        else {
-            if (start_row >= this._rows.length)
-                start_row = this._rows.length - 1;
-            if (start_row < 0)
-                start_row = 0;
-            if (end_row >= this._rows.length)
-                end_row = this._rows.length - 1;
-            if (end_row < 0)
-                end_row = 0;
-            if (start_char > this._rows[start_row].length)
-                start_char = this._rows[start_row].length;
-            if (start_char < 0)
-                start_char = 0;
-            if (end_char > this._rows[end_row].length)
-                end_char = this._rows[end_row].length;
-            if (end_char < 0)
-                end_char = 0;
-        }
-        // Make sure the start is before the end.
-        if (start_row > end_row || (start_row == end_row && start_char > end_char)) {
-            return {
-                start_row: end_row,
-                start_char: end_char,
-                end_row: start_row,
-                end_char: start_char,
-            };
-        }
-        else {
-            return {
-                start_row: start_row,
-                start_char: start_char,
-                end_row: end_row,
-                end_char: end_char,
-            };
-        }
-    };
-    /**
-     * Gets the text of the document.
-     * @return {string}
-     */
-    DocumentModel.prototype._get_text = function () {
-        return this._rows.join('\n');
-    };
-    /**
-     * Sets the text of the document.
-     * Complexity O(N) for N rows
-     * @param {string} value
-     */
-    DocumentModel.prototype._set_text = function (value) {
-        this._rows = value.split('\n');
-        this._resized_rows();
-        this.trigger('text_changed');
-        this.trigger('changed');
-    };
-    /**
-     * Updates _row's partner arrays.
-     * @return {null}
-     */
-    DocumentModel.prototype._resized_rows = function () {
-        while (this._row_tags.length < this._rows.length) {
-            this._row_tags.push({});
-        }
-        if (this._row_tags.length > this._rows.length) {
-            this._row_tags.splice(this._rows.length, this._row_tags.length - this._rows.length);
-        }
-    };
-    return DocumentModel;
-})(utils.PosterClass);
-exports.DocumentModel = DocumentModel;
-
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/document_model.js","/")
-},{"./superset":39,"./utils":40,"1YiZ5S":4,"buffer":1}],14:[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-var utils = require('./utils');
-// Renderers
-var batch = require('./renderers/batch');
-var highlighted_row = require('./renderers/highlighted_row');
-var cursors = require('./renderers/cursors');
-var selections = require('./renderers/selections');
-var color = require('./renderers/color');
-var highlighter = require('./highlighters/prism');
-/**
- * Visual representation of a DocumentModel instance
- * @param {Canvas} canvas instance
- * @param {DocumentModel} model instance
- * @param {Cursors} cursors_model instance
- * @param {Style} style - describes rendering style
- * @param {function} has_focus - function that checks if the text area has focus
- * @param {function} move_focal_point - function that moves the focal point
- */
-var DocumentView = (function (_super) {
-    __extends(DocumentView, _super);
-    function DocumentView(canvas, model, cursors_model, style, has_focus, move_focal_point) {
-        this._model = model;
-        // Create child renderers.
-        var row_renderer = new highlighted_row.HighlightedRowRenderer(model, canvas, style);
-        row_renderer.margin_left = 2;
-        row_renderer.margin_top = 2;
-        this.row_renderer = row_renderer;
-        // Make sure changes made to the cursor(s) are within the visible region.
-        cursors_model.on('change', function (cursor) {
-            var row_index = cursor.primary_row;
-            var char_index = cursor.primary_char;
-            var top = row_renderer.get_row_top(row_index);
-            var height = row_renderer.get_row_height(row_index);
-            var left = row_renderer.measure_partial_row_width(row_index, char_index) + row_renderer.margin_left;
-            var bottom = top + height;
-            var canvas_height = canvas.height - 20;
-            if (bottom > canvas.scroll_top + canvas_height) {
-                canvas.scroll_top = bottom - canvas_height;
-            }
-            else if (top < canvas.scroll_top) {
-                canvas.scroll_top = top;
-            }
-            var canvas_width = canvas.width - 20;
-            if (left > canvas.scroll_left + canvas_width) {
-                canvas.scroll_left = left - canvas_width;
-            }
-            else if (left - row_renderer.margin_left < canvas.scroll_left) {
-                canvas.scroll_left = Math.max(0, left - row_renderer.margin_left);
-            }
-            move_focal_point(left - canvas.scroll_left, top - canvas.scroll_top - canvas.height);
-        });
-        var cursors_renderer = new cursors.CursorsRenderer(cursors_model, style, row_renderer, has_focus);
-        var selections_renderer = new selections.SelectionsRenderer(cursors_model, style, row_renderer, has_focus, cursors_renderer);
-        // Create the background renderer
-        var color_renderer = new color.ColorRenderer();
-        color_renderer.color = style.background || 'white';
-        style.on('changed:style', function () {
-            color_renderer.color = style.background;
-        });
-        // Create the document highlighter, which needs to know about the currently
-        // rendered rows in order to know where to highlight.
-        this.highlighter = new highlighter.PrismHighlighter(model, row_renderer);
-        // Pass get_row_char into cursors.
-        cursors_model.get_row_char = utils.proxy(row_renderer.get_row_char, row_renderer);
-        // Call base constructor.
-        _super.call(this, [
-            color_renderer,
-            selections_renderer,
-            row_renderer,
-            cursors_renderer,
-        ], canvas);
-        // Hookup render events.
-        this._canvas.on('redraw', utils.proxy(this.render, this));
-        this._model.on('changed', utils.proxy(canvas.redraw, canvas));
-    }
-    Object.defineProperty(DocumentView.prototype, "language", {
-        get: function () {
-            return this._language;
-        },
-        set: function (value) {
-            this.highlighter.load(value);
-            this._language = value;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    return DocumentView;
-})(batch.BatchRenderer);
-exports.DocumentView = DocumentView;
-
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/document_view.js","/")
-},{"./highlighters/prism":20,"./renderers/batch":28,"./renderers/color":29,"./renderers/cursors":30,"./renderers/highlighted_row":31,"./renderers/selections":34,"./utils":40,"1YiZ5S":4,"buffer":1}],15:[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-// OSX bindings
 var _map;
 if (navigator.appVersion.indexOf("Mac") != -1) {
     _map = {
@@ -4426,8 +3235,148 @@ _map['shift-tab'] = 'cursor.unindent';
 _map['escape'] = 'cursors.single';
 exports.map = _map;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/events/default.js","/events")
-},{"1YiZ5S":4,"buffer":1}],16:[function(require,module,exports){
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/default.js","/control")
+},{"1YiZ5S":4,"buffer":1}],10:[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var utils = require('../utils/utils');
+var keymap = require('./map');
+/**
+ * Reversible action history.
+ */
+var History = (function (_super) {
+    __extends(History, _super);
+    function History(map) {
+        _super.call(this);
+        this._map = map;
+        this._actions = [];
+        this._action_groups = [];
+        this._undone = [];
+        this._autogroup = null;
+        this._action_lock = false;
+        keymap.Map.register('history.undo', utils.proxy(this.undo, this));
+        keymap.Map.register('history.redo', utils.proxy(this.redo, this));
+    }
+    /**
+     * Push a reversible action to the history.
+     * @param forward_name - name of the forward action
+     * @param forward_params - parameters to use when invoking the forward action
+     * @param backward_name - name of the backward action
+     * @param backward_params - parameters to use when invoking the backward action
+     * @param [autogroup_delay] - time to wait to automatically group the actions.
+     *                            If this is undefined, autogrouping will not occur.
+     */
+    History.prototype.push_action = function (forward_name, forward_params, backward_name, backward_params, autogroup_delay) {
+        var _this = this;
+        if (this._action_lock)
+            return;
+        this._actions.push({
+            forward: {
+                name: forward_name,
+                parameters: forward_params,
+            },
+            backward: {
+                name: backward_name,
+                parameters: backward_params,
+            }
+        });
+        this._undone = [];
+        // If a delay is defined, prepare a timeout to autogroup.
+        if (autogroup_delay !== undefined) {
+            // If another timeout was already set, cancel it.
+            if (this._autogroup !== null) {
+                clearTimeout(this._autogroup);
+            }
+            // Set a new timeout.
+            this._autogroup = setTimeout(function () {
+                _this.group_actions();
+            }, autogroup_delay);
+        }
+    };
+    /**
+     * Commit the pushed actions to one group.
+     */
+    History.prototype.group_actions = function () {
+        this._autogroup = null;
+        if (this._action_lock)
+            return;
+        this._action_groups.push(this._actions);
+        this._actions = [];
+        this._undone = [];
+    };
+    /**
+     * Undo one set of actions.
+     */
+    History.prototype.undo = function () {
+        var _this = this;
+        // If a timeout is set, group now.
+        if (this._autogroup !== null) {
+            clearTimeout(this._autogroup);
+            this.group_actions();
+        }
+        var undo;
+        if (this._actions.length > 0) {
+            undo = this._actions;
+        }
+        else if (this._action_groups.length > 0) {
+            undo = this._action_groups.pop();
+            undo.reverse();
+        }
+        else {
+            return true;
+        }
+        // Undo the actions.
+        if (!this._action_lock) {
+            this._action_lock = true;
+            try {
+                undo.forEach(function (action) {
+                    _this._map.invoke(action.backward.name, action.backward.parameters);
+                });
+            }
+            finally {
+                this._action_lock = false;
+            }
+        }
+        // Allow the action to be redone.
+        this._undone.push(undo);
+        return true;
+    };
+    /**
+     * Redo one set of actions.
+     */
+    History.prototype.redo = function () {
+        var _this = this;
+        if (this._undone.length > 0) {
+            var redo = this._undone.pop();
+            // Redo the actions.
+            if (!this._action_lock) {
+                this._action_lock = true;
+                try {
+                    redo.forEach(function (action) {
+                        _this._map.invoke(action.forward.name, action.forward.parameters);
+                    });
+                }
+                finally {
+                    this._action_lock = false;
+                }
+            }
+            // Allow the action to be undone.
+            this._action_groups.push(redo);
+        }
+        return true;
+    };
+    return History;
+})(utils.PosterClass);
+exports.History = History;
+
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/history.js","/control")
+},{"../utils/utils":40,"./map":11,"1YiZ5S":4,"buffer":1}],11:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -4436,7 +3385,7 @@ var __extends = this.__extends || function (d, b) {
     d.prototype = new __();
 };
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var utils = require('../utils');
+var utils = require('../utils/utils');
 /**
  * Event normalizer
  *
@@ -4473,12 +3422,6 @@ var Map = (function (_super) {
     /**
      * Append event actions to the map.
      *
-     * This method has two signatures.  If a single argument
-     * is passed to it, that argument is treated like a
-     * dictionary.  If more than one argument is passed to it,
-     * each argument is treated as alternating key, value
-     * pairs of a dictionary.
-     *
      * The map allows you to register actions for keys.
      * Example:
      *     map.map({
@@ -4511,12 +3454,10 @@ var Map = (function (_super) {
      *     map.map({
      *         'alt-v': ['action_a', 'action_b'],
      *     });
-     *
-     * @return {null}
      */
-    Map.prototype.map = function () {
+    Map.prototype.map = function (keyactions) {
         var _this = this;
-        var parsed = this._parse_map_arguments(arguments);
+        var parsed = this._parse_map_arguments(keyactions);
         Object.keys(parsed).forEach(function (key) {
             if (_this._map[key] === undefined) {
                 _this._map[key] = parsed[key];
@@ -4531,11 +3472,10 @@ var Map = (function (_super) {
      *
      * See the doc for `map` for a detailed description of
      * possible input values.
-     * @return {null}
      */
-    Map.prototype.prepend_map = function () {
+    Map.prototype.prepend_map = function (keyactions) {
         var _this = this;
-        var parsed = this._parse_map_arguments(arguments);
+        var parsed = this._parse_map_arguments(keyactions);
         Object.keys(parsed).forEach(function (key) {
             if (_this._map[key] === undefined) {
                 _this._map[key] = parsed[key];
@@ -4550,17 +3490,16 @@ var Map = (function (_super) {
      *
      * See the doc for `map` for a detailed description of
      * possible input values.
-     * @return {null}
      */
-    Map.prototype.unmap = function () {
+    Map.prototype.unmap = function (keyactions) {
         var _this = this;
-        var parsed = this._parse_map_arguments(arguments);
+        var parsed = this._parse_map_arguments(keyactions);
         Object.keys(parsed).forEach(function (key) {
             if (_this._map[key] !== undefined) {
                 parsed[key].forEach(function (value) {
-                    var index = this._map[key].indexOf(value);
+                    var index = _this._map[key].indexOf(value);
                     if (index != -1) {
-                        this._map[key].splice(index, 1);
+                        _this._map[key].splice(index, 1);
                     }
                 });
             }
@@ -4568,185 +3507,143 @@ var Map = (function (_super) {
     };
     /**
      * Get a modifiable array of the actions for a particular event.
-     * @param  {string} event
-     * @return {array} by ref copy of the actions registered to an event.
+     * @return by ref copy of the actions registered to an event.
      */
     Map.prototype.get_mapping = function (event) {
         return this._map[this._normalize_event_name(event)];
     };
     /**
      * Invokes the callbacks of an action by name.
-     * @param  {string} name
-     * @param  {array} [args] - arguments to pass to the action callback[s]
-     * @return {boolean} true if one or more of the actions returned true
+     * @param name
+     * @param [args] - arguments to pass to the action callback[s]
+     * @return true if one or more of the actions returned true
      */
     Map.prototype.invoke = function (name, args) {
         var action_callbacks = Map.registry[name];
         if (action_callbacks) {
-            if (utils.is_array(action_callbacks)) {
-                var returns = [];
-                action_callbacks.forEach(function (action_callback) {
-                    returns.push(action_callback.apply(undefined, args) === true);
-                });
-                // If one of the action callbacks returned true, cancel bubbling.
-                if (returns.some(function (x) {
-                    return x;
-                })) {
-                    return true;
-                }
-            }
-            else {
-                if (action_callbacks.apply(undefined, args) === true) {
-                    return true;
-                }
+            var returns = [];
+            action_callbacks.forEach(function (action_callback) {
+                returns.push(action_callback.apply(undefined, args) === true);
+            });
+            // If one of the action callbacks returned true, cancel bubbling.
+            if (returns.some(function (x) {
+                return x;
+            })) {
+                return true;
             }
         }
         return false;
     };
     /**
      * Parse the arguments to a map function.
-     * @param  {arguments array} args
-     * @return {dictionary} parsed results
      */
-    Map.prototype._parse_map_arguments = function (args) {
+    Map.prototype._parse_map_arguments = function (keyactions) {
         var _this = this;
         var parsed = {};
-        // One arument, treat it as a dictionary of event names and
-        // actions.
-        if (args.length == 1) {
-            Object.keys(args[0]).forEach(function (key) {
-                var value = args[0][key];
-                var normalized_key = _this._normalize_event_name(key);
-                // If the value is not an array, wrap it in one.
-                if (!utils.is_array(value)) {
-                    value = [value];
-                }
-                // If the key is already defined, concat the values to
-                // it.  Otherwise, set it.
-                if (parsed[normalized_key] === undefined) {
-                    parsed[normalized_key] = value;
-                }
-                else {
-                    parsed[normalized_key] = parsed[normalized_key].concat(value);
-                }
-            });
-        }
-        else {
-            for (var i = 0; i < Math.floor(args.length / 2); i++) {
-                var key = this._normalize_event_name(args[2 * i]);
-                var value = args[2 * i + 1];
-                if (parsed[key] === undefined) {
-                    parsed[key] = [value];
-                }
-                else {
-                    parsed[key].push(value);
-                }
+        Object.keys(keyactions).forEach(function (key) {
+            var normalized_key = _this._normalize_event_name(key);
+            // If the value is not an array, wrap it in one.
+            var value;
+            if (!utils.is_array(keyactions[key])) {
+                value = [keyactions[key]];
             }
-        }
+            else {
+                value = keyactions[key];
+            }
+            // If the key is already defined, concat the values to
+            // it.  Otherwise, set it.
+            if (parsed[normalized_key] === undefined) {
+                parsed[normalized_key] = value;
+            }
+            else {
+                parsed[normalized_key] = parsed[normalized_key].concat(value);
+            }
+        });
         return parsed;
     };
     /**
      * Handles a normalized event.
-     * @param  {string} name - name of the event
-     * @param  {Event} e - browser Event object
-     * @return {null}
+     * @param name - name of the event
+     * @param e - browser Event object
      */
     Map.prototype._handle_event = function (name, e) {
         var _this = this;
         var normalized_event = this._normalize_event_name(name);
-        var actions = this._map[normalized_event];
-        if (actions) {
-            actions.forEach(function (action) {
-                if (_this.invoke(action, [e])) {
+        var action_names = this._map[normalized_event];
+        if (action_names) {
+            action_names.forEach(function (action_name) {
+                if (_this.invoke(action_name, [e])) {
                     utils.cancel_bubble(e);
                 }
             });
         }
-        return false;
     };
     /**
      * Alphabetically sorts keys in event name, so
-     * @param  {string} name - event name
-     * @return {string} normalized event name
+     * @return normalized event name
      */
     Map.prototype._normalize_event_name = function (name) {
         return name.toLowerCase().trim().split('-').sort().join('-');
     };
-    return Map;
-})(utils.PosterClass);
-exports.Map = Map;
-/**
- * Map of API methods by name.
- * @type {dictionary}
- */
-Map.registry = {};
-Map._registry_tags = {};
-/**
- * Registers an action.
- * @param  {string} name - name of the action
- * @param  {function} f
- * @param  {Object} (optional) tag - allows you to specify a tag
- *                  which can be used with the `unregister_by_tag`
- *                  method to quickly unregister actions with
- *                  the tag specified.
- * @return {null}
- */
-Map.register = function (name, f, tag) {
-    if (utils.is_array(Map.registry[name])) {
-        Map.registry[name].push(f);
-    }
-    else {
-        if (Map.registry[name] === undefined) {
-            Map.registry[name] = f;
+    Map.registry = {};
+    Map._registry_tags = {};
+    /**
+     * Registers an action.
+     * @param name - name of the action
+     * @param f
+     * @param (optional) tag - allows you to specify a tag
+     *                  which can be used with the `unregister_by_tag`
+     *                  method to quickly unregister actions with
+     *                  the tag specified.
+     */
+    Map.register = function (name, f, tag) {
+        if (utils.is_array(Map.registry[name])) {
+            Map.registry[name].push(f);
         }
         else {
-            Map.registry[name] = [Map.registry[name], f];
+            Map.registry[name] = [f];
         }
-    }
-    if (tag) {
-        if (Map._registry_tags[tag] === undefined) {
-            Map._registry_tags[tag] = [];
+        if (tag) {
+            if (Map._registry_tags[tag] === undefined) {
+                Map._registry_tags[tag] = [];
+            }
+            Map._registry_tags[tag].push({ name: name, f: f });
         }
-        Map._registry_tags[tag].push({ name: name, f: f });
-    }
-};
-/**
- * Unregister an action.
- * @param  {string} name - name of the action
- * @param  {function} f
- * @return {boolean} true if action was found and unregistered
- */
-Map.unregister = function (name, f) {
-    if (utils.is_array(Map.registry[name])) {
+    };
+    /**
+     * Unregister an action.
+     * @param name - name of the action
+     * @param f
+     * @return true if action was found and unregistered
+     */
+    Map.unregister = function (name, f) {
         var index = Map.registry[name].indexOf(f);
         if (index != -1) {
             Map.registry[name].splice(index, 1);
             return true;
         }
-    }
-    else if (Map.registry[name] == f) {
-        delete Map.registry[name];
-        return true;
-    }
-    return false;
-};
-/**
- * Unregisters all of the actions registered with a given tag.
- * @param  {Object} tag - specified in Map.register.
- * @return {boolean} true if the tag was found and deleted.
- */
-Map.unregister_by_tag = function (tag) {
-    if (Map._registry_tags[tag]) {
-        Map._registry_tags[tag].forEach(function (registration) {
-            Map.unregister(registration.name, registration.f);
-        });
-        delete Map._registry_tags[tag];
-        return true;
-    }
-};
+        return false;
+    };
+    /**
+     * Unregisters all of the actions registered with a given tag.
+     * @param tag - specified in Map.register.
+     * @return true if the tag was found and deleted.
+     */
+    Map.unregister_by_tag = function (tag) {
+        if (Map._registry_tags[tag]) {
+            Map._registry_tags[tag].forEach(function (registration) {
+                Map.unregister(registration.name, registration.f);
+            });
+            delete Map._registry_tags[tag];
+            return true;
+        }
+    };
+    return Map;
+})(utils.PosterClass);
+exports.Map = Map;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/events/map.js","/events")
-},{"../utils":40,"1YiZ5S":4,"buffer":1}],17:[function(require,module,exports){
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/map.js","/control")
+},{"../utils/utils":40,"1YiZ5S":4,"buffer":1}],12:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -4755,7 +3652,7 @@ var __extends = this.__extends || function (d, b) {
     d.prototype = new __();
 };
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var utils = require('../utils');
+var utils = require('../utils/utils');
 /**
  * Event normalizer
  *
@@ -4769,8 +3666,6 @@ var Normalizer = (function (_super) {
     }
     /**
      * Listen to the events of an element.
-     * @param  {HTMLElement} el
-     * @return {null}
      */
     Normalizer.prototype.listen_to = function (el) {
         var hooks = [];
@@ -4782,24 +3677,20 @@ var Normalizer = (function (_super) {
         hooks.push(utils.hook(el, 'onmousedown', this._proxy('down', this._handle_mouse_event, el)));
         hooks.push(utils.hook(el, 'onmouseup', this._proxy('up', this._handle_mouse_event, el)));
         hooks.push(utils.hook(el, 'onmousemove', this._proxy('move', this._handle_mousemove_event, el)));
-        this._el_hooks[el] = hooks;
+        this._el_hooks[el.toString()] = hooks;
     };
     /**
      * Stops listening to an element.
-     * @param  {HTMLElement} el
-     * @return {null}
      */
     Normalizer.prototype.stop_listening_to = function (el) {
-        if (this._el_hooks[el] !== undefined) {
-            this._el_hooks[el].forEach(function (hook) { return hook.unhook(); });
-            delete this._el_hooks[el];
+        var key = el.toString();
+        if (this._el_hooks[key] !== undefined) {
+            this._el_hooks[key].forEach(function (hook) { return hook.unhook(); });
+            delete this._el_hooks[key];
         }
     };
     /**
      * Handles when a mouse event occurs
-     * @param  {HTMLElement} el
-     * @param  {Event} e
-     * @return {null}
      */
     Normalizer.prototype._handle_mouse_event = function (el, event_name, e) {
         e = e || window.event;
@@ -4807,9 +3698,6 @@ var Normalizer = (function (_super) {
     };
     /**
      * Handles when a mouse event occurs
-     * @param  {HTMLElement} el
-     * @param  {Event} e
-     * @return {null}
      */
     Normalizer.prototype._handle_mousemove_event = function (el, event_name, e) {
         e = e || window.event;
@@ -4817,9 +3705,6 @@ var Normalizer = (function (_super) {
     };
     /**
      * Handles when a keyboard event occurs
-     * @param  {HTMLElement} el
-     * @param  {Event} e
-     * @return {null}
      */
     Normalizer.prototype._handle_keyboard_event = function (el, event_name, e) {
         e = e || window.event;
@@ -4835,19 +3720,12 @@ var Normalizer = (function (_super) {
     };
     /**
      * Handles when a keypress event occurs
-     * @param  {HTMLElement} el
-     * @param  {Event} e
-     * @return {null}
      */
     Normalizer.prototype._handle_keypress_event = function (el, event_name, e) {
         this.trigger('keypress', e);
     };
     /**
      * Creates an element event proxy.
-     * @param  {function} f
-     * @param  {string} event_name
-     * @param  {HTMLElement} el
-     * @return {null}
      */
     Normalizer.prototype._proxy = function (event_name, f, el) {
         var that = this;
@@ -4858,8 +3736,7 @@ var Normalizer = (function (_super) {
     };
     /**
      * Create a modifiers string from an event.
-     * @param  {Event} e
-     * @return {string} dash separated modifier string
+     * @return dash separated modifier string
      */
     Normalizer.prototype._modifier_string = function (e) {
         var modifiers = [];
@@ -4867,10 +3744,11 @@ var Normalizer = (function (_super) {
             modifiers.push('ctrl');
         if (e.altKey)
             modifiers.push('alt');
-        if (e.metaKey)
-            modifiers.push('meta');
         if (e.shiftKey)
             modifiers.push('shift');
+        // Hack, metaKey not recognized by TypeScript.
+        if (e.metaKey)
+            modifiers.push('meta');
         var string = modifiers.sort().join('-');
         if (string.length > 0)
             string = string + '-';
@@ -4878,8 +3756,7 @@ var Normalizer = (function (_super) {
     };
     /**
      * Lookup the human friendly name for a keycode.
-     * @param  {integer} keycode
-     * @return {string} key name
+     * @return key name
      */
     Normalizer.prototype._lookup_keycode = function (keycode) {
         if (112 <= keycode && keycode <= 123) {
@@ -4936,121 +3813,45 @@ var Normalizer = (function (_super) {
 })(utils.PosterClass);
 exports.Normalizer = Normalizer;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/events/normalizer.js","/events")
-},{"../utils":40,"1YiZ5S":4,"buffer":1}],18:[function(require,module,exports){
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/normalizer.js","/control")
+},{"../utils/utils":40,"1YiZ5S":4,"buffer":1}],13:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var scrolling_canvas = require('./scrolling_canvas');
-var document_controller = require('./document_controller');
-var document_model = require('./document_model');
-var document_view = require('./document_view');
-var pluginmanager = require('./plugins/manager');
-var plugin = require('./plugins/plugin');
-var renderer = require('./renderers/renderer');
-var style = require('./style');
-var utils = require('./utils');
-var config_mod = require('./config');
-var prism = require('prismjs');
-var config = config_mod.config;
+var utils = require('./utils/utils');
+var normalizer = require('./control/normalizer');
+var keymap = require('./control/map');
+var default_keymap = require('./control/default');
+var cursors = require('./control/cursors');
+var clipboard = require('./control/clipboard');
+var history = require('./control/history');
 /**
- * Canvas based text editor
+ * Controller for a DocumentModel.
  */
-var Poster = (function (_super) {
-    __extends(Poster, _super);
-    function Poster() {
-        var _this = this;
+var DocumentController = (function (_super) {
+    __extends(DocumentController, _super);
+    function DocumentController(el, model) {
         _super.call(this);
-        // Create canvas
-        this.canvas = new scrolling_canvas.ScrollingCanvas();
-        this.el = this.canvas.el; // Convenience
-        this._style = new style.Style();
-        // Create model, controller, and view.
-        this.model = new document_model.DocumentModel();
-        this.controller = new document_controller.DocumentController(this.canvas.el, this.model);
-        this.view = new document_view.DocumentView(this.canvas, this.model, this.controller.cursors, this._style, function () {
-            return _this.controller.clipboard.hidden_input === document.activeElement || _this.canvas.focused;
-        }, function (x, y) { return _this.controller.clipboard.set_position(x, y); });
-        // Load plugins.
-        this.plugins = new pluginmanager.PluginManager(this);
-        this.plugins.load('gutter');
-        this.plugins.load('linenumbers');
+        this.clipboard = new clipboard.Clipboard(el);
+        this.normalizer = new normalizer.Normalizer();
+        this.normalizer.listen_to(el);
+        this.normalizer.listen_to(this.clipboard.hidden_input);
+        this.map = new keymap.Map(this.normalizer);
+        this.map.map(default_keymap.map);
+        this.history = new history.History(this.map);
+        this.cursors = new cursors.Cursors(model, this.clipboard, this.history);
     }
-    Object.defineProperty(Poster.prototype, "style", {
-        get: function () {
-            return this._style;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(Poster.prototype, "config", {
-        get: function () {
-            return config;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(Poster.prototype, "value", {
-        get: function () {
-            return this.model.text;
-        },
-        set: function (value) {
-            this.model.text = value;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(Poster.prototype, "width", {
-        get: function () {
-            return this.view.width;
-        },
-        set: function (value) {
-            this.view.width = value;
-            this.trigger('resized');
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(Poster.prototype, "height", {
-        get: function () {
-            return this.view.height;
-        },
-        set: function (value) {
-            this.view.height = value;
-            this.trigger('resized');
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(Poster.prototype, "language", {
-        get: function () {
-            return this.view.language;
-        },
-        set: function (value) {
-            this.view.language = value;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    return Poster;
+    return DocumentController;
 })(utils.PosterClass);
-window.poster = {
-    Poster: Poster,
-    Canvas: plugin.PluginBase,
-    PluginBase: plugin.PluginBase,
-    RendererBase: renderer.RendererBase,
-    utils: utils
-};
-// Expose prism so the user can load custom language files.
-window.Prism = prism;
+exports.DocumentController = DocumentController;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/fake_df73b741.js","/")
-},{"./config":9,"./document_controller":12,"./document_model":13,"./document_view":14,"./plugins/manager":26,"./plugins/plugin":27,"./renderers/renderer":32,"./scrolling_canvas":35,"./style":36,"./utils":40,"1YiZ5S":4,"buffer":1,"prismjs":5}],19:[function(require,module,exports){
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/document_controller.js","/")
+},{"./control/clipboard":6,"./control/cursors":8,"./control/default":9,"./control/history":10,"./control/map":11,"./control/normalizer":12,"./utils/utils":40,"1YiZ5S":4,"buffer":1}],14:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -5059,773 +3860,392 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-var utils = require('../utils');
+var utils = require('./utils/utils');
+var superset = require('./utils/superset');
 /**
- * Listens to a model and higlights the text accordingly.
- * @param {DocumentModel} model
+ * Model containing all of the document's data (text).
  */
-var HighlighterBase = (function (_super) {
-    __extends(HighlighterBase, _super);
-    function HighlighterBase(model, row_renderer) {
+var DocumentModel = (function (_super) {
+    __extends(DocumentModel, _super);
+    function DocumentModel() {
         _super.call(this);
-        this._model = model;
-        this._row_renderer = row_renderer;
-        this._queued = null;
-        this.delay = 15; //ms
-        // Bind events.
-        this._row_renderer.on('rows_changed', utils.proxy(this._handle_scroll, this));
-        this._model.on('text_changed', utils.proxy(this._handle_text_change, this));
-        this._model.on('row_changed', utils.proxy(this._handle_text_change, this));
+        this._rows = [];
+        this._row_tags = [];
+        this._tag_lock = 0;
+        this._pending_tag_events = false;
     }
+    Object.defineProperty(DocumentModel.prototype, "rows", {
+        /**
+         * Shallow copy of the array.  Modifying this won't modify the
+         * contents of the Poster instance.
+         */
+        get: function () {
+            return [].concat(this._rows);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(DocumentModel.prototype, "text", {
+        /**
+         * Gets the text of the Poster instance
+         */
+        get: function () {
+            return this._get_text();
+        },
+        /**
+         * Sets the text of the Poster instance
+         */
+        set: function (value) {
+            this._set_text(value);
+        },
+        enumerable: true,
+        configurable: true
+    });
     /**
-     * Highlight the document
-     * @return {null}
-     */
-    HighlighterBase.prototype.highlight = function (start_row, end_row) {
-        throw new Error('Not implemented');
-    };
-    /**
-     * Queues a highlight operation.
+     * Acquire a lock on tag events
      *
-     * If a highlight operation is already queued, don't queue
-     * another one.  This ensures that the highlighting is
-     * frame rate locked.  Highlighting is an expensive operation.
-     * @return {null}
+     * Prevents tag events from firing.
+     * @return lock count
      */
-    HighlighterBase.prototype._queue_highlighter = function () {
-        var _this = this;
-        if (this._queued === null) {
-            this._queued = setTimeout(function () {
-                _this._model.acquire_tag_event_lock();
-                try {
-                    var visible_rows = _this._row_renderer.get_visible_rows();
-                    var top_row = visible_rows.top_row;
-                    var bottom_row = visible_rows.bottom_row;
-                    _this.highlight(top_row, bottom_row);
-                }
-                finally {
-                    _this._model.release_tag_event_lock();
-                    _this._queued = null;
-                }
-            }, this.delay);
+    DocumentModel.prototype.acquire_tag_event_lock = function () {
+        return this._tag_lock++;
+    };
+    /**
+     * Release a lock on tag events
+     * @return lock count
+     */
+    DocumentModel.prototype.release_tag_event_lock = function () {
+        this._tag_lock--;
+        if (this._tag_lock < 0) {
+            this._tag_lock = 0;
         }
-    };
-    /**
-     * Handles when the visible row indicies are changed.
-     * @return {null}
-     */
-    HighlighterBase.prototype._handle_scroll = function (start_row, end_row) {
-        this._queue_highlighter();
-    };
-    /**
-     * Handles when the text changes.
-     * @return {null}
-     */
-    HighlighterBase.prototype._handle_text_change = function () {
-        this._queue_highlighter();
-    };
-    return HighlighterBase;
-})(utils.PosterClass);
-exports.HighlighterBase = HighlighterBase;
-
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/highlighters/highlighter.js","/highlighters")
-},{"../utils":40,"1YiZ5S":4,"buffer":1}],20:[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-var superset = require('../superset');
-var highlighter = require('./highlighter');
-var prism = require('prismjs');
-/**
- * Listens to a model and highlights the text accordingly.
- * @param {DocumentModel} model
- */
-var PrismHighlighter = (function (_super) {
-    __extends(PrismHighlighter, _super);
-    function PrismHighlighter(model, row_renderer) {
-        _super.call(this, model, row_renderer);
-        // Look back and forward this many rows for contextually 
-        // sensitive highlighting.
-        this._row_padding = 30;
-        this._language = null;
-    }
-    Object.defineProperty(PrismHighlighter.prototype, "languages", {
-        get: function () {
-            var languages = [];
-            for (var l in prism.languages) {
-                if (["extend", "insertBefore", "DFS"].indexOf(l) == -1) {
-                    languages.push(l);
-                }
-            }
-            return languages;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    /**
-     * Highlight the document
-     * @return {null}
-     */
-    PrismHighlighter.prototype.highlight = function (start_row, end_row) {
-        var _this = this;
-        // Get the first and last rows that should be highlighted.
-        start_row = Math.max(0, start_row - this._row_padding);
-        end_row = Math.min(this._model._rows.length - 1, end_row + this._row_padding);
-        // Abort if language isn't specified.
-        if (!this._language)
-            return;
-        // Get the text of the rows.
-        var text = this._model.get_text(start_row, 0, end_row, this._model._rows[end_row].length);
-        // Figure out where each tag belongs.
-        var highlights = this._highlight(text); // [start_index, end_index, tag]
-        // Calculate Poster tags
-        highlights.forEach(function (highlight) {
-            // Translate tag character indicies to row, char coordinates.
-            var before_rows = text.substring(0, highlight[0]).split('\n');
-            var group_start_row = start_row + before_rows.length - 1;
-            var group_start_char = before_rows[before_rows.length - 1].length;
-            var after_rows = text.substring(0, highlight[1]).split('\n');
-            var group_end_row = start_row + after_rows.length - 1;
-            var group_end_char = after_rows[after_rows.length - 1].length;
-            while (group_start_char === _this._model._rows[group_start_row].length) {
-                if (group_start_row < group_end_row) {
-                    group_start_row++;
-                    group_start_char = 0;
-                }
-                else {
-                    return;
-                }
-            }
-            while (group_end_char === 0) {
-                if (group_end_row > group_start_row) {
-                    group_end_row--;
-                    group_end_char = _this._model._rows[group_end_row].length;
-                }
-                else {
-                    return;
-                }
-            }
-            // Apply tag if it's not already applied.
-            var tag = highlight[2].toLowerCase();
-            var existing_tags = _this._model.get_tags('syntax', group_start_row, group_start_char, group_end_row, group_end_char);
-            // Make sure the number of tags = number of rows.
-            var correct_count = (existing_tags.length === group_end_row - group_start_row + 1);
-            // Make sure every tag value equals the new value.
-            var correct_values = true;
-            var i;
-            if (correct_count) {
-                for (i = 0; i < existing_tags.length; i++) {
-                    if (existing_tags[i][3] !== tag) {
-                        correct_values = false;
-                        break;
-                    }
-                }
-            }
-            // Check that the start and ends of tags are correct.
-            var correct_ranges = true;
-            if (correct_count && correct_values) {
-                if (existing_tags.length == 1) {
-                    correct_ranges = existing_tags[0][1] === group_start_char && existing_tags[0][2] === group_end_char;
-                }
-                else {
-                    correct_ranges = existing_tags[0][1] <= group_start_char && existing_tags[0][2] >= _this._model._rows[group_start_row].length - 1;
-                    correct_ranges = correct_ranges && existing_tags[existing_tags.length - 1][1] === 0 && existing_tags[existing_tags.length - 1][2] >= group_end_char;
-                    for (i = 1; i < existing_tags.length - 1; i++) {
-                        correct_ranges = correct_ranges && existing_tags[i][1] === 0 && existing_tags[i][2] >= _this._model._rows[existing_tags[i][0]].length - 1;
-                        if (!correct_ranges)
-                            break;
-                    }
-                }
-            }
-            if (!(correct_count && correct_values && correct_ranges)) {
-                _this._model.set_tag(group_start_row, group_start_char, group_end_row, group_end_char, 'syntax', tag);
-            }
-        });
-    };
-    /**
-     * Find each part of text that needs to be highlighted.
-     * @param  {string} text
-     * @return {array} list containing items of the form [start_index, end_index, tag]
-     */
-    PrismHighlighter.prototype._highlight = function (text) {
-        // Tokenize using prism.js
-        var tokens = prism.tokenize(text, this._language);
-        // Convert the tokens into [start_index, end_index, tag]
-        var left = 0;
-        var flatten = function (tokens, prefix) {
-            if (!prefix) {
-                prefix = [];
-            }
-            var flat = [];
-            for (var i = 0; i < tokens.length; i++) {
-                var token = tokens[i];
-                if (token.content) {
-                    flat = flat.concat(flatten([].concat(token.content), prefix.concat(token.type)));
-                }
-                else {
-                    if (prefix.length > 0) {
-                        flat.push([left, left + token.length, prefix.join(' ')]);
-                    }
-                    left += token.length;
-                }
-            }
-            return flat;
-        };
-        var tags = flatten(tokens);
-        // Use a superset to reduce overlapping tags.
-        var set = new superset.Superset();
-        set.set(0, text.length - 1, '');
-        tags.forEach(function (tag) { return set.set(tag[0], tag[1] - 1, tag[2]); });
-        return set.array;
-    };
-    /**
-     * Loads a syntax by language name.
-     * @param  {string or dictionary} language
-     * @return {boolean} success
-     */
-    PrismHighlighter.prototype.load = function (language) {
-        try {
-            // Check if the language exists.
-            if (prism.languages[language] === undefined) {
-                throw new Error('Language does not exist!');
-            }
-            this._language = prism.languages[language];
-            this._queue_highlighter();
-            return true;
+        if (this._tag_lock === 0 && this._pending_tag_events) {
+            this._pending_tag_events = false;
+            this.trigger_tag_events();
         }
-        catch (e) {
-            console.error('Error loading language', e);
-            this._language = null;
-            return false;
-        }
-    };
-    return PrismHighlighter;
-})(highlighter.HighlighterBase);
-exports.PrismHighlighter = PrismHighlighter;
-
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/highlighters/prism.js","/highlighters")
-},{"../superset":39,"./highlighter":19,"1YiZ5S":4,"buffer":1,"prismjs":5}],21:[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-var utils = require('./utils');
-var keymap = require('./events/map');
-/**
- * Reversible action history.
- */
-var History = (function (_super) {
-    __extends(History, _super);
-    function History(map) {
-        _super.call(this);
-        this._map = map;
-        this._actions = [];
-        this._action_groups = [];
-        this._undone = [];
-        this._autogroup = null;
-        this._action_lock = false;
-        keymap.Map.register('history.undo', utils.proxy(this.undo, this));
-        keymap.Map.register('history.redo', utils.proxy(this.redo, this));
-    }
-    /**
-     * Push a reversible action to the history.
-     * @param  {string} forward_name - name of the forward action
-     * @param  {array} forward_params - parameters to use when invoking the forward action
-     * @param  {string} backward_name - name of the backward action
-     * @param  {array} backward_params - parameters to use when invoking the backward action
-     * @param  {float} [autogroup_delay] - time to wait to automatically group the actions.
-     *                                     If this is undefined, autogrouping will not occur.
-     */
-    History.prototype.push_action = function (forward_name, forward_params, backward_name, backward_params, autogroup_delay) {
-        if (this._action_lock)
-            return;
-        this._actions.push({
-            forward: {
-                name: forward_name,
-                parameters: forward_params,
-            },
-            backward: {
-                name: backward_name,
-                parameters: backward_params,
-            }
-        });
-        this._undone = [];
-        // If a delay is defined, prepare a timeout to autogroup.
-        if (autogroup_delay !== undefined) {
-            // If another timeout was already set, cancel it.
-            if (this._autogroup !== null) {
-                clearTimeout(this._autogroup);
-            }
-            // Set a new timeout.
-            var that = this;
-            this._autogroup = setTimeout(function () {
-                that.group_actions();
-            }, autogroup_delay);
-        }
+        return this._tag_lock;
     };
     /**
-     * Commit the pushed actions to one group.
+     * Triggers the tag change events.
      */
-    History.prototype.group_actions = function () {
-        this._autogroup = null;
-        if (this._action_lock)
-            return;
-        this._action_groups.push(this._actions);
-        this._actions = [];
-        this._undone = [];
-    };
-    /**
-     * Undo one set of actions.
-     */
-    History.prototype.undo = function () {
-        // If a timeout is set, group now.
-        if (this._autogroup !== null) {
-            clearTimeout(this._autogroup);
-            this.group_actions();
-        }
-        var undo;
-        if (this._actions.length > 0) {
-            undo = this._actions;
-        }
-        else if (this._action_groups.length > 0) {
-            undo = this._action_groups.pop();
-            undo.reverse();
+    DocumentModel.prototype.trigger_tag_events = function (rows) {
+        if (this._tag_lock === 0) {
+            this.trigger('tags_changed', this._pending_tag_events_rows);
+            this._pending_tag_events_rows = undefined;
         }
         else {
-            return true;
-        }
-        // Undo the actions.
-        if (!this._action_lock) {
-            this._action_lock = true;
-            try {
-                var that = this;
-                undo.forEach(function (action) {
-                    that._map.invoke(action.backward.name, action.backward.parameters);
-                });
-            }
-            finally {
-                this._action_lock = false;
-            }
-        }
-        // Allow the action to be redone.
-        this._undone.push(undo);
-        return true;
-    };
-    /**
-     * Redo one set of actions.
-     */
-    History.prototype.redo = function () {
-        if (this._undone.length > 0) {
-            var redo = this._undone.pop();
-            // Redo the actions.
-            if (!this._action_lock) {
-                this._action_lock = true;
-                try {
-                    var that = this;
-                    redo.forEach(function (action) {
-                        that._map.invoke(action.forward.name, action.forward.parameters);
-                    });
-                }
-                finally {
-                    this._action_lock = false;
-                }
-            }
-            // Allow the action to be undone.
-            this._action_groups.push(redo);
-        }
-        return true;
-    };
-    return History;
-})(utils.PosterClass);
-exports.History = History;
-
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/history.js","/")
-},{"./events/map":16,"./utils":40,"1YiZ5S":4,"buffer":1}],22:[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var plugin = require('../plugin');
-var renderer = require('./renderer');
-/**
- * Gutter plugin.
- */
-var Gutter = (function (_super) {
-    __extends(Gutter, _super);
-    function Gutter() {
-        _super.call(this);
-        this.on('load', this._handle_load, this);
-        this.on('unload', this._handle_unload, this);
-        this._gutter_width = 50;
-    }
-    Object.defineProperty(Gutter.prototype, "gutter_width", {
-        // Create a gutter_width property that is adjustable.
-        get: function () {
-            return this._gutter_width;
-        },
-        set: function (value) {
-            this._set_width(value);
-        },
-        enumerable: true,
-        configurable: true
-    });
-    Object.defineProperty(Gutter.prototype, "renderer", {
-        get: function () {
-            return this._renderer;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    /**
-     * Sets the gutter's width.
-     * @param {integer} value - width in pixels
-     */
-    Gutter.prototype._set_width = function (value) {
-        if (this._gutter_width !== value) {
-            if (this.loaded) {
-                this.poster.view.row_renderer.margin_left += value - this._gutter_width;
-            }
-            this._gutter_width = value;
-            this.trigger('changed');
-        }
-    };
-    /**
-     * Handles when the plugin is loaded.
-     */
-    Gutter.prototype._handle_load = function () {
-        this.poster.view.row_renderer.margin_left += this._gutter_width;
-        this._renderer = new renderer.GutterRenderer(this);
-        this.register_renderer(this._renderer);
-    };
-    /**
-     * Handles when the plugin is unloaded.
-     */
-    Gutter.prototype._handle_unload = function () {
-        // Remove all listeners to this plugin's changed event.
-        this._renderer.unregister();
-        this.poster.view.row_renderer.margin_left -= this._gutter_width;
-    };
-    return Gutter;
-})(plugin.PluginBase);
-exports.Gutter = Gutter;
-
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/gutter/gutter.js","/plugins/gutter")
-},{"../plugin":27,"./renderer":23,"1YiZ5S":4,"buffer":1}],23:[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var renderer = require('../../renderers/renderer');
-/**
- * Renderers the gutter.
- */
-var GutterRenderer = (function (_super) {
-    __extends(GutterRenderer, _super);
-    function GutterRenderer(gutter) {
-        var _this = this;
-        _super.call(this, undefined, { parent_independent: true });
-        this._gutter = gutter;
-        this._gutter.on('changed', function () {
-            _this._render();
-            _this.trigger('changed');
-        });
-        this._hovering = false;
-    }
-    /**
-     * Handles rendering
-     * Only re-render when scrolled horizontally.
-     */
-    GutterRenderer.prototype.render = function (scroll) {
-        // Scrolled right xor hovering
-        var left = this._gutter.poster.canvas.scroll_left;
-        if ((left > 0) !== this._hovering) {
-            this._hovering = left > 0;
-            this._render();
-        }
-    };
-    /**
-     * Renders the gutter
-     */
-    GutterRenderer.prototype._render = function () {
-        this._canvas.clear();
-        var width = this._gutter.gutter_width;
-        this._canvas.draw_rectangle(0, 0, width, this.height, {
-            fill_color: this._gutter.poster.style.gutter,
-        });
-        // If the gutter is hovering over content, draw a drop shadow.
-        if (this._hovering) {
-            var shadow_width = 15;
-            var gradient = this._canvas.gradient(width, 0, width + shadow_width, 0, this._gutter.poster.style.gutter_shadow || [
-                [0, 'black'],
-                [1, 'transparent']
-            ]);
-            this._canvas.draw_rectangle(width, 0, shadow_width, this.height, {
-                fill_color: gradient,
-                alpha: 0.35,
-            });
-        }
-    };
-    /**
-     * Unregister the event listeners
-     * @param  {Poster} poster
-     * @param  {Gutter} gutter
-     */
-    GutterRenderer.prototype.unregister = function () {
-        this._gutter.off('changed', this._render);
-    };
-    return GutterRenderer;
-})(renderer.RendererBase);
-exports.GutterRenderer = GutterRenderer;
-
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/gutter/renderer.js","/plugins/gutter")
-},{"../../renderers/renderer":32,"1YiZ5S":4,"buffer":1}],24:[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var plugin = require('../plugin');
-var renderer = require('./renderer');
-/**
- * Line numbers plugin.
- */
-var LineNumbers = (function (_super) {
-    __extends(LineNumbers, _super);
-    function LineNumbers() {
-        _super.call(this);
-        this.on('load', this._handle_load, this);
-        this.on('unload', this._handle_unload, this);
-    }
-    /**
-     * Handles when the plugin is loaded.
-     */
-    LineNumbers.prototype._handle_load = function () {
-        this._renderer = new renderer.LineNumbersRenderer(this);
-        this.register_renderer(this._renderer);
-    };
-    /**
-     * Handles when the plugin is unloaded.
-     */
-    LineNumbers.prototype._handle_unload = function () {
-        // Remove all listeners to this plugin's changed event.
-        this._renderer.unregister();
-    };
-    return LineNumbers;
-})(plugin.PluginBase);
-exports.LineNumbers = LineNumbers;
-
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/linenumbers/linenumbers.js","/plugins/linenumbers")
-},{"../plugin":27,"./renderer":25,"1YiZ5S":4,"buffer":1}],25:[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var renderer = require('../../renderers/renderer');
-var utils = require('../../utils');
-var canvas = require('../../canvas');
-/**
- * Renderers the line numbers.
- */
-var LineNumbersRenderer = (function (_super) {
-    __extends(LineNumbersRenderer, _super);
-    function LineNumbersRenderer(plugin) {
-        _super.call(this, undefined, { parent_independent: true });
-        this._plugin = plugin;
-        this._top = null;
-        this._top_row = null;
-        this._character_width = null;
-        this._last_row_count = null;
-        // Find gutter plugin, listen to its change event.
-        var manager = this._plugin.poster.plugins;
-        this._gutter = manager.find('gutter')[0];
-        this._gutter.renderer.on('changed', this._gutter_resize, this);
-        // Get row renderer.
-        this._row_renderer = this._plugin.poster.view.row_renderer;
-        // Double buffer.
-        this._text_canvas = new canvas.Canvas();
-        this._tmp_canvas = new canvas.Canvas();
-        this._text_canvas.width = this._gutter.gutter_width;
-        this._tmp_canvas.width = this._gutter.gutter_width;
-        this.height = this.height;
-        // Adjust the gutter size when the number of lines in the document changes.
-        this._plugin.poster.model.on('text_changed', utils.proxy(this._handle_text_change, this));
-        this._plugin.poster.model.on('rows_added', utils.proxy(this._handle_text_change, this));
-        this._plugin.poster.model.on('rows_removed', utils.proxy(this._handle_text_change, this));
-        this._handle_text_change();
-    }
-    Object.defineProperty(LineNumbersRenderer.prototype, "height", {
-        get: function () {
-            return this._canvas.height;
-        },
-        set: function (value) {
-            // Adjust every buffer's size when the height changes.
-            this._canvas.height = value;
-            // The text canvas should be the right height to fit all of the lines
-            // that will be rendered in the base canvas.  This includes the lines
-            // that are partially rendered at the top and bottom of the base canvas.
-            var row_height = this._row_renderer.get_row_height();
-            this._row_height = row_height;
-            this._visible_row_count = Math.ceil(value / row_height) + 1;
-            this._text_canvas.height = this._visible_row_count * row_height;
-            this._tmp_canvas.height = this._text_canvas.height;
-            this.rerender();
-            this.trigger('changed');
-        },
-        enumerable: true,
-        configurable: true
-    });
-    /**
-     * Handles rendering
-     * Only re-render when scrolled vertically.
-     */
-    LineNumbersRenderer.prototype.render = function (scroll) {
-        var top = this._gutter.poster.canvas.scroll_top;
-        if (this._top === null || this._top !== top) {
-            this._top = top;
-            this._render();
-        }
-    };
-    /**
-     * Renders the line numbers
-     */
-    LineNumbersRenderer.prototype._render = function () {
-        // Measure the width of numerical characters if not done yet.
-        if (this._character_width === null) {
-            this._character_width = this._text_canvas.measure_text('0123456789', {
-                font_family: 'monospace',
-                font_size: 14,
-            }) / 10.0;
-            this._handle_text_change();
-        }
-        // Update the text buffer if needed.
-        var top_row = this._row_renderer.get_row_char(0, this._top).row_index;
-        var lines = this._plugin.poster.model._rows.length;
-        if (this._top_row !== top_row) {
-            this._last_row_count = lines;
-            var last_top_row = this._top_row;
-            this._top_row = top_row;
-            // Recycle rows if possible.
-            var row_scroll = this._top_row - last_top_row;
-            var row_delta = Math.abs(row_scroll);
-            if (this._top_row !== null && row_delta < this._visible_row_count) {
-                // Get a snapshot of the text before the scroll.
-                this._tmp_canvas.clear();
-                this._tmp_canvas.draw_image(this._text_canvas, 0, 0);
-                // Render the new rows.
-                this._text_canvas.clear();
-                if (this._top_row < last_top_row) {
-                    // Scrolled up the document (the scrollbar moved up, page down)
-                    this._render_rows(this._top_row, row_delta);
-                }
-                else {
-                    // Scrolled down the document (the scrollbar moved down, page up)
-                    this._render_rows(this._top_row + this._visible_row_count - row_delta, row_delta);
-                }
-                // Use the old content to fill in the rest.
-                this._text_canvas.draw_image(this._tmp_canvas, 0, -row_scroll * this._row_height);
+            this._pending_tag_events = true;
+            if (this._pending_tag_events_rows) {
+                this._pending_tag_events_rows = this._pending_tag_events_rows.concat(rows);
             }
             else {
-                // Draw everything.
-                this._text_canvas.clear();
-                this._render_rows(this._top_row, this._visible_row_count);
+                this._pending_tag_events_rows = rows;
             }
         }
-        // Render the buffer at the correct offset.
-        this._canvas.clear();
-        this._canvas.draw_image(this._text_canvas, 0, this._row_renderer.get_row_top(this._top_row) - this._row_renderer.top);
-    };
-    LineNumbersRenderer.prototype.rerender = function () {
-        // Draw everything.
-        this._character_width = null;
-        this._text_canvas.erase_options_cache();
-        this._text_canvas.clear();
-        this._render_rows(this._top_row, this._visible_row_count);
-        // Render the buffer at the correct offset.
-        this._canvas.clear();
-        this._canvas.draw_image(this._text_canvas, 0, this._row_renderer.get_row_top(this._top_row) - this._row_renderer.top);
     };
     /**
-     * Renders a set of line numbers.
-     * @param  {integer} start_row
-     * @param  {integer} num_rows
+     * Sets a 'tag' on the text specified.
+     * @param start_row - row the tag starts on
+     * @param start_char - index, in the row, of the first tagged character
+     * @param end_row - row the tag ends on
+     * @param end_char - index, in the row, of the last tagged character
+     * @param tag_name
+     * @param tag_value - overrides any previous tags
      */
-    LineNumbersRenderer.prototype._render_rows = function (start_row, num_rows) {
-        var lines = this._plugin.poster.model._rows.length;
-        for (var i = start_row; i < start_row + num_rows; i++) {
-            if (i < lines) {
-                var y = (i - this._top_row) * this._row_height;
-                if (this._plugin.poster.config.highlight_draw) {
-                    this._text_canvas.draw_rectangle(0, y, this._text_canvas.width, this._row_height, {
-                        fill_color: utils.random_color(),
-                    });
+    DocumentModel.prototype.set_tag = function (start_row, start_char, end_row, end_char, tag_name, tag_value) {
+        var coords = this.validate_coords.apply(this, arguments);
+        var rows = [];
+        for (var row = coords.start_row; row <= coords.end_row; row++) {
+            // Make sure the superset is defined for the row/tag_name pair.
+            var row_tags = this._row_tags[row];
+            if (row_tags[tag_name] === undefined) {
+                row_tags[tag_name] = new superset.Superset();
+            }
+            // Get the start and end char indicies.
+            var s = coords.start_char;
+            var e = coords.end_char;
+            if (row > coords.start_row)
+                s = 0;
+            if (row < coords.end_row)
+                e = this._rows[row].length - 1;
+            // Set the value for the range.
+            row_tags[tag_name].set(s, e, tag_value);
+            rows.push(row);
+        }
+        this.trigger_tag_events(rows);
+    };
+    /**
+     * Removed all of the tags on the document.
+     */
+    DocumentModel.prototype.clear_tags = function (start_row, end_row) {
+        start_row = start_row !== undefined ? start_row : 0;
+        end_row = end_row !== undefined ? end_row : this._row_tags.length - 1;
+        var rows = [];
+        for (var i = start_row; i <= end_row; i++) {
+            this._row_tags[i] = {};
+            rows.push(i);
+        }
+        this.trigger_tag_events(rows);
+    };
+    /**
+     * Get the tag value applied to the character.
+     * @return value or undefined
+     */
+    DocumentModel.prototype.get_tag_value = function (tag_name, row_index, char_index) {
+        // Loop through the tags on this row.
+        var row_tags = this._row_tags[row_index][tag_name];
+        if (row_tags !== undefined) {
+            var tag_array = row_tags.array;
+            for (var i = 0; i < tag_array.length; i++) {
+                // Check if within.
+                if (tag_array[i][0] <= char_index && char_index <= tag_array[i][1]) {
+                    return tag_array[i][2];
                 }
-                this._text_canvas.draw_text(10, y, String(i + 1), {
-                    font_family: 'monospace',
-                    font_size: 14,
-                    color: this._plugin.poster.style.gutter_text || 'black',
-                });
             }
         }
+        return undefined;
     };
     /**
-     * Handles when the number of lines in the editor changes.
+     * Get the tag value ranges applied to the specific range.
+     * @return array of tag value ranges ([row_index, start_char, end_char, tag_value])
      */
-    LineNumbersRenderer.prototype._handle_text_change = function () {
-        var lines = this._plugin.poster.model._rows.length;
-        var digit_width = Math.max(2, Math.ceil(Math.log(lines + 1) / Math.log(10)) + 1);
-        var char_width = this._character_width || 10.0;
-        this._gutter.gutter_width = digit_width * char_width + 8.0;
-        if (lines !== this._last_row_count) {
-            this.rerender();
+    DocumentModel.prototype.get_tags = function (tag_name, start_row, start_char, end_row, end_char) {
+        var coords = this.validate_coords.call(this, start_row, start_char, end_row, end_char);
+        var values = [];
+        for (var row = coords.start_row; row <= coords.end_row; row++) {
+            // Get the start and end char indicies.
+            var s = coords.start_char;
+            var e = coords.end_char;
+            if (row > coords.start_row)
+                s = 0;
+            if (row < coords.end_row)
+                e = this._rows[row].length - 1;
+            // Loop through the tags on this row.
+            var row_tags = this._row_tags[row][tag_name];
+            if (row_tags !== undefined) {
+                var tag_array = row_tags.array;
+                for (var i = 0; i < tag_array.length; i++) {
+                    var ns = tag_array[i][0];
+                    var ne = tag_array[i][1];
+                    // Check if the areas insersect.
+                    if (ns <= e && ne >= s) {
+                        values.push([row, ns, ne, tag_array[i][2]]);
+                    }
+                }
+            }
+        }
+        return values;
+    };
+    /**
+     * Adds text efficiently somewhere in the document.
+     */
+    DocumentModel.prototype.add_text = function (row_index, char_index, text) {
+        var coords = this.validate_coords.apply(this, Array.prototype.slice.call(arguments, 0, 2));
+        var old_text = this._rows[coords.start_row];
+        // If the text has a new line in it, just re-set
+        // the rows list.
+        if (text.indexOf('\n') != -1) {
+            var new_rows = [];
+            if (coords.start_row > 0) {
+                new_rows = this._rows.slice(0, coords.start_row);
+            }
+            var old_row_start = old_text.substring(0, coords.start_char);
+            var old_row_end = old_text.substring(coords.start_char);
+            var split_text = text.split('\n');
+            new_rows.push(old_row_start + split_text[0]);
+            if (split_text.length > 2) {
+                new_rows = new_rows.concat(split_text.slice(1, split_text.length - 1));
+            }
+            new_rows.push(split_text[split_text.length - 1] + old_row_end);
+            if (coords.start_row + 1 < this._rows.length) {
+                new_rows = new_rows.concat(this._rows.slice(coords.start_row + 1));
+            }
+            this._rows = new_rows;
+            this._resized_rows();
+            this.trigger('row_changed', old_text, coords.start_row);
+            this.trigger('rows_added', coords.start_row + 1, coords.start_row + split_text.length - 1);
+            this.trigger('changed');
+        }
+        else {
+            this._rows[coords.start_row] = old_text.substring(0, coords.start_char) + text + old_text.substring(coords.start_char);
+            this.trigger('row_changed', old_text, coords.start_row);
             this.trigger('changed');
         }
     };
     /**
-     * Handles when the gutter is resized
+     * Removes a block of text from the document
      */
-    LineNumbersRenderer.prototype._gutter_resize = function () {
-        this._text_canvas.width = this._gutter.gutter_width;
-        this._tmp_canvas.width = this._gutter.gutter_width;
-        this.rerender();
+    DocumentModel.prototype.remove_text = function (start_row, start_char, end_row, end_char) {
+        var coords = this.validate_coords.apply(this, arguments);
+        var old_text = this._rows[coords.start_row];
+        if (coords.start_row == coords.end_row) {
+            this._rows[coords.start_row] = this._rows[coords.start_row].substring(0, coords.start_char) + this._rows[coords.start_row].substring(coords.end_char);
+        }
+        else {
+            this._rows[coords.start_row] = this._rows[coords.start_row].substring(0, coords.start_char) + this._rows[coords.end_row].substring(coords.end_char);
+        }
+        if (coords.end_row - coords.start_row > 0) {
+            var rows_removed = this._rows.splice(coords.start_row + 1, coords.end_row - coords.start_row);
+            this._resized_rows();
+            // If there are more deleted rows than rows remaining, it
+            // is faster to run a calculation on the remaining rows than
+            // to run it on the rows removed.
+            if (rows_removed.length > this._rows.length) {
+                this.trigger('text_changed');
+                this.trigger('changed');
+            }
+            else {
+                this.trigger('row_changed', old_text, coords.start_row);
+                this.trigger('rows_removed', rows_removed);
+                this.trigger('changed');
+            }
+        }
+        else if (coords.end_row == coords.start_row) {
+            this.trigger('row_changed', old_text, coords.start_row);
+            this.trigger('changed');
+        }
+    };
+    /**
+     * Remove a row from the document.
+     */
+    DocumentModel.prototype.remove_row = function (row_index) {
+        if (0 < row_index && row_index < this._rows.length) {
+            var rows_removed = this._rows.splice(row_index, 1);
+            this._resized_rows();
+            this.trigger('rows_removed', rows_removed);
+            this.trigger('changed');
+        }
+    };
+    /**
+     * Gets a chunk of text.
+     */
+    DocumentModel.prototype.get_text = function (start_row, start_char, end_row, end_char) {
+        var coords = this.validate_coords.apply(this, arguments);
+        if (coords.start_row == coords.end_row) {
+            return this._rows[coords.start_row].substring(coords.start_char, coords.end_char);
+        }
+        else {
+            var text = [];
+            text.push(this._rows[coords.start_row].substring(coords.start_char));
+            if (coords.end_row - coords.start_row > 1) {
+                for (var i = coords.start_row + 1; i < coords.end_row; i++) {
+                    text.push(this._rows[i]);
+                }
+            }
+            text.push(this._rows[coords.end_row].substring(0, coords.end_char));
+            return text.join('\n');
+        }
+    };
+    /**
+     * Add a row to the document
+     * @param row_index
+     * @param text - new row's text
+     */
+    DocumentModel.prototype.add_row = function (row_index, text) {
+        var new_rows = [];
+        if (row_index > 0) {
+            new_rows = this._rows.slice(0, row_index);
+        }
+        new_rows.push(text);
+        if (row_index < this._rows.length) {
+            new_rows = new_rows.concat(this._rows.slice(row_index));
+        }
+        this._rows = new_rows;
+        this._resized_rows();
+        this.trigger('rows_added', row_index, row_index);
         this.trigger('changed');
     };
     /**
-     * Unregister the event listeners
-     * @param  {Poster} poster
-     * @param  {Gutter} gutter
+     * Validates row, character coordinates in the document.
+     * @return dictionary containing validated coordinates {start_row,
+     *         start_char, end_row, end_char}
      */
-    LineNumbersRenderer.prototype.unregister = function () {
-        this._gutter.off('changed', this._render);
+    DocumentModel.prototype.validate_coords = function (start_row, start_char, end_row, end_char) {
+        // Make sure the values aren't undefined.
+        if (start_row === undefined)
+            start_row = 0;
+        if (start_char === undefined)
+            start_char = 0;
+        if (end_row === undefined)
+            end_row = start_row;
+        if (end_char === undefined)
+            end_char = start_char;
+        // Make sure the values are within the bounds of the contents.
+        if (this._rows.length === 0) {
+            start_row = 0;
+            start_char = 0;
+            end_row = 0;
+            end_char = 0;
+        }
+        else {
+            if (start_row >= this._rows.length)
+                start_row = this._rows.length - 1;
+            if (start_row < 0)
+                start_row = 0;
+            if (end_row >= this._rows.length)
+                end_row = this._rows.length - 1;
+            if (end_row < 0)
+                end_row = 0;
+            if (start_char > this._rows[start_row].length)
+                start_char = this._rows[start_row].length;
+            if (start_char < 0)
+                start_char = 0;
+            if (end_char > this._rows[end_row].length)
+                end_char = this._rows[end_row].length;
+            if (end_char < 0)
+                end_char = 0;
+        }
+        // Make sure the start is before the end.
+        if (start_row > end_row || (start_row == end_row && start_char > end_char)) {
+            return {
+                start_row: end_row,
+                start_char: end_char,
+                end_row: start_row,
+                end_char: start_char,
+            };
+        }
+        else {
+            return {
+                start_row: start_row,
+                start_char: start_char,
+                end_row: end_row,
+                end_char: end_char,
+            };
+        }
     };
-    return LineNumbersRenderer;
-})(renderer.RendererBase);
-exports.LineNumbersRenderer = LineNumbersRenderer;
+    /**
+     * Gets the text of the document.
+     */
+    DocumentModel.prototype._get_text = function () {
+        return this._rows.join('\n');
+    };
+    /**
+     * Sets the text of the document.
+     * Complexity O(N) for N rows
+     */
+    DocumentModel.prototype._set_text = function (value) {
+        this._rows = value.split('\n');
+        this._resized_rows();
+        this.trigger('text_changed');
+        this.trigger('changed');
+    };
+    /**
+     * Updates _row's partner arrays.
+     */
+    DocumentModel.prototype._resized_rows = function () {
+        while (this._row_tags.length < this._rows.length) {
+            this._row_tags.push({});
+        }
+        if (this._row_tags.length > this._rows.length) {
+            this._row_tags.splice(this._rows.length, this._row_tags.length - this._rows.length);
+        }
+    };
+    return DocumentModel;
+})(utils.PosterClass);
+exports.DocumentModel = DocumentModel;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/linenumbers/renderer.js","/plugins/linenumbers")
-},{"../../canvas":7,"../../renderers/renderer":32,"../../utils":40,"1YiZ5S":4,"buffer":1}],26:[function(require,module,exports){
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/document_model.js","/")
+},{"./utils/superset":39,"./utils/utils":40,"1YiZ5S":4,"buffer":1}],15:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -5834,87 +4254,717 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-var utils = require('../utils');
-var pluginbase = require('./plugin');
-var gutter = require('./gutter/gutter');
-var linenumbers = require('./linenumbers/linenumbers');
+var utils = require('./utils/utils');
+// Renderers
+var batch = require('./draw/renderers/batch');
+var highlighted_row = require('./draw/renderers/highlighted_row');
+var cursors = require('./draw/renderers/cursors');
+var selections = require('./draw/renderers/selections');
+var color = require('./draw/renderers/color');
+var highlighter = require('./syntax/prism');
 /**
- * Plugin manager class
+ * Visual representation of a DocumentModel instance
  */
-var PluginManager = (function (_super) {
-    __extends(PluginManager, _super);
-    function PluginManager(poster) {
-        _super.call(this);
-        this._poster = poster;
-        this._plugins = [];
-        // Populate built-in plugin list.
-        this._internal_plugins = {};
-        this._internal_plugins.gutter = gutter.Gutter;
-        this._internal_plugins.linenumbers = linenumbers.LineNumbers;
+var DocumentView = (function (_super) {
+    __extends(DocumentView, _super);
+    /**
+     * @param scrolling_canvas
+     * @param model
+     * @param cursors_model
+     * @param style - describes rendering style
+     * @param has_focus - function that checks if the text area has focus
+     * @param move_focal_point - function that moves the focal point
+     */
+    function DocumentView(scrolling_canvas, model, cursors_model, style, has_focus, move_focal_point) {
+        // Create child renderers.
+        var row_renderer = new highlighted_row.HighlightedRowRenderer(model, scrolling_canvas, style);
+        row_renderer.margin_left = 2;
+        row_renderer.margin_top = 2;
+        this.row_renderer = row_renderer;
+        // Make sure changes made to the cursor(s) are within the visible region.
+        cursors_model.on('change', function (cursor) {
+            var row_index = cursor.primary_row;
+            var char_index = cursor.primary_char;
+            var top = row_renderer.get_row_top(row_index);
+            var height = row_renderer.get_row_height(row_index);
+            var left = row_renderer.measure_partial_row_width(row_index, char_index) + row_renderer.margin_left;
+            var bottom = top + height;
+            var canvas_height = scrolling_canvas.height - 20;
+            if (bottom > scrolling_canvas.scroll_top + canvas_height) {
+                scrolling_canvas.scroll_top = bottom - canvas_height;
+            }
+            else if (top < scrolling_canvas.scroll_top) {
+                scrolling_canvas.scroll_top = top;
+            }
+            var canvas_width = scrolling_canvas.width - 20;
+            if (left > scrolling_canvas.scroll_left + canvas_width) {
+                scrolling_canvas.scroll_left = left - canvas_width;
+            }
+            else if (left - row_renderer.margin_left < scrolling_canvas.scroll_left) {
+                scrolling_canvas.scroll_left = Math.max(0, left - row_renderer.margin_left);
+            }
+            move_focal_point(left - scrolling_canvas.scroll_left, top - scrolling_canvas.scroll_top - scrolling_canvas.height);
+        });
+        var cursors_renderer = new cursors.CursorsRenderer(cursors_model, style, row_renderer, has_focus);
+        var selections_renderer = new selections.SelectionsRenderer(cursors_model, style, row_renderer, has_focus, cursors_renderer);
+        // Create the background renderer
+        var color_renderer = new color.ColorRenderer();
+        color_renderer.color = style.background || 'white';
+        style.on('changed:style', function () {
+            color_renderer.color = style.background;
+        });
+        // Create the document highlighter, which needs to know about the currently
+        // rendered rows in order to know where to highlight.
+        this.highlighter = new highlighter.PrismHighlighter(model, row_renderer);
+        // Pass get_row_char into cursors.
+        cursors_model.get_row_char = utils.proxy(row_renderer.get_row_char, row_renderer);
+        // Call base constructor.
+        _super.call(this, [
+            color_renderer,
+            selections_renderer,
+            row_renderer,
+            cursors_renderer,
+        ], scrolling_canvas);
+        // Hookup render events.
+        this._canvas.on('redraw', utils.proxy(this.render, this));
+        model.on('changed', utils.proxy(scrolling_canvas.redraw, scrolling_canvas));
     }
-    Object.defineProperty(PluginManager.prototype, "plugins", {
+    Object.defineProperty(DocumentView.prototype, "language", {
         get: function () {
-            return [].concat(this._plugins);
+            return this._language;
+        },
+        set: function (value) {
+            this.highlighter.load(value);
+            this._language = value;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    return DocumentView;
+})(batch.BatchRenderer);
+exports.DocumentView = DocumentView;
+
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/document_view.js","/")
+},{"./draw/renderers/batch":18,"./draw/renderers/color":19,"./draw/renderers/cursors":20,"./draw/renderers/highlighted_row":21,"./draw/renderers/selections":24,"./syntax/prism":37,"./utils/utils":40,"1YiZ5S":4,"buffer":1}],16:[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var utils = require('../utils/utils');
+/**
+ * Animation helper.
+ */
+var Animator = (function (_super) {
+    __extends(Animator, _super);
+    function Animator(duration) {
+        _super.call(this);
+        this.duration = duration;
+        this._start = Date.now();
+    }
+    /**
+     * Get the time in the animation
+     * @return between 0 and 1
+     */
+    Animator.prototype.time = function () {
+        var elapsed = Date.now() - this._start;
+        return (elapsed % this.duration) / this.duration;
+    };
+    /**
+     * Reset the animation progress to 0.
+     */
+    Animator.prototype.reset = function () {
+        this._start = Date.now();
+    };
+    return Animator;
+})(utils.PosterClass);
+exports.Animator = Animator;
+
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/animator.js","/draw")
+},{"../utils/utils":40,"1YiZ5S":4,"buffer":1}],17:[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+var utils = require('../utils/utils');
+var config_mod = require('../utils/config');
+var config = config_mod.config;
+var CompositeOperationEnum = (function () {
+    function CompositeOperationEnum(value) {
+        this.value = value;
+    }
+    CompositeOperationEnum.prototype.toString = function () {
+        return this.value;
+    };
+    // Possible values.
+    CompositeOperationEnum.source_over = new CompositeOperationEnum('source-over');
+    CompositeOperationEnum.source_atop = new CompositeOperationEnum('source-atop');
+    CompositeOperationEnum.source_in = new CompositeOperationEnum('source-in');
+    CompositeOperationEnum.source_out = new CompositeOperationEnum('source-out');
+    CompositeOperationEnum.destination_over = new CompositeOperationEnum('destination-over');
+    CompositeOperationEnum.destination_atop = new CompositeOperationEnum('destination-atop');
+    CompositeOperationEnum.destination_in = new CompositeOperationEnum('destination-in');
+    CompositeOperationEnum.destination_out = new CompositeOperationEnum('destination-out');
+    CompositeOperationEnum.lighter = new CompositeOperationEnum('lighter');
+    CompositeOperationEnum.copy = new CompositeOperationEnum('copy');
+    CompositeOperationEnum.xor = new CompositeOperationEnum('xor');
+    return CompositeOperationEnum;
+})();
+exports.CompositeOperationEnum = CompositeOperationEnum;
+var TextAlignmentEnum = (function () {
+    function TextAlignmentEnum(value) {
+        this.value = value;
+    }
+    TextAlignmentEnum.prototype.toString = function () {
+        return this.value;
+    };
+    // Possible values.
+    TextAlignmentEnum.start = new TextAlignmentEnum('start');
+    TextAlignmentEnum.end = new TextAlignmentEnum('end');
+    TextAlignmentEnum.center = new TextAlignmentEnum('center');
+    TextAlignmentEnum.left = new TextAlignmentEnum('left');
+    TextAlignmentEnum.right = new TextAlignmentEnum('right');
+    return TextAlignmentEnum;
+})();
+exports.TextAlignmentEnum = TextAlignmentEnum;
+var TextBaselineEnum = (function () {
+    function TextBaselineEnum(value) {
+        this.value = value;
+    }
+    TextBaselineEnum.prototype.toString = function () {
+        return this.value;
+    };
+    // Possible values.
+    TextBaselineEnum.alphabetic = new TextBaselineEnum('alphabetic');
+    TextBaselineEnum.top = new TextBaselineEnum('top');
+    TextBaselineEnum.hanging = new TextBaselineEnum('hanging');
+    TextBaselineEnum.middle = new TextBaselineEnum('middle');
+    TextBaselineEnum.ideographic = new TextBaselineEnum('ideographic');
+    TextBaselineEnum.bottom = new TextBaselineEnum('bottom');
+    return TextBaselineEnum;
+})();
+exports.TextBaselineEnum = TextBaselineEnum;
+var LineCapEnum = (function () {
+    function LineCapEnum(value) {
+        this.value = value;
+    }
+    LineCapEnum.prototype.toString = function () {
+        return this.value;
+    };
+    // Possible values.
+    LineCapEnum.butt = new LineCapEnum('butt');
+    LineCapEnum.round = new LineCapEnum('round');
+    LineCapEnum.square = new LineCapEnum('square');
+    return LineCapEnum;
+})();
+exports.LineCapEnum = LineCapEnum;
+var LineJoinEnum = (function () {
+    function LineJoinEnum(value) {
+        this.value = value;
+    }
+    LineJoinEnum.prototype.toString = function () {
+        return this.value;
+    };
+    // Possible values.
+    LineJoinEnum.bevel = new LineJoinEnum('bevel');
+    LineJoinEnum.round = new LineJoinEnum('round');
+    LineJoinEnum.miter = new LineJoinEnum('miter');
+    return LineJoinEnum;
+})();
+exports.LineJoinEnum = LineJoinEnum;
+/**
+ * HTML canvas with drawing convinience functions.
+ */
+var Canvas = (function (_super) {
+    __extends(Canvas, _super);
+    function Canvas() {
+        _super.call(this);
+        this._text_size_cache_size = 1000;
+        this._rendered_region = {
+            x1: null,
+            y1: null,
+            x2: null,
+            y2: null
+        };
+        this._layout();
+        this._last_set_options = {};
+        this._text_size_cache = {};
+        this._text_size_array = [];
+        // Set default size.
+        this.width = 400;
+        this.height = 300;
+    }
+    Object.defineProperty(Canvas.prototype, "context", {
+        get: function () {
+            return this._context;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Canvas.prototype, "height", {
+        /**
+         * Height of the canvas
+         */
+        get: function () {
+            return this._canvas.height / 2;
+        },
+        set: function (value) {
+            this._canvas.setAttribute('height', String(value * 2));
+            // Stretch the image for retina support.
+            this.scale(2, 2);
+            this._touch();
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Canvas.prototype, "width", {
+        /**
+         * Width of the canvas
+         */
+        get: function () {
+            return this._canvas.width / 2;
+        },
+        set: function (value) {
+            this._canvas.setAttribute('width', String(value * 2));
+            // Stretch the image for retina support.
+            this.scale(2, 2);
+            this._touch();
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Canvas.prototype, "rendered_region", {
+        /**
+         * Region of the canvas that has been rendered to
+         * @return null if canvas has changed since last check
+         */
+        get: function () {
+            return this.get_rendered_region(true);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Canvas.prototype, "canvas", {
+        /**
+         * HTML 5 Canvas element
+         */
+        get: function () {
+            return this._canvas;
         },
         enumerable: true,
         configurable: true
     });
     /**
-     * Loads a plugin
-     * @param  {string or PluginBase} plugin
-     * @returns {boolean} success
+     * Gets the region of the canvas that has been rendered to.
+     * @param  [reset] - resets the region.
      */
-    PluginManager.prototype.load = function (plugin) {
-        if (!(plugin instanceof pluginbase.PluginBase)) {
-            var plugin_class = this._internal_plugins[plugin];
-            if (plugin_class !== undefined) {
-                plugin = new plugin_class();
-            }
+    Canvas.prototype.get_rendered_region = function (reset) {
+        var rendered_region = this._rendered_region;
+        if (rendered_region[0] === null)
+            return null;
+        if (reset) {
+            this._rendered_region = {
+                x1: null,
+                y1: null,
+                x2: null,
+                y2: null
+            };
         }
-        if (plugin instanceof pluginbase.PluginBase) {
-            this._plugins.push(plugin);
-            plugin._load(this, this._poster);
-            return true;
-        }
-        return false;
+        return {
+            x: this.tx(rendered_region[0], true),
+            y: this.ty(rendered_region[1], true),
+            width: (this.tx(rendered_region[2]) - this.tx(rendered_region[0])),
+            height: (this.ty(rendered_region[3]) - this.ty(rendered_region[1])),
+        };
     };
     /**
-     * Unloads a plugin
-     * @param  {PluginBase} plugin
-     * @returns {boolean} success
+     * Erases the cached rendering options.
+     *
+     * This should be called if a font is not rendering properly.  A font may not
+     * render properly if it was was used within Poster before it was loaded by the
+     * browser. i.e. If font 'FontA' is used within Poster, but hasn't been loaded
+     * yet by the browser, Poster will use a temporary font instead of 'FontA'.
+     * Because Poster is unaware of when fonts are loaded (TODO attempt to fix this)
+     * by the browser, once 'FontA' is actually loaded, the temporary font will
+     * continue to be used.  Clearing the cache makes Poster attempt to reload that
+     * font.
      */
-    PluginManager.prototype.unload = function (plugin) {
-        var index = this._plugins.indexOf(plugin);
-        if (index != -1) {
-            this._plugins.splice(index, 1);
-            plugin._unload();
-            return true;
-        }
-        return false;
+    Canvas.prototype.erase_options_cache = function () {
+        this._last_set_options = {};
     };
     /**
-     * Finds the instance of a plugin.
-     * @param  {string or type} plugin_class - name of internal plugin or plugin class
-     * @return {array} of plugin instances
+     * Draws a rectangle
      */
-    PluginManager.prototype.find = function (plugin_class) {
-        if (this._internal_plugins[plugin_class] !== undefined) {
-            plugin_class = this._internal_plugins[plugin_class];
+    Canvas.prototype.draw_rectangle = function (x, y, width, height, options) {
+        var tx = this.tx(x);
+        var ty = this.ty(y);
+        this.context.beginPath();
+        this.context.rect(tx, ty, width, height);
+        this._do_draw(options);
+        this._touch(tx, ty, tx + width, ty + height);
+    };
+    /**
+     * Draws a circle
+     */
+    Canvas.prototype.draw_circle = function (x, y, r, options) {
+        var tx = this.tx(x);
+        var ty = this.ty(y);
+        this.context.beginPath();
+        this.context.arc(tx, ty, r, 0, 2 * Math.PI);
+        this._do_draw(options);
+        this._touch(tx - r, ty - r, tx + r, ty + r);
+    };
+    /**
+     * Draws an image
+     */
+    Canvas.prototype.draw_image = function (img, x, y, width, height, clip_bounds) {
+        var tx = this.tx(x);
+        var ty = this.ty(y);
+        width = width || img.width;
+        height = height || img.height;
+        var html_img = img.canvas ? img.canvas : img;
+        if (clip_bounds) {
+            // Horizontally offset the image operation by one pixel along each 
+            // border to eliminate the strange white l&r border artifacts.
+            var hoffset = 1;
+            this.context.drawImage(html_img, (this.tx(clip_bounds.x) - hoffset) * 2, this.ty(clip_bounds.y) * 2, (clip_bounds.width + 2 * hoffset) * 2, clip_bounds.height * 2, tx - hoffset, ty, width + 2 * hoffset, height);
         }
-        var found = [];
-        for (var i = 0; i < this._plugins.length; i++) {
-            if (this._plugins[i] instanceof plugin_class) {
-                found.push(this._plugins[i]);
+        else {
+            this.context.drawImage(html_img, tx, ty, width, height);
+        }
+        this._touch(tx, ty, tx + width, ty + height);
+    };
+    /**
+     * Draws a line
+     */
+    Canvas.prototype.draw_line = function (x1, y1, x2, y2, options) {
+        var tx1 = this.tx(x1);
+        var ty1 = this.ty(y1);
+        var tx2 = this.tx(x2);
+        var ty2 = this.ty(y2);
+        this.context.beginPath();
+        this.context.moveTo(tx1, ty1);
+        this.context.lineTo(tx2, ty2);
+        this._do_draw(options);
+        this._touch(tx1, ty1, tx2, ty2);
+    };
+    /**
+     * Draws a poly line
+     * @param  points - array of points.  Each point is an array itself, of the
+     *                  form [x, y] where x and y are floating point values.
+     */
+    Canvas.prototype.draw_polyline = function (points, options) {
+        if (points.length < 2) {
+            throw new Error('Poly line must have atleast two points.');
+        }
+        else {
+            this.context.beginPath();
+            var point = points[0];
+            this.context.moveTo(this.tx(point[0]), this.ty(point[1]));
+            var minx = this.width;
+            var miny = this.height;
+            var maxx = 0;
+            var maxy = 0;
+            for (var i = 1; i < points.length; i++) {
+                point = points[i];
+                var tx = this.tx(point[0]);
+                var ty = this.ty(point[1]);
+                this.context.lineTo(tx, ty);
+                minx = Math.min(tx, minx);
+                miny = Math.min(ty, miny);
+                maxx = Math.max(tx, maxx);
+                maxy = Math.max(ty, maxy);
+            }
+            this._do_draw(options);
+            this._touch(minx, miny, maxx, maxy);
+        }
+    };
+    /**
+     * Draws a text string
+     */
+    Canvas.prototype.draw_text = function (x, y, text, options) {
+        var tx = this.tx(x);
+        var ty = this.ty(y);
+        text = this._process_tabs(text);
+        options = this._apply_options(options);
+        // 'fill' the text by default when neither a stroke or fill 
+        // is defined.  Otherwise only fill if a fill is defined.
+        if (options.fill || !options.stroke) {
+            this.context.fillText(text, tx, ty);
+        }
+        // Only stroke if a stroke is defined.
+        if (options.stroke) {
+            this.context.strokeText(text, tx, ty);
+        }
+        // Mark the region as dirty.
+        var width = this.measure_text(text, options);
+        var height = this._font_height;
+        this._touch(tx, ty, tx + width, ty + height);
+    };
+    /**
+     * Get's a chunk of the canvas as a raw image.
+     */
+    Canvas.prototype.get_raw_image = function (x, y, width, height) {
+        console.warn('get_raw_image image is slow, use canvas references instead with draw_image');
+        if (x === undefined) {
+            x = 0;
+        }
+        else {
+            x = this.tx(x);
+        }
+        if (y === undefined) {
+            y = 0;
+        }
+        else {
+            y = this.ty(y);
+        }
+        if (width === undefined)
+            width = this.width;
+        if (height === undefined)
+            height = this.height;
+        // Multiply by two for pixel doubling.
+        x = 2 * x;
+        y = 2 * y;
+        width = 2 * width;
+        height = 2 * height;
+        // Update the cached image if it's not the requested one.
+        var region = {
+            x1: x,
+            y1: y,
+            x2: width,
+            y2: height
+        };
+        if (!(this._cached_timestamp === this._modified && utils.compare_objects(region, this._cached_region))) {
+            this._cached_image = this.context.getImageData(x, y, width, height);
+            this._cached_timestamp = this._modified;
+            this._cached_region = region;
+        }
+        // Return the cached image.
+        return this._cached_image;
+    };
+    /**
+     * Put's a raw image on the canvas somewhere.
+     */
+    Canvas.prototype.put_raw_image = function (img, x, y) {
+        console.warn('put_raw_image image is slow, use draw_image instead');
+        var tx = this.tx(x);
+        var ty = this.ty(y);
+        // Multiply by two for pixel doubling.
+        var ret = this.context.putImageData(img, tx * 2, ty * 2);
+        this._touch(tx, ty, this.width, this.height); // Don't know size of image
+    };
+    /**
+     * Measures the width of a text string.
+     */
+    Canvas.prototype.measure_text = function (text, options) {
+        options = this._apply_options(options);
+        text = this._process_tabs(text);
+        // Cache the size if it's not already cached.
+        if (this._text_size_cache[text] === undefined) {
+            this._text_size_cache[text] = this.context.measureText(text).width;
+            this._text_size_array.push(text);
+            while (this._text_size_array.length > this._text_size_cache_size) {
+                var oldest = this._text_size_array.shift();
+                delete this._text_size_cache[oldest];
             }
         }
-        return found;
+        // Use the cached size.
+        return this._text_size_cache[text];
     };
-    return PluginManager;
+    /**
+     * Create a linear gradient
+     * @param x1
+     * @param y1
+     * @param x2
+     * @param y2
+     * @param color_stops - array of [float, color] pairs
+     */
+    Canvas.prototype.gradient = function (x1, y1, x2, y2, color_stops) {
+        var gradient = this.context.createLinearGradient(x1, y1, x2, y2);
+        for (var i = 0; i < color_stops.length; i++) {
+            gradient.addColorStop(color_stops[i][0], color_stops[i][1]);
+        }
+        return gradient;
+    };
+    /**
+     * Clear's the canvas.
+     */
+    Canvas.prototype.clear = function (region) {
+        if (region) {
+            var tx = this.tx(region.x);
+            var ty = this.ty(region.y);
+            this.context.clearRect(tx, ty, region.width, region.height);
+            this._touch(tx, ty, tx + region.width, ty + region.height);
+        }
+        else {
+            this.context.clearRect(0, 0, this.width, this.height);
+            this._touch();
+        }
+    };
+    /**
+     * Scale the current drawing.
+     */
+    Canvas.prototype.scale = function (x, y) {
+        this.context.scale(x, y);
+        this._touch();
+    };
+    /**
+     * Transform an x value before rendering.
+     * @param x
+     * @param [inverse] - perform inverse transformation
+     */
+    Canvas.prototype.tx = function (x, inverse) {
+        return x;
+    };
+    /**
+     * Transform a y value before rendering.
+     * @param y
+     * @param [inverse] - perform inverse transformation
+     */
+    Canvas.prototype.ty = function (y, inverse) {
+        return y;
+    };
+    /**
+     * Layout the elements for the canvas.
+     * Creates `this.el`
+     */
+    Canvas.prototype._layout = function () {
+        this._canvas = document.createElement('canvas');
+        this._canvas.setAttribute('class', 'poster hidden-canvas');
+        this._context = this._canvas.getContext('2d');
+        // Stretch the image for retina support.
+        this.scale(2, 2);
+    };
+    /**
+     * Finishes the drawing operation using the set of provided options.
+     */
+    Canvas.prototype._do_draw = function (options) {
+        options = this._apply_options(options);
+        // Only fill if a fill is defined.
+        if (options.fill) {
+            this.context.fill();
+        }
+        // Stroke by default, if no stroke or fill is defined.  Otherwise
+        // only stroke if a stroke is defined.
+        if (options.stroke || !options.fill) {
+            this.context.stroke();
+        }
+    };
+    /**
+     * Applies a dictionary of drawing options to the pen.
+     */
+    Canvas.prototype._apply_options = function (options) {
+        options = options || {};
+        // Special options.
+        var set_options = {};
+        set_options.globalAlpha = (options.alpha === undefined ? 1.0 : options.alpha);
+        set_options.globalCompositeOperation = (options.composite_operation || CompositeOperationEnum.source_over).toString();
+        // Line style.
+        set_options.lineCap = (options.line_cap || LineCapEnum.butt).toString();
+        set_options.lineJoin = (options.line_join || LineJoinEnum.bevel).toString();
+        set_options.lineWidth = options.line_width === undefined ? 1.0 : options.line_width;
+        set_options.miterLimit = options.line_miter_limit === undefined ? 10 : options.line_miter_limit;
+        this.context.strokeStyle = options.line_color || options.color || 'black'; // TODO: Support gradient
+        options.stroke = (options.line_color !== undefined || options.line_width !== undefined);
+        // Fill style.
+        this.context.fillStyle = options.fill_color || options.color || 'red'; // TODO: Support gradient
+        options.fill = options.fill_color !== undefined;
+        // Font style.
+        var pixels = function (x) {
+            if (x !== undefined && x !== null) {
+                if (!isNaN(x)) {
+                    return String(x) + 'px';
+                }
+                else {
+                    return x;
+                }
+            }
+            else {
+                return null;
+            }
+        };
+        var font_style = options.font_style || '';
+        var font_variant = options.font_variant || '';
+        var font_weight = options.font_weight || '';
+        this._font_height = options.font_size || 12;
+        var font_size = pixels(this._font_height);
+        var font_family = options.font_family || 'Arial';
+        var font = font_style + ' ' + font_variant + ' ' + font_weight + ' ' + font_size + ' ' + font_family;
+        set_options.font = font;
+        // Text style.
+        set_options.textAlign = (options.text_align || TextAlignmentEnum.left).toString();
+        set_options.textBaseline = (options.text_baseline || TextBaselineEnum.top).toString();
+        // TODO: Support shadows.
+        // Empty the measure text cache if the font is changed.
+        if (set_options.font !== this._last_set_options.font) {
+            this._text_size_cache = {};
+            this._text_size_array = [];
+        }
+        for (var key in set_options) {
+            if (set_options.hasOwnProperty(key)) {
+                if (this._last_set_options[key] !== set_options[key]) {
+                    this._last_set_options[key] = set_options[key];
+                    this.context[key] = set_options[key];
+                }
+            }
+        }
+        return options;
+    };
+    /**
+     * Update the timestamp that the canvas was modified and
+     * the region that has contents rendered to it.
+     */
+    Canvas.prototype._touch = function (x1, y1, x2, y2) {
+        this._modified = Date.now();
+        var all_undefined = (x1 === undefined && y1 === undefined && x2 === undefined && y2 === undefined);
+        var one_nan = (isNaN(x1 * x2 * y1 * y2));
+        if (one_nan || all_undefined) {
+            this._rendered_region = {
+                x1: 0,
+                y1: 0,
+                x2: this.width,
+                y2: this.height
+            };
+            return;
+        }
+        // Set the render region.
+        var comparitor = function (old_value, new_value, comparison) {
+            if (old_value === null || old_value === undefined || new_value === null || new_value === undefined) {
+                return new_value;
+            }
+            else {
+                return comparison.call(undefined, old_value, new_value);
+            }
+        };
+        this._rendered_region.x1 = comparitor(this._rendered_region.x1, comparitor(x1, x2, Math.min), Math.min);
+        this._rendered_region.y1 = comparitor(this._rendered_region.y1, comparitor(y1, y2, Math.min), Math.min);
+        this._rendered_region.x2 = comparitor(this._rendered_region.x2, comparitor(x1, x2, Math.max), Math.max);
+        this._rendered_region.y2 = comparitor(this._rendered_region.y2, comparitor(y1, y2, Math.max), Math.max);
+    };
+    /**
+     * Convert tab characters to the config defined number of space
+     * characters for rendering.
+     */
+    Canvas.prototype._process_tabs = function (s) {
+        var space_tab = '';
+        for (var i = 0; i < (config.tab_width || 1); i++) {
+            space_tab += ' ';
+        }
+        return s.replace(/\t/g, space_tab);
+    };
+    return Canvas;
 })(utils.PosterClass);
-exports.PluginManager = PluginManager;
+exports.Canvas = Canvas;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/manager.js","/plugins")
-},{"../utils":40,"./gutter/gutter":22,"./linenumbers/linenumbers":24,"./plugin":27,"1YiZ5S":4,"buffer":1}],27:[function(require,module,exports){
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/canvas.js","/draw")
+},{"../utils/config":38,"../utils/utils":40,"1YiZ5S":4,"buffer":1}],18:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -5923,93 +4973,9 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-var utils = require('../utils');
-/**
- * Plugin base class
- */
-var PluginBase = (function (_super) {
-    __extends(PluginBase, _super);
-    function PluginBase() {
-        _super.call(this);
-        this.loaded = false;
-        this._renderers = [];
-        this._poster = null;
-    }
-    Object.defineProperty(PluginBase.prototype, "poster", {
-        get: function () {
-            return this._poster;
-        },
-        enumerable: true,
-        configurable: true
-    });
-    /**
-     * Loads the plugin
-     */
-    PluginBase.prototype._load = function (manager, poster) {
-        this._poster = poster;
-        this._manager = manager;
-        this.loaded = true;
-        this.trigger('load');
-    };
-    /**
-     * Unloads this plugin
-     */
-    PluginBase.prototype.unload = function () {
-        this._manager.unload(this);
-    };
-    /**
-     * Trigger unload event
-     */
-    PluginBase.prototype._unload = function () {
-        for (var i = 0; i < this._renderers.length; i++) {
-            this._unregister_renderer(this._renderers[i]);
-        }
-        this.loaded = false;
-        this.trigger('unload');
-    };
-    /**
-     * Registers a renderer
-     * @param  {RendererBase} renderer
-     */
-    PluginBase.prototype.register_renderer = function (renderer) {
-        this._renderers.push(renderer);
-        this.poster.view.add_renderer(renderer);
-    };
-    /**
-     * Unregisters a renderer and removes it from the internal list.
-     * @param  {RendererBase} renderer
-     */
-    PluginBase.prototype.unregister_renderer = function (renderer) {
-        var index = this._renderers.indexOf(renderer);
-        if (index !== -1) {
-            this._renderers.splice(index, 1);
-        }
-        this._unregister_renderer(renderer);
-    };
-    /**
-     * Unregisters a renderer
-     * @param  {RendererBase} renderer
-     */
-    PluginBase.prototype._unregister_renderer = function (renderer) {
-        this.poster.view.remove_renderer(renderer);
-    };
-    return PluginBase;
-})(utils.PosterClass);
-exports.PluginBase = PluginBase;
-
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/plugin.js","/plugins")
-},{"../utils":40,"1YiZ5S":4,"buffer":1}],28:[function(require,module,exports){
-(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
-var utils = require('../utils');
+var utils = require('../../utils/utils');
 var renderer = require('./renderer');
-var config_mod = require('../config');
+var config_mod = require('../../utils/config');
 var config = config_mod.config;
 /**
  * Groups multiple renderers
@@ -6027,7 +4993,7 @@ var BatchRenderer = (function (_super) {
         // the full image by copying them all again.
         this._renderers.forEach(function (renderer) {
             renderer.on('changed', function () {
-                var rendered_region = renderer._canvas.rendered_region;
+                var rendered_region = renderer.canvas.rendered_region;
                 _this._copy_renderers(rendered_region);
             });
         });
@@ -6065,7 +5031,7 @@ var BatchRenderer = (function (_super) {
         var _this = this;
         this._renderers.push(renderer);
         renderer.on('changed', function () {
-            var rendered_region = renderer._canvas.rendered_region;
+            var rendered_region = renderer.canvas.rendered_region;
             _this._copy_renderers(rendered_region);
         });
     };
@@ -6081,9 +5047,7 @@ var BatchRenderer = (function (_super) {
     };
     /**
      * Render to the canvas
-     * @param {dictionary} (optional) scroll - How much the canvas was scrolled.  This
-     *                     is a dictionary of the form {x: float, y: float}
-     * @return {null}
+     * @param [scroll] - How much the canvas was scrolled.
      */
     BatchRenderer.prototype.render = function (scroll) {
         var _this = this;
@@ -6093,8 +5057,8 @@ var BatchRenderer = (function (_super) {
                 this._renderers.forEach(function (renderer) {
                     // Apply the rendering coordinate transforms of the parent.
                     if (!renderer.options.parent_independent) {
-                        renderer._canvas._tx = utils.proxy(_this._canvas._tx, _this._canvas);
-                        renderer._canvas._ty = utils.proxy(_this._canvas._ty, _this._canvas);
+                        renderer.canvas.tx = utils.proxy(_this._canvas.tx, _this._canvas);
+                        renderer.canvas.ty = utils.proxy(_this._canvas.ty, _this._canvas);
                     }
                 });
                 // Tell each renderer to render and keep track of the region
@@ -6103,7 +5067,7 @@ var BatchRenderer = (function (_super) {
                 this._renderers.forEach(function (renderer) {
                     // Tell the renderer to render itself.
                     renderer.render(scroll);
-                    var new_region = renderer._canvas.rendered_region;
+                    var new_region = renderer.canvas.rendered_region;
                     if (rendered_region === null) {
                         rendered_region = new_region;
                     }
@@ -6133,7 +5097,6 @@ var BatchRenderer = (function (_super) {
     };
     /**
      * Copies all the renderer layers to the canvas.
-     * @return {null}
      */
     BatchRenderer.prototype._copy_renderers = function (region) {
         var _this = this;
@@ -6146,25 +5109,23 @@ var BatchRenderer = (function (_super) {
     };
     /**
      * Copy a renderer to the canvas.
-     * @param  {RendererBase} renderer
-     * @param  {object} (optional) region
      */
     BatchRenderer.prototype._copy_renderer = function (renderer, region) {
         if (region) {
             // Copy a region.
-            this._canvas.draw_image(renderer._canvas, region.x, region.y, region.width, region.height, region);
+            this._canvas.draw_image(renderer.canvas, region.x, region.y, region.width, region.height, region);
         }
         else {
             // Copy the entire image.
-            this._canvas.draw_image(renderer._canvas, this.left, this.top, this._canvas.width, this._canvas.height);
+            this._canvas.draw_image(renderer.canvas, this.left, this.top, this._canvas.width, this._canvas.height);
         }
     };
     return BatchRenderer;
 })(renderer.RendererBase);
 exports.BatchRenderer = BatchRenderer;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/renderers/batch.js","/renderers")
-},{"../config":9,"../utils":40,"./renderer":32,"1YiZ5S":4,"buffer":1}],29:[function(require,module,exports){
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/batch.js","/draw/renderers")
+},{"../../utils/config":38,"../../utils/utils":40,"./renderer":22,"1YiZ5S":4,"buffer":1}],19:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -6228,9 +5189,7 @@ var ColorRenderer = (function (_super) {
     });
     /**
      * Render to the canvas
-     * @param {dictionary} (optional) scroll - How much the canvas was scrolled.  This
-     *                     is a dictionary of the form {x: float, y: float}
-     * @return {null}
+     * @param [scroll] - How much the canvas was scrolled.
      */
     ColorRenderer.prototype.render = function (scroll) {
         if (!this._rendered) {
@@ -6240,7 +5199,6 @@ var ColorRenderer = (function (_super) {
     };
     /**
      * Render a frame.
-     * @return {null}
      */
     ColorRenderer.prototype._render = function () {
         this._canvas.clear();
@@ -6250,8 +5208,8 @@ var ColorRenderer = (function (_super) {
 })(renderer.RendererBase);
 exports.ColorRenderer = ColorRenderer;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/renderers/color.js","/renderers")
-},{"./renderer":32,"1YiZ5S":4,"buffer":1}],30:[function(require,module,exports){
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/color.js","/draw/renderers")
+},{"./renderer":22,"1YiZ5S":4,"buffer":1}],20:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -6261,7 +5219,7 @@ var __extends = this.__extends || function (d, b) {
     d.prototype = new __();
 };
 var animator = require('../animator');
-var utils = require('../utils');
+var utils = require('../../utils/utils');
 var renderer = require('./renderer');
 /**
  * Render document cursors
@@ -6278,11 +5236,6 @@ var CursorsRenderer = (function (_super) {
         this._cursors = cursors;
         this._last_drawn_cursors = [];
         this._row_renderer = row_renderer;
-        // TODO: Remove the following block.
-        this._get_visible_rows = utils.proxy(row_renderer.get_visible_rows, row_renderer);
-        this._get_row_height = utils.proxy(row_renderer.get_row_height, row_renderer);
-        this._get_row_top = utils.proxy(row_renderer.get_row_top, row_renderer);
-        this._measure_partial_row = utils.proxy(row_renderer.measure_partial_row_width, row_renderer);
         this._blink_animator = new animator.Animator(1000);
         this._fps = 2;
         // Start the cursor rendering clock.
@@ -6301,7 +5254,6 @@ var CursorsRenderer = (function (_super) {
      * Render to the canvas
      * Note: This method is called often, so it's important that it's
      * optimized for speed.
-     * @return {null}
      */
     CursorsRenderer.prototype.render = function (scroll) {
         var _this = this;
@@ -6328,26 +5280,26 @@ var CursorsRenderer = (function (_super) {
         if (this._has_focus() && this._blink_animator.time() < 0.5) {
             this._cursors.cursors.forEach(function (cursor) {
                 // Get the visible rows.
-                var visible_rows = _this._get_visible_rows();
+                var visible_rows = _this._row_renderer.get_visible_rows();
                 // If a cursor doesn't have a position, render it at the
                 // beginning of the document.
                 var row_index = cursor.primary_row || 0;
                 var char_index = cursor.primary_char || 0;
                 // Draw the cursor.
-                var height = _this._get_row_height(row_index);
-                var multiplier = _this.style.cursor_height || 1.0;
+                var height = _this._row_renderer.get_row_height(row_index);
+                var multiplier = _this.style.get('cursor_height', 1.0);
                 var offset = (height - (multiplier * height)) / 2;
                 height *= multiplier;
                 if (visible_rows.top_row <= row_index && row_index <= visible_rows.bottom_row) {
                     var cursor_box = {
-                        x: char_index === 0 ? _this._row_renderer.margin_left : _this._measure_partial_row(row_index, char_index) + _this._row_renderer.margin_left,
-                        y: _this._get_row_top(row_index) + offset,
-                        width: _this.style.cursor_width === undefined ? 1.0 : _this.style.cursor_width,
+                        x: char_index === 0 ? _this._row_renderer.margin_left : _this._row_renderer.measure_partial_row_width(row_index, char_index) + _this._row_renderer.margin_left,
+                        y: _this._row_renderer.get_row_top(row_index) + offset,
+                        width: _this.style.get('cursor_width', 1.0),
                         height: height,
                     };
                     _this._last_drawn_cursors.push(cursor_box);
                     _this._canvas.draw_rectangle(cursor_box.x, cursor_box.y, cursor_box.width, cursor_box.height, {
-                        fill_color: _this.style.cursor || 'back',
+                        fill_color: _this.style.get('cursor', 'back'),
                     });
                 }
             });
@@ -6356,7 +5308,6 @@ var CursorsRenderer = (function (_super) {
     };
     /**
      * Clock for rendering the cursor.
-     * @return {null}
      */
     CursorsRenderer.prototype._render_clock = function () {
         // If the canvas is focused, redraw.
@@ -6383,8 +5334,8 @@ var CursorsRenderer = (function (_super) {
 })(renderer.RendererBase);
 exports.CursorsRenderer = CursorsRenderer;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/renderers/cursors.js","/renderers")
-},{"../animator":6,"../utils":40,"./renderer":32,"1YiZ5S":4,"buffer":1}],31:[function(require,module,exports){
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/cursors.js","/draw/renderers")
+},{"../../utils/utils":40,"../animator":16,"./renderer":22,"1YiZ5S":4,"buffer":1}],21:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -6393,10 +5344,11 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-var utils = require('../utils');
+var utils = require('../../utils/utils');
 var row = require('./row');
-var config_mod = require('../config');
+var config_mod = require('../../utils/config');
 var config = config_mod.config;
+;
 /**
  * Render the text rows of a DocumentModel.
  * @param {DocumentModel} model instance
@@ -6428,10 +5380,6 @@ var HighlightedRowRenderer = (function (_super) {
     }
     /**
      * Render a single row
-     * @param  {integer} index
-     * @param  {float} x
-     * @param  {float} y
-     * @return {null}
      */
     HighlightedRowRenderer.prototype._render_row = function (index, x, y) {
         if (index < 0 || this._model._rows.length <= index)
@@ -6451,9 +5399,7 @@ var HighlightedRowRenderer = (function (_super) {
     };
     /**
      * Get render groups for a row.
-     * @param  {integer} index of the row
-     * @return {array} array of renderings, each rendering is an array of
-     *                 the form {options, text}.
+     * @param index of the row
      */
     HighlightedRowRenderer.prototype._get_groups = function (index) {
         if (index < 0 || this._model._rows.length <= index)
@@ -6478,8 +5424,7 @@ var HighlightedRowRenderer = (function (_super) {
     };
     /**
      * Creates a style options dictionary from a syntax tag.
-     * @param  {string} syntax
-     * @return {null}
+     * @param syntax
      */
     HighlightedRowRenderer.prototype._get_options = function (syntax) {
         var render_options = utils.shallow_copy(this._base_options);
@@ -6498,19 +5443,17 @@ var HighlightedRowRenderer = (function (_super) {
             }
             // Style if the syntax item is defined in the style.
             if (syntax && this.style[syntax]) {
-                render_options.color = this.style[syntax];
+                render_options.color = this.style.get(syntax);
             }
             else {
-                render_options.color = this.style.text || 'black';
+                render_options.color = this.style.get('text') || 'black';
             }
         }
         return render_options;
     };
     /**
      * Compare two syntaxs.
-     * @param  {string} a - syntax
-     * @param  {string} b - syntax
-     * @return {bool} true if a and b are equal
+     * @return true if a and b are equal
      */
     HighlightedRowRenderer.prototype._compare_syntax = function (a, b) {
         return a === b;
@@ -6519,8 +5462,8 @@ var HighlightedRowRenderer = (function (_super) {
 })(row.RowRenderer);
 exports.HighlightedRowRenderer = HighlightedRowRenderer;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/renderers/highlighted_row.js","/renderers")
-},{"../config":9,"../utils":40,"./row":33,"1YiZ5S":4,"buffer":1}],32:[function(require,module,exports){
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/highlighted_row.js","/draw/renderers")
+},{"../../utils/config":38,"../../utils/utils":40,"./row":23,"1YiZ5S":4,"buffer":1}],22:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -6530,7 +5473,7 @@ var __extends = this.__extends || function (d, b) {
     d.prototype = new __();
 };
 var canvas = require('../canvas');
-var utils = require('../utils');
+var utils = require('../../utils/utils');
 /**
  * Renders to a canvas
  * @param {Canvas} default_canvas
@@ -6539,9 +5482,16 @@ var RendererBase = (function (_super) {
     __extends(RendererBase, _super);
     function RendererBase(default_canvas, options) {
         _super.call(this);
-        this.options = options || {};
         this._canvas = default_canvas ? default_canvas : new canvas.Canvas();
+        this.options = options || {};
     }
+    Object.defineProperty(RendererBase.prototype, "canvas", {
+        get: function () {
+            return this._canvas;
+        },
+        enumerable: true,
+        configurable: true
+    });
     Object.defineProperty(RendererBase.prototype, "width", {
         get: function () {
             return this._canvas.width;
@@ -6564,23 +5514,21 @@ var RendererBase = (function (_super) {
     });
     Object.defineProperty(RendererBase.prototype, "top", {
         get: function () {
-            return -this._canvas._ty(0);
+            return -this._canvas.ty(0);
         },
         enumerable: true,
         configurable: true
     });
     Object.defineProperty(RendererBase.prototype, "left", {
         get: function () {
-            return -this._canvas._tx(0);
+            return -this._canvas.tx(0);
         },
         enumerable: true,
         configurable: true
     });
     /**
      * Render to the canvas
-     * @param {dictionary} (optional) scroll - How much the canvas was scrolled.  This
-     *                     is a dictionary of the form {x: float, y: float}
-     * @return {null}
+     * @param [scroll] - How much the canvas was scrolled
      */
     RendererBase.prototype.render = function (scroll) {
         throw new Error('Not implemented');
@@ -6589,8 +5537,8 @@ var RendererBase = (function (_super) {
 })(utils.PosterClass);
 exports.RendererBase = RendererBase;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/renderers/renderer.js","/renderers")
-},{"../canvas":7,"../utils":40,"1YiZ5S":4,"buffer":1}],33:[function(require,module,exports){
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/renderer.js","/draw/renderers")
+},{"../../utils/utils":40,"../canvas":17,"1YiZ5S":4,"buffer":1}],23:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -6600,7 +5548,7 @@ var __extends = this.__extends || function (d, b) {
     d.prototype = new __();
 };
 var canvas = require('../canvas');
-var utils = require('../utils');
+var utils = require('../../utils/utils');
 var renderer = require('./renderer');
 /**
  * Render the text rows of a DocumentModel.
@@ -6712,9 +5660,7 @@ var RowRenderer = (function (_super) {
      * Render to the canvas
      * Note: This method is called often, so it's important that it's
      * optimized for speed.
-     * @param {dictionary} (optional) scroll - How much the canvas was scrolled.  This
-     *                     is a dictionary of the form {x: float, y: float}
-     * @return {null}
+     * @param [scroll] - How much the canvas was scrolled.
      */
     RowRenderer.prototype.render = function (scroll) {
         // If only the y axis was scrolled, blit the good contents and just render
@@ -6728,15 +5674,82 @@ var RowRenderer = (function (_super) {
         this._canvas.draw_image(this._text_canvas, this._scrolling_canvas.scroll_left, this.get_row_top(visible_rows.top_row));
     };
     /**
+     * Gets the row and character indicies closest to given control space coordinates.
+     * @param cursor_x - x value, 0 is the left of the canvas.
+     * @param cursor_y - y value, 0 is the top of the canvas.
+     */
+    RowRenderer.prototype.get_row_char = function (cursor_x, cursor_y) {
+        var row_index = Math.floor((cursor_y - this._margin_top) / this.get_row_height());
+        // Find the character index.
+        var widths = [0];
+        try {
+            for (var length = 1; length <= this._model._rows[row_index].length; length++) {
+                widths.push(this.measure_partial_row_width(row_index, length));
+            }
+        }
+        catch (e) {
+        }
+        var coords = this._model.validate_coords(row_index, utils.find_closest(widths, cursor_x - this._margin_left));
+        return {
+            row_index: coords.start_row,
+            char_index: coords.start_char,
+        };
+    };
+    /**
+     * Measures the partial width of a text row.
+     * @param  index
+     * @param  [length] - number of characters
+     * @return width
+     */
+    RowRenderer.prototype.measure_partial_row_width = function (index, length) {
+        if (0 > index || index >= this._model._rows.length) {
+            return 0;
+        }
+        var text = this._model._rows[index];
+        text = (length === undefined) ? text : text.substring(0, length);
+        return this._canvas.measure_text(text, this._base_options);
+    };
+    /**
+     * Measures the height of a text row as if it were rendered.
+     */
+    RowRenderer.prototype.get_row_height = function (index) {
+        return this._base_options.font_size + this._line_spacing;
+    };
+    /**
+     * Gets the top of the row when rendered
+     */
+    RowRenderer.prototype.get_row_top = function (index) {
+        return index * this.get_row_height() + this._margin_top;
+    };
+    /**
+     * Gets the visible rows.
+     */
+    RowRenderer.prototype.get_visible_rows = function () {
+        // Find the row closest to the scroll top.  If that row is below
+        // the scroll top, use the partially displayed row above it.
+        var top_row = Math.max(0, Math.floor((this._scrolling_canvas.scroll_top - this._margin_top) / this.get_row_height()));
+        // Find the row closest to the scroll bottom.  If that row is above
+        // the scroll bottom, use the partially displayed row below it.
+        var row_count = Math.ceil(this._canvas.height / this.get_row_height());
+        var bottom_row = top_row + row_count;
+        // Row count + 1 to include first row.
+        return { top_row: top_row, bottom_row: bottom_row, row_count: row_count + 1 };
+    };
+    /**
+     * Render a single row
+     */
+    RowRenderer.prototype._render_row = function (index, x, y) {
+        this._text_canvas.draw_text(x, y, this._model._rows[index], this._base_options);
+    };
+    /**
      * Render text to the text canvas.
      *
      * Later, the main rendering function can use this rendered text to draw the
      * base canvas.
-     * @param  {float} x_offset - horizontal offset of the text
-     * @param  {integer} top_row
-     * @param  {boolean} force_redraw - redraw the contents even if they are
-     *                                the same as the cached contents.
-     * @return {null}
+     * @param x_offset - horizontal offset of the text
+     * @param top_row
+     * @param force_redraw - redraw the contents even if they are
+     *                       the same as the cached contents.
      */
     RowRenderer.prototype._render_text_canvas = function (x_offset, top_row, force_redraw) {
         // Try to reuse some of the already rendered text if possible.
@@ -6791,89 +5804,17 @@ var RowRenderer = (function (_super) {
         this._last_rendered_offset = x_offset;
     };
     /**
-     * Gets the row and character indicies closest to given control space coordinates.
-     * @param  {float} cursor_x - x value, 0 is the left of the canvas.
-     * @param  {float} cursor_y - y value, 0 is the top of the canvas.
-     * @return {dictionary} dictionary of the form {row_index, char_index}
-     */
-    RowRenderer.prototype.get_row_char = function (cursor_x, cursor_y) {
-        var row_index = Math.floor((cursor_y - this._margin_top) / this.get_row_height());
-        // Find the character index.
-        var widths = [0];
-        try {
-            for (var length = 1; length <= this._model._rows[row_index].length; length++) {
-                widths.push(this.measure_partial_row_width(row_index, length));
-            }
-        }
-        catch (e) {
-        }
-        var coords = this._model.validate_coords(row_index, utils.find_closest(widths, cursor_x - this._margin_left));
-        return {
-            row_index: coords.start_row,
-            char_index: coords.start_char,
-        };
-    };
-    /**
-     * Measures the partial width of a text row.
-     * @param  {integer} index
-     * @param  {integer} (optional) length - number of characters
-     * @return {float} width
-     */
-    RowRenderer.prototype.measure_partial_row_width = function (index, length) {
-        if (0 > index || index >= this._model._rows.length) {
-            return 0;
-        }
-        var text = this._model._rows[index];
-        text = (length === undefined) ? text : text.substring(0, length);
-        return this._canvas.measure_text(text, this._base_options);
-    };
-    /**
      * Measures a strings width.
-     * @param  {string} text - text to measure the width of
-     * @param  {integer} [index] - row index, can be used to apply size sensitive
-     *                             formatting to the text.
-     * @return {float} width
+     * @param text - text to measure the width of
+     * @param [index] - row index, can be used to apply size sensitive
+     *        formatting to the text.
      */
     RowRenderer.prototype._measure_text_width = function (text, index) {
         return this._canvas.measure_text(text, this._base_options);
     };
     /**
-     * Measures the height of a text row as if it were rendered.
-     * @param  {integer} (optional) index
-     * @return {float} height
-     */
-    RowRenderer.prototype.get_row_height = function (index) {
-        return this._base_options.font_size + this._line_spacing;
-    };
-    /**
-     * Gets the top of the row when rendered
-     * @param  {integer} index
-     * @return {null}
-     */
-    RowRenderer.prototype.get_row_top = function (index) {
-        return index * this.get_row_height() + this._margin_top;
-    };
-    /**
-     * Gets the visible rows.
-     * @return {dictionary} dictionary containing information about
-     *                      the visible rows.  Format {top_row,
-     *                      bottom_row, row_count}.
-     */
-    RowRenderer.prototype.get_visible_rows = function () {
-        // Find the row closest to the scroll top.  If that row is below
-        // the scroll top, use the partially displayed row above it.
-        var top_row = Math.max(0, Math.floor((this._scrolling_canvas.scroll_top - this._margin_top) / this.get_row_height()));
-        // Find the row closest to the scroll bottom.  If that row is above
-        // the scroll bottom, use the partially displayed row below it.
-        var row_count = Math.ceil(this._canvas.height / this.get_row_height());
-        var bottom_row = top_row + row_count;
-        // Row count + 1 to include first row.
-        return { top_row: top_row, bottom_row: bottom_row, row_count: row_count + 1 };
-    };
-    /**
      * Handles when the model's value changes
      * Complexity: O(N) for N rows of text.
-     * @return {null}
      */
     RowRenderer.prototype._handle_value_changed = function () {
         // Calculate the document width.
@@ -6894,7 +5835,6 @@ var RowRenderer = (function (_super) {
     };
     /**
      * Handles when one of the model's rows change
-     * @return {null}
      */
     RowRenderer.prototype._handle_row_changed = function (text, index) {
         var new_width = this._measure_row_width(index) + this._margin_left;
@@ -6917,9 +5857,6 @@ var RowRenderer = (function (_super) {
      * Handles when one or more rows are added to the model
      *
      * Assumes constant row height.
-     * @param  {integer} start
-     * @param  {integer} end
-     * @return {null}
      */
     RowRenderer.prototype._handle_rows_added = function (start, end) {
         this._scrolling_canvas.scroll_height += (end - start + 1) * this.get_row_height();
@@ -6938,9 +5875,8 @@ var RowRenderer = (function (_super) {
      * Handles when one or more rows are removed from the model
      *
      * Assumes constant row height.
-     * @param  {array} rows
-     * @param  {integer} [index]
-     * @return {null}
+     * @param  rows - indicies
+     * @param  [index]
      */
     RowRenderer.prototype._handle_rows_removed = function (rows, index) {
         // Decrease the scrolling height based on the number of rows removed.
@@ -6957,26 +5893,13 @@ var RowRenderer = (function (_super) {
         this._scrolling_canvas.scroll_width = this._find_largest_width();
     };
     /**
-     * Render a single row
-     * @param  {integer} index
-     * @param  {float} x
-     * @param  {float} y
-     * @return {null}
-     */
-    RowRenderer.prototype._render_row = function (index, x, y) {
-        this._text_canvas.draw_text(x, y, this._model._rows[index], this._base_options);
-    };
-    /**
      * Measures the width of a text row as if it were rendered.
-     * @param  {integer} index
-     * @return {float} width
      */
     RowRenderer.prototype._measure_row_width = function (index) {
         return this.measure_partial_row_width(index, this._model._rows[index].length);
     };
     /**
      * Find the largest width in the width row count dictionary.
-     * @return {float} width
      */
     RowRenderer.prototype._find_largest_width = function () {
         var values = Object.keys(this._row_width_counts);
@@ -6987,8 +5910,8 @@ var RowRenderer = (function (_super) {
 })(renderer.RendererBase);
 exports.RowRenderer = RowRenderer;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/renderers/row.js","/renderers")
-},{"../canvas":7,"../utils":40,"./renderer":32,"1YiZ5S":4,"buffer":1}],34:[function(require,module,exports){
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/row.js","/draw/renderers")
+},{"../../utils/utils":40,"../canvas":17,"./renderer":22,"1YiZ5S":4,"buffer":1}],24:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -6997,9 +5920,8 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-var utils = require('../utils');
 var renderer = require('./renderer');
-var config_mod = require('../config');
+var config_mod = require('../../utils/config');
 var config = config_mod.config;
 /**
  * Render document selection boxes
@@ -7026,11 +5948,6 @@ var SelectionsRenderer = (function (_super) {
         this.style.on('change', rerender);
         config.on('change', rerender);
         this._row_renderer = row_renderer;
-        // TODO: Remove the following block.
-        this._get_visible_rows = utils.proxy(row_renderer.get_visible_rows, row_renderer);
-        this._get_row_height = utils.proxy(row_renderer.get_row_height, row_renderer);
-        this._get_row_top = utils.proxy(row_renderer.get_row_top, row_renderer);
-        this._measure_partial_row = utils.proxy(row_renderer.measure_partial_row_width, row_renderer);
         // When the cursor is hidden/shown, redraw the selection.
         cursors_renderer.on('toggle', function () {
             _this.render();
@@ -7042,7 +5959,6 @@ var SelectionsRenderer = (function (_super) {
      * Render to the canvas
      * Note: This method is called often, so it's important that it's
      * optimized for speed.
-     * @return {null}
      */
     SelectionsRenderer.prototype.render = function (scroll) {
         var _this = this;
@@ -7068,27 +5984,27 @@ var SelectionsRenderer = (function (_super) {
         // Only render if the canvas has focus.
         this._cursors.cursors.forEach(function (cursor) {
             // Get the visible rows.
-            var visible_rows = _this._get_visible_rows();
+            var visible_rows = _this._row_renderer.get_visible_rows();
             // Draw the selection box.
             if (cursor.start_row !== null && cursor.start_char !== null && cursor.end_row !== null && cursor.end_char !== null) {
                 for (var i = Math.max(cursor.start_row, visible_rows.top_row); i <= Math.min(cursor.end_row, visible_rows.bottom_row); i++) {
                     var left = _this._row_renderer.margin_left;
                     if (i == cursor.start_row && cursor.start_char > 0) {
-                        left += _this._measure_partial_row(i, cursor.start_char);
+                        left += _this._row_renderer.measure_partial_row_width(i, cursor.start_char);
                     }
                     var selection_color;
                     if (_this._has_focus()) {
-                        selection_color = _this.style.selection || 'skyblue';
+                        selection_color = _this.style.get('selection', 'skyblue');
                     }
                     else {
-                        selection_color = _this.style.selection_unfocused || 'gray';
+                        selection_color = _this.style.get('selection_unfocused', 'gray');
                     }
                     var width;
                     if (i !== cursor.end_row) {
-                        width = _this._measure_partial_row(i) - left + _this._row_renderer.margin_left + newline_width;
+                        width = _this._row_renderer.measure_partial_row_width(i) - left + _this._row_renderer.margin_left + newline_width;
                     }
                     else {
-                        width = _this._measure_partial_row(i, cursor.end_char);
+                        width = _this._row_renderer.measure_partial_row_width(i, cursor.end_char);
                         // If this isn't the first selected row, make sure atleast the newline
                         // is visibily selected at the beginning of the row by making sure that
                         // the selection box is atleast the size of a newline character (as
@@ -7099,26 +6015,27 @@ var SelectionsRenderer = (function (_super) {
                         width = width - left + _this._row_renderer.margin_left;
                     }
                     var block = {
-                        left: left,
-                        top: _this._get_row_top(i),
+                        x: left,
+                        y: _this._row_renderer.get_row_top(i),
                         width: width,
-                        height: _this._get_row_height(i)
+                        height: _this._row_renderer.get_row_height(i)
                     };
-                    _this._canvas.draw_rectangle(block.left, block.top, block.width, block.height, {
+                    _this._canvas.draw_rectangle(block.x, block.y, block.width, block.height, {
                         fill_color: selection_color,
                     });
                     if (_this._dirty === null) {
-                        _this._dirty = {};
-                        _this._dirty.x1 = block.left;
-                        _this._dirty.y1 = block.top;
-                        _this._dirty.x2 = block.left + block.width;
-                        _this._dirty.y2 = block.top + block.height;
+                        _this._dirty = {
+                            x1: block.x,
+                            y1: block.y,
+                            x2: block.x + block.width,
+                            y2: block.y + block.height
+                        };
                     }
                     else {
-                        _this._dirty.x1 = Math.min(block.left, _this._dirty.x1);
-                        _this._dirty.y1 = Math.min(block.top, _this._dirty.y1);
-                        _this._dirty.x2 = Math.max(block.left + block.width, _this._dirty.x2);
-                        _this._dirty.y2 = Math.max(block.top + block.height, _this._dirty.y2);
+                        _this._dirty.x1 = Math.min(block.x, _this._dirty.x1);
+                        _this._dirty.y1 = Math.min(block.y, _this._dirty.y1);
+                        _this._dirty.x2 = Math.max(block.x + block.width, _this._dirty.x2);
+                        _this._dirty.y2 = Math.max(block.y + block.height, _this._dirty.y2);
                     }
                 }
             }
@@ -7128,8 +6045,8 @@ var SelectionsRenderer = (function (_super) {
 })(renderer.RendererBase);
 exports.SelectionsRenderer = SelectionsRenderer;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/renderers/selections.js","/renderers")
-},{"../config":9,"../utils":40,"./renderer":32,"1YiZ5S":4,"buffer":1}],35:[function(require,module,exports){
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/selections.js","/draw/renderers")
+},{"../../utils/config":38,"./renderer":22,"1YiZ5S":4,"buffer":1}],25:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -7139,7 +6056,7 @@ var __extends = this.__extends || function (d, b) {
 };
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var canvas = require('./canvas');
-var utils = require('./utils');
+var utils = require('../utils/utils');
 /**
  * HTML canvas with drawing convinience functions.
  */
@@ -7221,13 +6138,12 @@ var ScrollingCanvas = (function (_super) {
     Object.defineProperty(ScrollingCanvas.prototype, "height", {
         /**
          * Height of the canvas
-         * @return {float}
          */
         get: function () {
             return this._canvas.height / 2;
         },
         set: function (value) {
-            this._canvas.setAttribute('height', value * 2);
+            this._canvas.setAttribute('height', String(value * 2));
             this.el.setAttribute('style', 'width: ' + this.width + 'px; height: ' + value + 'px;');
             this.trigger('resize', { height: value });
             this._try_redraw();
@@ -7240,13 +6156,12 @@ var ScrollingCanvas = (function (_super) {
     Object.defineProperty(ScrollingCanvas.prototype, "width", {
         /**
          * Width of the canvas
-         * @return {float}
          */
         get: function () {
             return this._canvas.width / 2;
         },
         set: function (value) {
-            this._canvas.setAttribute('width', value * 2);
+            this._canvas.setAttribute('width', String(value * 2));
             this.el.setAttribute('style', 'width: ' + value + 'px; height: ' + this.height + 'px;');
             this.trigger('resize', { width: value });
             this._try_redraw();
@@ -7259,7 +6174,6 @@ var ScrollingCanvas = (function (_super) {
     Object.defineProperty(ScrollingCanvas.prototype, "focused", {
         /**
          * Is the canvas or related elements focused?
-         * @return {boolean}
          */
         get: function () {
             return document.activeElement === this.el || document.activeElement === this._scroll_bars || document.activeElement === this._dummy || document.activeElement === this._canvas;
@@ -7269,25 +6183,38 @@ var ScrollingCanvas = (function (_super) {
     });
     /**
      * Causes the canvas contents to be redrawn.
-     * @return {null}
      */
     ScrollingCanvas.prototype.redraw = function (scroll) {
         this.clear();
         this.trigger('redraw', scroll);
     };
     /**
+     * Transform an x value based on scroll position.
+     * @param x
+     * @param [inverse] - perform inverse transformation
+     */
+    ScrollingCanvas.prototype.tx = function (x, inverse) {
+        return x - (inverse ? -1 : 1) * this.scroll_left;
+    };
+    /**
+     * Transform a y value based on scroll position.
+     * @param y
+     * @param [inverse] - perform inverse transformation
+     */
+    ScrollingCanvas.prototype.ty = function (y, inverse) {
+        return y - (inverse ? -1 : 1) * this.scroll_top;
+    };
+    /**
      * Layout the elements for the canvas.
      * Creates `this.el`
-     *
-     * @return {null}
      */
     ScrollingCanvas.prototype._layout = function () {
-        canvas.Canvas.prototype._layout.call(this);
+        _super.prototype._layout.call(this);
         // Change the canvas class so it's not hidden.
         this._canvas.setAttribute('class', 'canvas');
         this.el = document.createElement('div');
         this.el.setAttribute('class', 'poster scroll-window');
-        this.el.setAttribute('tabindex', 0);
+        this.el.setAttribute('tabindex', '0');
         this._scroll_bars = document.createElement('div');
         this._scroll_bars.setAttribute('class', 'scroll-bars');
         this._touch_pane = document.createElement('div');
@@ -7301,7 +6228,6 @@ var ScrollingCanvas = (function (_super) {
     };
     /**
      * Bind to the events of the canvas.
-     * @return {null}
      */
     ScrollingCanvas.prototype._bind_events = function () {
         var _this = this;
@@ -7340,7 +6266,7 @@ var ScrollingCanvas = (function (_super) {
     };
     /**
      * Queries to see if redraw is okay, and then redraws if it is.
-     * @return {boolean} true if redraw happened.
+     * @return true if redraw happened.
      */
     ScrollingCanvas.prototype._try_redraw = function (scroll) {
         if (this._query_redraw()) {
@@ -7351,45 +6277,508 @@ var ScrollingCanvas = (function (_super) {
     };
     /**
      * Trigger the 'query_redraw' event.
-     * @return {boolean} true if control should redraw itself.
+     * @return true if control should redraw itself.
      */
     ScrollingCanvas.prototype._query_redraw = function () {
         return this.trigger('query_redraw').every(function (x) { return x; });
     };
     /**
      * Moves the dummy element that causes the scrollbar to appear.
-     * @param  {float} x
-     * @param  {float} y
-     * @return {null}
      */
     ScrollingCanvas.prototype._move_dummy = function (x, y) {
         this._dummy.setAttribute('style', 'left: ' + String(x) + 'px; top: ' + String(y) + 'px;');
         this._touch_pane.setAttribute('style', 'width: ' + String(Math.max(x, this._scroll_bars.clientWidth)) + 'px; ' + 'height: ' + String(Math.max(y, this._scroll_bars.clientHeight)) + 'px;');
     };
-    /**
-     * Transform an x value based on scroll position.
-     * @param  {float} x
-     * @param  {boolean} inverse - perform inverse transformation
-     * @return {float}
-     */
-    ScrollingCanvas.prototype._tx = function (x, inverse) {
-        return x - (inverse ? -1 : 1) * this.scroll_left;
-    };
-    /**
-     * Transform a y value based on scroll position.
-     * @param  {float} y
-     * @param  {boolean} inverse - perform inverse transformation
-     * @return {float}
-     */
-    ScrollingCanvas.prototype._ty = function (y, inverse) {
-        return y - (inverse ? -1 : 1) * this.scroll_top;
-    };
     return ScrollingCanvas;
 })(canvas.Canvas);
 exports.ScrollingCanvas = ScrollingCanvas;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/scrolling_canvas.js","/")
-},{"./canvas":7,"./utils":40,"1YiZ5S":4,"buffer":1}],36:[function(require,module,exports){
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/scrolling_canvas.js","/draw")
+},{"../utils/utils":40,"./canvas":17,"1YiZ5S":4,"buffer":1}],26:[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+var scrolling_canvas = require('./draw/scrolling_canvas');
+var document_controller = require('./document_controller');
+var document_model = require('./document_model');
+var document_view = require('./document_view');
+var pluginmanager = require('./plugins/manager');
+var plugin = require('./plugins/plugin');
+var renderer = require('./draw/renderers/renderer');
+var style = require('./styles/style');
+var utils = require('./utils/utils');
+var config_mod = require('./utils/config');
+var prism = require('prismjs');
+var config = config_mod.config;
+/**
+ * Canvas based text editor
+ */
+var Poster = (function (_super) {
+    __extends(Poster, _super);
+    function Poster() {
+        var _this = this;
+        _super.call(this);
+        // Create canvas
+        this.canvas = new scrolling_canvas.ScrollingCanvas();
+        this.el = this.canvas.el; // Convenience
+        this._style = new style.Style();
+        // Create model, controller, and view.
+        this.model = new document_model.DocumentModel();
+        this.controller = new document_controller.DocumentController(this.canvas.el, this.model);
+        this.view = new document_view.DocumentView(this.canvas, this.model, this.controller.cursors, this._style, function () {
+            return _this.controller.clipboard.hidden_input === document.activeElement || _this.canvas.focused;
+        }, function (x, y) { return _this.controller.clipboard.set_position(x, y); });
+        // Load plugins.
+        this.plugins = new pluginmanager.PluginManager(this);
+        this.plugins.load('gutter');
+        this.plugins.load('linenumbers');
+    }
+    Object.defineProperty(Poster.prototype, "style", {
+        get: function () {
+            return this._style;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Poster.prototype, "config", {
+        get: function () {
+            return config;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Poster.prototype, "value", {
+        get: function () {
+            return this.model.text;
+        },
+        set: function (value) {
+            this.model.text = value;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Poster.prototype, "width", {
+        get: function () {
+            return this.view.width;
+        },
+        set: function (value) {
+            this.view.width = value;
+            this.trigger('resized');
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Poster.prototype, "height", {
+        get: function () {
+            return this.view.height;
+        },
+        set: function (value) {
+            this.view.height = value;
+            this.trigger('resized');
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Poster.prototype, "language", {
+        get: function () {
+            return this.view.language;
+        },
+        set: function (value) {
+            this.view.language = value;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    return Poster;
+})(utils.PosterClass);
+window.poster = {
+    Poster: Poster,
+    Canvas: plugin.PluginBase,
+    PluginBase: plugin.PluginBase,
+    RendererBase: renderer.RendererBase,
+    utils: utils
+};
+// Expose prism so the user can load custom language files.
+window.Prism = prism;
+
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/fake_7ec0984a.js","/")
+},{"./document_controller":13,"./document_model":14,"./document_view":15,"./draw/renderers/renderer":22,"./draw/scrolling_canvas":25,"./plugins/manager":31,"./plugins/plugin":32,"./styles/style":35,"./utils/config":38,"./utils/utils":40,"1YiZ5S":4,"buffer":1,"prismjs":5}],27:[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+var plugin = require('../plugin');
+var renderer = require('./renderer');
+/**
+ * Gutter plugin.
+ */
+var Gutter = (function (_super) {
+    __extends(Gutter, _super);
+    function Gutter() {
+        _super.call(this);
+        this.on('load', this._handle_load, this);
+        this.on('unload', this._handle_unload, this);
+        this._gutter_width = 50;
+    }
+    Object.defineProperty(Gutter.prototype, "gutter_width", {
+        // Create a gutter_width property that is adjustable.
+        get: function () {
+            return this._gutter_width;
+        },
+        set: function (value) {
+            this._set_width(value);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Gutter.prototype, "renderer", {
+        get: function () {
+            return this._renderer;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    /**
+     * Sets the gutter's width.
+     * @param value - width in pixels
+     */
+    Gutter.prototype._set_width = function (value) {
+        if (this._gutter_width !== value) {
+            if (this.loaded) {
+                this.poster.view.row_renderer.margin_left += value - this._gutter_width;
+            }
+            this._gutter_width = value;
+            this.trigger('changed');
+        }
+    };
+    /**
+     * Handles when the plugin is loaded.
+     */
+    Gutter.prototype._handle_load = function () {
+        this.poster.view.row_renderer.margin_left += this._gutter_width;
+        this._renderer = new renderer.GutterRenderer(this);
+        this.register_renderer(this._renderer);
+    };
+    /**
+     * Handles when the plugin is unloaded.
+     */
+    Gutter.prototype._handle_unload = function () {
+        // Remove all listeners to this plugin's changed event.
+        this._renderer.unregister();
+        this.poster.view.row_renderer.margin_left -= this._gutter_width;
+    };
+    return Gutter;
+})(plugin.PluginBase);
+exports.Gutter = Gutter;
+
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/gutter/gutter.js","/plugins/gutter")
+},{"../plugin":32,"./renderer":28,"1YiZ5S":4,"buffer":1}],28:[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+var renderer = require('../../draw/renderers/renderer');
+/**
+ * Renderers the gutter.
+ */
+var GutterRenderer = (function (_super) {
+    __extends(GutterRenderer, _super);
+    function GutterRenderer(gutter) {
+        var _this = this;
+        _super.call(this, undefined, { parent_independent: true });
+        this._gutter = gutter;
+        this._gutter.on('changed', function () {
+            _this._render();
+            _this.trigger('changed');
+        });
+        this._hovering = false;
+    }
+    /**
+     * Handles rendering
+     * Only re-render when scrolled horizontally.
+     */
+    GutterRenderer.prototype.render = function (scroll) {
+        // Scrolled right xor hovering
+        var left = this._gutter.poster.canvas.scroll_left;
+        if ((left > 0) !== this._hovering) {
+            this._hovering = left > 0;
+            this._render();
+        }
+    };
+    /**
+     * Unregister the event listeners
+     */
+    GutterRenderer.prototype.unregister = function () {
+        this._gutter.off('changed', this._render);
+    };
+    /**
+     * Renders the gutter
+     */
+    GutterRenderer.prototype._render = function () {
+        this._canvas.clear();
+        var width = this._gutter.gutter_width;
+        this._canvas.draw_rectangle(0, 0, width, this.height, {
+            fill_color: this._gutter.poster.style.gutter,
+        });
+        // If the gutter is hovering over content, draw a drop shadow.
+        if (this._hovering) {
+            var shadow_width = 15;
+            var gradient = this._canvas.gradient(width, 0, width + shadow_width, 0, this._gutter.poster.style.gutter_shadow || [
+                [0, 'black'],
+                [1, 'transparent']
+            ]);
+            this._canvas.draw_rectangle(width, 0, shadow_width, this.height, {
+                fill_color: gradient,
+                alpha: 0.35,
+            });
+        }
+    };
+    return GutterRenderer;
+})(renderer.RendererBase);
+exports.GutterRenderer = GutterRenderer;
+
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/gutter/renderer.js","/plugins/gutter")
+},{"../../draw/renderers/renderer":22,"1YiZ5S":4,"buffer":1}],29:[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+var plugin = require('../plugin');
+var renderer = require('./renderer');
+/**
+ * Line numbers plugin.
+ */
+var LineNumbers = (function (_super) {
+    __extends(LineNumbers, _super);
+    function LineNumbers() {
+        _super.call(this);
+        this.on('load', this._handle_load, this);
+        this.on('unload', this._handle_unload, this);
+    }
+    /**
+     * Handles when the plugin is loaded.
+     */
+    LineNumbers.prototype._handle_load = function () {
+        this._renderer = new renderer.LineNumbersRenderer(this);
+        this.register_renderer(this._renderer);
+    };
+    /**
+     * Handles when the plugin is unloaded.
+     */
+    LineNumbers.prototype._handle_unload = function () {
+        // Remove all listeners to this plugin's changed event.
+        this._renderer.unregister();
+    };
+    return LineNumbers;
+})(plugin.PluginBase);
+exports.LineNumbers = LineNumbers;
+
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/linenumbers/linenumbers.js","/plugins/linenumbers")
+},{"../plugin":32,"./renderer":30,"1YiZ5S":4,"buffer":1}],30:[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+var renderer = require('../../draw/renderers/renderer');
+var canvas = require('../../draw/canvas');
+var utils = require('../../utils/utils');
+/**
+ * Renderers the line numbers.
+ */
+var LineNumbersRenderer = (function (_super) {
+    __extends(LineNumbersRenderer, _super);
+    function LineNumbersRenderer(plugin) {
+        _super.call(this, undefined, { parent_independent: true });
+        this._plugin = plugin;
+        this._top = null;
+        this._top_row = null;
+        this._character_width = null;
+        this._last_row_count = null;
+        // Find gutter plugin, listen to its change event.
+        var manager = this._plugin.poster.plugins;
+        this._gutter = manager.find('gutter')[0];
+        this._gutter.renderer.on('changed', this._gutter_resize, this);
+        // Get row renderer.
+        this._row_renderer = this._plugin.poster.view.row_renderer;
+        // Double buffer.
+        this._text_canvas = new canvas.Canvas();
+        this._tmp_canvas = new canvas.Canvas();
+        this._text_canvas.width = this._gutter.gutter_width;
+        this._tmp_canvas.width = this._gutter.gutter_width;
+        this.height = this.height;
+        // Adjust the gutter size when the number of lines in the document changes.
+        this._plugin.poster.model.on('text_changed', utils.proxy(this._handle_text_change, this));
+        this._plugin.poster.model.on('rows_added', utils.proxy(this._handle_text_change, this));
+        this._plugin.poster.model.on('rows_removed', utils.proxy(this._handle_text_change, this));
+        this._handle_text_change();
+    }
+    Object.defineProperty(LineNumbersRenderer.prototype, "height", {
+        get: function () {
+            return this._canvas.height;
+        },
+        set: function (value) {
+            // Adjust every buffer's size when the height changes.
+            this._canvas.height = value;
+            // The text canvas should be the right height to fit all of the lines
+            // that will be rendered in the base canvas.  This includes the lines
+            // that are partially rendered at the top and bottom of the base canvas.
+            var row_height = this._row_renderer.get_row_height();
+            this._row_height = row_height;
+            this._visible_row_count = Math.ceil(value / row_height) + 1;
+            this._text_canvas.height = this._visible_row_count * row_height;
+            this._tmp_canvas.height = this._text_canvas.height;
+            this.rerender();
+            this.trigger('changed');
+        },
+        enumerable: true,
+        configurable: true
+    });
+    /**
+     * Handles rendering
+     * Only re-render when scrolled vertically.
+     */
+    LineNumbersRenderer.prototype.render = function (scroll) {
+        var top = this._gutter.poster.canvas.scroll_top;
+        if (this._top === null || this._top !== top) {
+            this._top = top;
+            this._render();
+        }
+    };
+    LineNumbersRenderer.prototype.rerender = function () {
+        // Draw everything.
+        this._character_width = null;
+        this._text_canvas.erase_options_cache();
+        this._text_canvas.clear();
+        this._render_rows(this._top_row, this._visible_row_count);
+        // Render the buffer at the correct offset.
+        this._canvas.clear();
+        this._canvas.draw_image(this._text_canvas, 0, this._row_renderer.get_row_top(this._top_row) - this._row_renderer.top);
+    };
+    /**
+     * Unregister the event listeners
+     */
+    LineNumbersRenderer.prototype.unregister = function () {
+        this._gutter.off('changed', this._render);
+    };
+    /**
+     * Renders the line numbers
+     */
+    LineNumbersRenderer.prototype._render = function () {
+        // Measure the width of numerical characters if not done yet.
+        if (this._character_width === null) {
+            this._character_width = this._text_canvas.measure_text('0123456789', {
+                font_family: 'monospace',
+                font_size: 14,
+            }) / 10.0;
+            this._handle_text_change();
+        }
+        // Update the text buffer if needed.
+        var top_row = this._row_renderer.get_row_char(0, this._top).row_index;
+        var lines = this._plugin.poster.model._rows.length;
+        if (this._top_row !== top_row) {
+            this._last_row_count = lines;
+            var last_top_row = this._top_row;
+            this._top_row = top_row;
+            // Recycle rows if possible.
+            var row_scroll = this._top_row - last_top_row;
+            var row_delta = Math.abs(row_scroll);
+            if (this._top_row !== null && row_delta < this._visible_row_count) {
+                // Get a snapshot of the text before the scroll.
+                this._tmp_canvas.clear();
+                this._tmp_canvas.draw_image(this._text_canvas, 0, 0);
+                // Render the new rows.
+                this._text_canvas.clear();
+                if (this._top_row < last_top_row) {
+                    // Scrolled up the document (the scrollbar moved up, page down)
+                    this._render_rows(this._top_row, row_delta);
+                }
+                else {
+                    // Scrolled down the document (the scrollbar moved down, page up)
+                    this._render_rows(this._top_row + this._visible_row_count - row_delta, row_delta);
+                }
+                // Use the old content to fill in the rest.
+                this._text_canvas.draw_image(this._tmp_canvas, 0, -row_scroll * this._row_height);
+            }
+            else {
+                // Draw everything.
+                this._text_canvas.clear();
+                this._render_rows(this._top_row, this._visible_row_count);
+            }
+        }
+        // Render the buffer at the correct offset.
+        this._canvas.clear();
+        this._canvas.draw_image(this._text_canvas, 0, this._row_renderer.get_row_top(this._top_row) - this._row_renderer.top);
+    };
+    /**
+     * Renders a set of line numbers.
+     */
+    LineNumbersRenderer.prototype._render_rows = function (start_row, num_rows) {
+        var lines = this._plugin.poster.model._rows.length;
+        for (var i = start_row; i < start_row + num_rows; i++) {
+            if (i < lines) {
+                var y = (i - this._top_row) * this._row_height;
+                if (this._plugin.poster.config.highlight_draw) {
+                    this._text_canvas.draw_rectangle(0, y, this._text_canvas.width, this._row_height, {
+                        fill_color: utils.random_color(),
+                    });
+                }
+                this._text_canvas.draw_text(10, y, String(i + 1), {
+                    font_family: 'monospace',
+                    font_size: 14,
+                    color: this._plugin.poster.style.get('gutter_text', 'black'),
+                });
+            }
+        }
+    };
+    /**
+     * Handles when the number of lines in the editor changes.
+     */
+    LineNumbersRenderer.prototype._handle_text_change = function () {
+        var lines = this._plugin.poster.model._rows.length;
+        var digit_width = Math.max(2, Math.ceil(Math.log(lines + 1) / Math.log(10)) + 1);
+        var char_width = this._character_width || 10.0;
+        this._gutter.gutter_width = digit_width * char_width + 8.0;
+        if (lines !== this._last_row_count) {
+            this.rerender();
+            this.trigger('changed');
+        }
+    };
+    /**
+     * Handles when the gutter is resized
+     */
+    LineNumbersRenderer.prototype._gutter_resize = function () {
+        this._text_canvas.width = this._gutter.gutter_width;
+        this._tmp_canvas.width = this._gutter.gutter_width;
+        this.rerender();
+        this.trigger('changed');
+    };
+    return LineNumbersRenderer;
+})(renderer.RendererBase);
+exports.LineNumbersRenderer = LineNumbersRenderer;
+
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/linenumbers/renderer.js","/plugins/linenumbers")
+},{"../../draw/canvas":17,"../../draw/renderers/renderer":22,"../../utils/utils":40,"1YiZ5S":4,"buffer":1}],31:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -7398,69 +6787,160 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-var utils = require('./utils');
-var styles = require('./styles/init');
+var utils = require('../utils/utils');
+var pluginbase = require('./plugin');
+var gutter = require('./gutter/gutter');
+var linenumbers = require('./linenumbers/linenumbers');
 /**
- * Style
+ * Plugin manager class
  */
-var Style = (function (_super) {
-    __extends(Style, _super);
-    function Style() {
-        _super.call(this, [
-            'comment',
-            'string',
-            'class-name',
-            'keyword',
-            'boolean',
-            'function',
-            'operator',
-            'number',
-            'ignore',
-            'punctuation',
-            'cursor',
-            'cursor_width',
-            'cursor_height',
-            'selection',
-            'selection_unfocused',
-            'text',
-            'background',
-            'gutter',
-            'gutter_text',
-            'gutter_shadow'
-        ]);
-        // Load the default style.
-        this.load('peacock');
+var PluginManager = (function (_super) {
+    __extends(PluginManager, _super);
+    function PluginManager(poster) {
+        _super.call(this);
+        this._poster = poster;
+        this._plugins = [];
+        // Populate built-in plugin list.
+        this._internal_plugins = {};
+        this._internal_plugins['gutter'] = gutter.Gutter;
+        this._internal_plugins['linenumbers'] = linenumbers.LineNumbers;
     }
-    /**
-     * Load a rendering style
-     * @param  {string or dictionary} style - name of the built-in style
-     *         or style dictionary itself.
-     * @return {boolean} success
-     */
-    Style.prototype.load = function (style) {
-        try {
-            // Load the style if it's built-in.
-            if (styles.styles[style]) {
-                style = styles.styles[style].style;
+    Object.defineProperty(PluginManager.prototype, "plugins", {
+        /**
+         * Get a readonly copy of the loaded plugins.
+         */
+        get: function () {
+            return [].concat(this._plugins);
+        },
+        enumerable: true,
+        configurable: true
+    });
+    PluginManager.prototype.load = function (plugin) {
+        if (!(plugin instanceof pluginbase.PluginBase)) {
+            var plugin_class = this._internal_plugins[plugin];
+            if (plugin_class !== undefined) {
+                plugin = new plugin_class();
             }
-            for (var key in style) {
-                if (style.hasOwnProperty(key)) {
-                    this[key] = style[key];
-                }
-            }
+        }
+        if (plugin instanceof pluginbase.PluginBase) {
+            this._plugins.push(plugin);
+            plugin.handle_load(this, this._poster);
             return true;
         }
-        catch (e) {
-            console.error('Error loading style', e);
-            return false;
-        }
+        return false;
     };
-    return Style;
+    /**
+     * Unloads a plugin
+     * @returns success
+     */
+    PluginManager.prototype.unload = function (plugin) {
+        var index = this._plugins.indexOf(plugin);
+        if (index != -1) {
+            this._plugins.splice(index, 1);
+            plugin.handle_unload();
+            return true;
+        }
+        return false;
+    };
+    PluginManager.prototype.find = function (plugin_class) {
+        if (this._internal_plugins[plugin_class] !== undefined) {
+            plugin_class = this._internal_plugins[plugin_class];
+        }
+        var found = [];
+        for (var i = 0; i < this._plugins.length; i++) {
+            if (this._plugins[i] instanceof plugin_class) {
+                found.push(this._plugins[i]);
+            }
+        }
+        return found;
+    };
+    return PluginManager;
 })(utils.PosterClass);
-exports.Style = Style;
+exports.PluginManager = PluginManager;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/style.js","/")
-},{"./styles/init":37,"./utils":40,"1YiZ5S":4,"buffer":1}],37:[function(require,module,exports){
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/manager.js","/plugins")
+},{"../utils/utils":40,"./gutter/gutter":27,"./linenumbers/linenumbers":29,"./plugin":32,"1YiZ5S":4,"buffer":1}],32:[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var utils = require('../utils/utils');
+/**
+ * Plugin base class
+ */
+var PluginBase = (function (_super) {
+    __extends(PluginBase, _super);
+    function PluginBase() {
+        _super.call(this);
+        this.loaded = false;
+        this._renderers = [];
+        this._poster = null;
+    }
+    Object.defineProperty(PluginBase.prototype, "poster", {
+        get: function () {
+            return this._poster;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    /**
+     * Unloads this plugin
+     */
+    PluginBase.prototype.unload = function () {
+        this._manager.unload(this);
+    };
+    /**
+     * Registers a renderer
+     */
+    PluginBase.prototype.register_renderer = function (renderer) {
+        this._renderers.push(renderer);
+        this.poster.view.add_renderer(renderer);
+    };
+    /**
+     * Unregisters a renderer and removes it from the internal list.
+     */
+    PluginBase.prototype.unregister_renderer = function (renderer) {
+        var index = this._renderers.indexOf(renderer);
+        if (index !== -1) {
+            this._renderers.splice(index, 1);
+        }
+        this._unregister_renderer(renderer);
+    };
+    /**
+     * Loads the plugin
+     */
+    PluginBase.prototype.handle_load = function (manager, poster) {
+        this._poster = poster;
+        this._manager = manager;
+        this.loaded = true;
+        this.trigger('load');
+    };
+    /**
+     * Trigger unload event
+     */
+    PluginBase.prototype.handle_unload = function () {
+        for (var i = 0; i < this._renderers.length; i++) {
+            this._unregister_renderer(this._renderers[i]);
+        }
+        this.loaded = false;
+        this.trigger('unload');
+    };
+    /**
+     * Unregisters a renderer
+     */
+    PluginBase.prototype._unregister_renderer = function (renderer) {
+        this.poster.view.remove_renderer(renderer);
+    };
+    return PluginBase;
+})(utils.PosterClass);
+exports.PluginBase = PluginBase;
+
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/plugin.js","/plugins")
+},{"../utils/utils":40,"1YiZ5S":4,"buffer":1}],33:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var peacock = require('./peacock');
 exports.styles = {
@@ -7468,7 +6948,7 @@ exports.styles = {
 };
 
 }).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/styles/init.js","/styles")
-},{"./peacock":38,"1YiZ5S":4,"buffer":1}],38:[function(require,module,exports){
+},{"./peacock":34,"1YiZ5S":4,"buffer":1}],34:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 exports.style = {
     comment: '#7a7267',
@@ -7497,7 +6977,358 @@ exports.style = {
 };
 
 }).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/styles/peacock.js","/styles")
-},{"1YiZ5S":4,"buffer":1}],39:[function(require,module,exports){
+},{"1YiZ5S":4,"buffer":1}],35:[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+var utils = require('../utils/utils');
+var styles = require('./init');
+/**
+ * Style
+ */
+var Style = (function (_super) {
+    __extends(Style, _super);
+    function Style() {
+        _super.call(this, [
+            'comment',
+            'string',
+            'class_name',
+            'keyword',
+            'boolean',
+            'function',
+            'operator',
+            'number',
+            'ignore',
+            'punctuation',
+            'cursor',
+            'cursor_width',
+            'cursor_height',
+            'selection',
+            'selection_unfocused',
+            'text',
+            'background',
+            'gutter',
+            'gutter_text',
+            'gutter_shadow'
+        ]);
+        // Load the default style.
+        this.load('peacock');
+    }
+    /**
+     * Get the value of a property of this instance.
+     */
+    Style.prototype.get = function (name, default_value) {
+        name = name.replace(/-/g, '_');
+        return this[name] !== undefined ? this[name] : default_value;
+    };
+    Style.prototype.load = function (style) {
+        try {
+            // Load the style if it's built-in.
+            if (styles.styles[style]) {
+                style = styles.styles[style].style;
+            }
+            for (var key in style) {
+                if (style.hasOwnProperty(key)) {
+                    this[key] = style[key];
+                }
+            }
+            return true;
+        }
+        catch (e) {
+            console.error('Error loading style', e);
+            return false;
+        }
+    };
+    return Style;
+})(utils.PosterClass);
+exports.Style = Style;
+
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/styles/style.js","/styles")
+},{"../utils/utils":40,"./init":33,"1YiZ5S":4,"buffer":1}],36:[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var utils = require('../utils/utils');
+/**
+ * Listens to a model and higlights the text accordingly.
+ * @param {DocumentModel} model
+ */
+var HighlighterBase = (function (_super) {
+    __extends(HighlighterBase, _super);
+    function HighlighterBase(model, row_renderer) {
+        _super.call(this);
+        this._model = model;
+        this._row_renderer = row_renderer;
+        this._queued = null;
+        this.delay = 15; //ms
+        // Bind events.
+        this._row_renderer.on('rows_changed', utils.proxy(this._handle_scroll, this));
+        this._model.on('text_changed', utils.proxy(this._handle_text_change, this));
+        this._model.on('row_changed', utils.proxy(this._handle_text_change, this));
+    }
+    /**
+     * Highlight the document
+     */
+    HighlighterBase.prototype.highlight = function (start_row, end_row) {
+        throw new Error('Not implemented');
+    };
+    /**
+     * Queues a highlight operation.
+     *
+     * If a highlight operation is already queued, don't queue
+     * another one.  This ensures that the highlighting is
+     * frame rate locked.  Highlighting is an expensive operation.
+     */
+    HighlighterBase.prototype._queue_highlighter = function () {
+        var _this = this;
+        if (this._queued === null) {
+            this._queued = setTimeout(function () {
+                _this._model.acquire_tag_event_lock();
+                try {
+                    var visible_rows = _this._row_renderer.get_visible_rows();
+                    var top_row = visible_rows.top_row;
+                    var bottom_row = visible_rows.bottom_row;
+                    _this.highlight(top_row, bottom_row);
+                }
+                finally {
+                    _this._model.release_tag_event_lock();
+                    _this._queued = null;
+                }
+            }, this.delay);
+        }
+    };
+    /**
+     * Handles when the visible row indicies are changed.
+     */
+    HighlighterBase.prototype._handle_scroll = function (start_row, end_row) {
+        this._queue_highlighter();
+    };
+    /**
+     * Handles when the text changes.
+     */
+    HighlighterBase.prototype._handle_text_change = function () {
+        this._queue_highlighter();
+    };
+    return HighlighterBase;
+})(utils.PosterClass);
+exports.HighlighterBase = HighlighterBase;
+
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/syntax/highlighter.js","/syntax")
+},{"../utils/utils":40,"1YiZ5S":4,"buffer":1}],37:[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var superset = require('../utils/superset');
+var highlighter = require('./highlighter');
+var prism = require('prismjs');
+/**
+ * Listens to a model and highlights the text accordingly.
+ * @param {DocumentModel} model
+ */
+var PrismHighlighter = (function (_super) {
+    __extends(PrismHighlighter, _super);
+    function PrismHighlighter(model, row_renderer) {
+        _super.call(this, model, row_renderer);
+        // Look back and forward this many rows for contextually 
+        // sensitive highlighting.
+        this._row_padding = 30;
+        this._language = null;
+    }
+    Object.defineProperty(PrismHighlighter.prototype, "languages", {
+        get: function () {
+            var languages = [];
+            for (var l in prism.languages) {
+                if (["extend", "insertBefore", "DFS"].indexOf(l) == -1) {
+                    languages.push(l);
+                }
+            }
+            return languages;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    /**
+     * Highlight the document
+     */
+    PrismHighlighter.prototype.highlight = function (start_row, end_row) {
+        var _this = this;
+        // Get the first and last rows that should be highlighted.
+        start_row = Math.max(0, start_row - this._row_padding);
+        end_row = Math.min(this._model._rows.length - 1, end_row + this._row_padding);
+        // Abort if language isn't specified.
+        if (!this._language)
+            return;
+        // Get the text of the rows.
+        var text = this._model.get_text(start_row, 0, end_row, this._model._rows[end_row].length);
+        // Figure out where each tag belongs.
+        var highlights = this._highlight(text); // [start_index, end_index, tag]
+        // Calculate Poster tags
+        highlights.forEach(function (highlight) {
+            // Translate tag character indicies to row, char coordinates.
+            var before_rows = text.substring(0, highlight[0]).split('\n');
+            var group_start_row = start_row + before_rows.length - 1;
+            var group_start_char = before_rows[before_rows.length - 1].length;
+            var after_rows = text.substring(0, highlight[1]).split('\n');
+            var group_end_row = start_row + after_rows.length - 1;
+            var group_end_char = after_rows[after_rows.length - 1].length;
+            while (group_start_char === _this._model._rows[group_start_row].length) {
+                if (group_start_row < group_end_row) {
+                    group_start_row++;
+                    group_start_char = 0;
+                }
+                else {
+                    return;
+                }
+            }
+            while (group_end_char === 0) {
+                if (group_end_row > group_start_row) {
+                    group_end_row--;
+                    group_end_char = _this._model._rows[group_end_row].length;
+                }
+                else {
+                    return;
+                }
+            }
+            // Apply tag if it's not already applied.
+            var tag = highlight[2].toLowerCase();
+            var existing_tags = _this._model.get_tags('syntax', group_start_row, group_start_char, group_end_row, group_end_char);
+            // Make sure the number of tags = number of rows.
+            var correct_count = (existing_tags.length === group_end_row - group_start_row + 1);
+            // Make sure every tag value equals the new value.
+            var correct_values = true;
+            var i;
+            if (correct_count) {
+                for (i = 0; i < existing_tags.length; i++) {
+                    if (existing_tags[i][3] !== tag) {
+                        correct_values = false;
+                        break;
+                    }
+                }
+            }
+            // Check that the start and ends of tags are correct.
+            var correct_ranges = true;
+            if (correct_count && correct_values) {
+                if (existing_tags.length == 1) {
+                    correct_ranges = existing_tags[0][1] === group_start_char && existing_tags[0][2] === group_end_char;
+                }
+                else {
+                    correct_ranges = existing_tags[0][1] <= group_start_char && existing_tags[0][2] >= _this._model._rows[group_start_row].length - 1;
+                    correct_ranges = correct_ranges && existing_tags[existing_tags.length - 1][1] === 0 && existing_tags[existing_tags.length - 1][2] >= group_end_char;
+                    for (i = 1; i < existing_tags.length - 1; i++) {
+                        correct_ranges = correct_ranges && existing_tags[i][1] === 0 && existing_tags[i][2] >= _this._model._rows[existing_tags[i][0]].length - 1;
+                        if (!correct_ranges)
+                            break;
+                    }
+                }
+            }
+            if (!(correct_count && correct_values && correct_ranges)) {
+                _this._model.set_tag(group_start_row, group_start_char, group_end_row, group_end_char, 'syntax', tag);
+            }
+        });
+    };
+    PrismHighlighter.prototype.load = function (language) {
+        try {
+            // Check if the language exists.
+            if (prism.languages[language] === undefined) {
+                throw new Error('Language does not exist!');
+            }
+            this._language = prism.languages[language];
+            this._queue_highlighter();
+            return true;
+        }
+        catch (e) {
+            console.error('Error loading language', e);
+            this._language = null;
+            return false;
+        }
+    };
+    /**
+     * Find each part of text that needs to be highlighted.
+     * @return list containing items of the form [start_index, end_index, tag]
+     */
+    PrismHighlighter.prototype._highlight = function (text) {
+        // Tokenize using prism.js
+        var tokens = prism.tokenize(text, this._language);
+        // Convert the tokens into [start_index, end_index, tag]
+        var left = 0;
+        var flatten = function (tokens, prefix) {
+            if (!prefix) {
+                prefix = [];
+            }
+            var flat = [];
+            for (var i = 0; i < tokens.length; i++) {
+                var token = tokens[i];
+                if (token.content) {
+                    flat = flat.concat(flatten([].concat(token.content), prefix.concat(token.type)));
+                }
+                else {
+                    if (prefix.length > 0) {
+                        flat.push([left, left + token.length, prefix.join(' ')]);
+                    }
+                    left += token.length;
+                }
+            }
+            return flat;
+        };
+        var tags = flatten(tokens);
+        // Use a superset to reduce overlapping tags.
+        var set = new superset.Superset();
+        set.set(0, text.length - 1, '');
+        tags.forEach(function (tag) { return set.set(tag[0], tag[1] - 1, tag[2]); });
+        return set.array;
+    };
+    return PrismHighlighter;
+})(highlighter.HighlighterBase);
+exports.PrismHighlighter = PrismHighlighter;
+
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/syntax/prism.js","/syntax")
+},{"../utils/superset":39,"./highlighter":36,"1YiZ5S":4,"buffer":1,"prismjs":5}],38:[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var utils = require('./utils');
+var Config = (function (_super) {
+    __extends(Config, _super);
+    function Config() {
+        _super.call(this, [
+            'highlight_draw',
+            'highlight_blit',
+            'newline_width',
+            'tab_width',
+            'use_spaces',
+            'history_group_delay',
+        ]);
+    }
+    return Config;
+})(utils.PosterClass);
+exports.Config = Config;
+exports.config = new Config();
+// Set defaults
+exports.config.tab_width = 4;
+exports.config.use_spaces = true;
+exports.config.history_group_delay = 100;
+
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/utils/config.js","/utils")
+},{"./utils":40,"1YiZ5S":4,"buffer":1}],39:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -7532,19 +7363,19 @@ var Superset = (function (_super) {
     };
     /**
      * Set the state of a region.
-     * @param {integer} start - index, inclusive
-     * @param {integer} stop - index, inclusive
-     * @param {object} state
+     * @param start - index, inclusive
+     * @param stop - index, inclusive
+     * @param state
      */
     Superset.prototype.set = function (start, stop, state) {
         this._set(start, stop, state, 0);
     };
     /**
      * Set the state of a region.
-     * @param {integer} start - index, inclusive
-     * @param {integer} stop - index, inclusive
-     * @param {object} state
-     * @param {integer} integer - current recursion index
+     * @param start - index, inclusive
+     * @param stop - index, inclusive
+     * @param state
+     * @param index - current recursion index
      */
     Superset.prototype._set = function (start, stop, state, index) {
         // Make sure start and stop are in correct order.
@@ -7576,10 +7407,6 @@ var Superset = (function (_super) {
     };
     /**
      * Inserts an entry.
-     * @param  {integer} index
-     * @param  {integer} start
-     * @param  {integer} end
-     * @param  {object} state
      */
     Superset.prototype._insert = function (index, start, end, state) {
         if (start > end)
@@ -7604,14 +7431,14 @@ var Superset = (function (_super) {
 })(utils.PosterClass);
 exports.Superset = Superset;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/superset.js","/")
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/utils/superset.js","/utils")
 },{"./utils":40,"1YiZ5S":4,"buffer":1}],40:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+;
 /**
  * Base class with helpful utilities
- * @param {array} [eventful_properties] list of property names (strings)
- *                to create and wire change events to.
+ * @param [eventful_properties] list of property names (strings)
+ *        to create and wire change events to.
  */
 var PosterClass = (function () {
     function PosterClass(eventful_properties) {
@@ -7637,10 +7464,6 @@ var PosterClass = (function () {
     }
     /**
      * Define a property for the class
-     * @param  {string} name
-     * @param  {function} getter
-     * @param  {function} setter
-     * @return {null}
      */
     PosterClass.prototype.property = function (name, getter, setter) {
         Object.defineProperty(this, name, {
@@ -7651,10 +7474,6 @@ var PosterClass = (function () {
     };
     /**
      * Register an event listener
-     * @param  {string} event
-     * @param  {function} handler
-     * @param  {object} context
-     * @return {null}
      */
     PosterClass.prototype.on = function (event, handler, context) {
         event = event.trim().toLowerCase();
@@ -7667,9 +7486,6 @@ var PosterClass = (function () {
     };
     /**
      * Unregister one or all event listeners for a specific event
-     * @param  {string} event
-     * @param  {callback} (optional) handler
-     * @return {null}
      */
     PosterClass.prototype.off = function (event, handler) {
         event = event.trim().toLowerCase();
@@ -7688,10 +7504,8 @@ var PosterClass = (function () {
      *
      * A global event handler fires for any event that's
      * triggered.
-     * @param  {string} handler - function that accepts one
-     *                            argument, the name of the
-     *                            event,
-     * @return {null}
+     * @param handler - function that accepts one argument,
+     *        the name of the event.
      */
     PosterClass.prototype.on_all = function (handler) {
         var index = this._on_all.indexOf(handler);
@@ -7701,8 +7515,7 @@ var PosterClass = (function () {
     };
     /**
      * Unregister a global event handler.
-     * @param  {[type]} handler
-     * @return {boolean} true if a handler was removed
+     * @return true if a handler was removed
      */
     PosterClass.prototype.off_all = function (handler) {
         var index = this._on_all.indexOf(handler);
@@ -7714,8 +7527,7 @@ var PosterClass = (function () {
     };
     /**
      * Triggers the callbacks of an event to fire.
-     * @param  {string} event
-     * @return {array} array of return values
+     * @return array of return values
      */
     PosterClass.prototype.trigger = function (event) {
         var _this = this;
@@ -7742,18 +7554,7 @@ var PosterClass = (function () {
 })();
 exports.PosterClass = PosterClass;
 /**
- * Cause one class to inherit from another
- * @param  {type} child
- * @param  {type} parent
- * @return {null}
- */
-exports.inherit = function (child, parent) {
-    child.prototype = Object.create(parent.prototype, {});
-};
-/**
  * Checks if a value is callable
- * @param  {any} value
- * @return {boolean}
  */
 exports.callable = function (value) {
     return typeof value == 'function';
@@ -7761,8 +7562,6 @@ exports.callable = function (value) {
 /**
  * Calls the value if it's callable and returns it's return.
  * Otherwise returns the value as-is.
- * @param  {any} value
- * @return {any}
  */
 exports.resolve_callable = function (value) {
     if (exports.callable(value)) {
@@ -7774,7 +7573,6 @@ exports.resolve_callable = function (value) {
 };
 /**
  * Creates a proxy to a function so it is called in the correct context.
- * @return {function} proxied function.
  */
 exports.proxy = function (f, context) {
     if (f === undefined) {
@@ -7791,8 +7589,6 @@ exports.proxy = function (f, context) {
  * a list in place in Javascript.
  * Benchmark: http://jsperf.com/empty-javascript-array
  * Complexity: O(N)
- * @param  {array} array
- * @return {null}
  */
 exports.clear_array = function (array) {
     while (array.length > 0) {
@@ -7801,8 +7597,6 @@ exports.clear_array = function (array) {
 };
 /**
  * Checks if a value is an array
- * @param  {any} x
- * @return {boolean} true if value is an array
  */
 exports.is_array = function (x) {
     return x instanceof Array;
@@ -7812,9 +7606,9 @@ exports.is_array = function (x) {
  *
  * Interpolation search algorithm.
  * Complexity: O(lg(lg(N)))
- * @param  {array} sorted - sorted array of numbers
- * @param  {float} x - number to try to find
- * @return {integer} index of the value that's closest to x
+ * @param sorted - sorted array of numbers
+ * @param x - number to try to find
+ * @return index of the value that's closest to x
  */
 exports.find_closest = function (sorted, x) {
     var min = sorted[0];
@@ -7852,9 +7646,7 @@ exports.find_closest = function (sorted, x) {
     }
 };
 /**
- * Make a shallow copy of a dictionary.
- * @param  {dictionary} x
- * @return {dictionary}
+ * Make a shallow copy of an object.
  */
 exports.shallow_copy = function (x) {
     var y = {};
@@ -7867,10 +7659,10 @@ exports.shallow_copy = function (x) {
 };
 /**
  * Hooks a function.
- * @param  {object} obj - object to hook
- * @param  {string} method - name of the function to hook
- * @param  {function} hook - function to call before the original
- * @return {object} hook reference, object with an `unhook` method
+ * @param obj - object to hook
+ * @param method - name of the function to hook
+ * @param hook - function to call before the original
+ * @return hook reference, object with an `unhook` method
  */
 exports.hook = function (obj, method, hook) {
     // If the original has already been hooked, add this hook to the list 
@@ -7915,8 +7707,6 @@ exports.hook = function (obj, method, hook) {
 };
 /**
  * Cancels event bubbling.
- * @param  {event} e
- * @return {null}
  */
 exports.cancel_bubble = function (e) {
     if (e.stopPropagation)
@@ -7928,7 +7718,7 @@ exports.cancel_bubble = function (e) {
 };
 /**
  * Generates a random color string
- * @return {string} hexadecimal color string
+ * @return hexadecimal color string
  */
 exports.random_color = function () {
     var random_byte = function () {
@@ -7939,9 +7729,6 @@ exports.random_color = function () {
 };
 /**
  * Compare two arrays by contents for equality.
- * @param  {array} x
- * @param  {array} y
- * @return {boolean}
  */
 exports.compare_arrays = function (x, y) {
     if (x.length != y.length)
@@ -7953,13 +7740,28 @@ exports.compare_arrays = function (x, y) {
     return true;
 };
 /**
- * Find all the occurances of a regular expression inside a string.
- * @param  {string} text - string to look in
- * @param  {string} re - regular expression to find
- * @return {array} array of [start_index, end_index] pairs
+ * Compare two objects by contents for equality.
  */
-exports.findall = function (text, re, flags) {
-    re = new RegExp(re, flags || 'gm');
+exports.compare_objects = function (x, y) {
+    // Make sure the objects have the same keys.
+    var keys = Object.keys(x);
+    if (!exports.compare_arrays(keys, Object.keys(y)))
+        return false;
+    for (var i = 0; i < keys.length; i++) {
+        var key = keys[i];
+        if (x[key] !== y[key])
+            return false;
+    }
+    return true;
+};
+/**
+ * Find all the occurances of a regular expression inside a string.
+ * @param text - string to look in
+ * @param regular_expression - regular expression to find
+ * @return array of [start_index, end_index] pairs
+ */
+exports.findall = function (text, regular_expression, flags) {
+    var re = new RegExp(regular_expression, flags || 'gm');
     var results;
     var found = [];
     while ((results = re.exec(text)) !== null) {
@@ -7971,16 +7773,14 @@ exports.findall = function (text, re, flags) {
 };
 /**
  * Checks if the character isn't text.
- * @param  {char} c - character
- * @return {boolean} true if the character is not text.
+ * @return true if the character is not text.
  */
 exports.not_text = function (c) {
     return 'abcdefghijklmnopqrstuvwxyz1234567890_'.indexOf(c.toLowerCase()) == -1;
 };
 /**
  * Merges objects
- * @param  {array} objects
- * @return {object} new object, result of merged objects
+ * @return new object, result of merged objects
  */
 exports.merge = function (objects) {
     var result = {};
@@ -7993,6 +7793,13 @@ exports.merge = function (objects) {
     }
     return result;
 };
+/**
+ * Convert arguments object to an array of arguments.
+ * @param  arguments_obj - `arguments`
+ */
+exports.args = function (arguments_obj) {
+    return Array.prototype.slice.call(arguments_obj);
+};
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/utils.js","/")
-},{"1YiZ5S":4,"buffer":1}]},{},[18])
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/utils/utils.js","/utils")
+},{"1YiZ5S":4,"buffer":1}]},{},[26])
