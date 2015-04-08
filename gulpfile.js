@@ -5,17 +5,25 @@ var less = require('gulp-less');
 var ts = require('gulp-typescript');
 var merge = require('merge2');
 var browserify = require('gulp-browserify');
+var child_process = require("child_process");
 // var debug = require('gulp-debug');
 
 // Default task set.
-gulp.task('default', ['javascript', 'less']);
+gulp.task('default', ['docs', 'javascript', 'less']);
 
 /*
  * Watch for changes.
  */
 gulp.task('watch', function() {
-    gulp.watch('source/ts/**/*.ts', ['javascript']);
+    gulp.watch('source/ts/**/*.ts', ['docs', 'javascript']);
     gulp.watch('source/less/*.less', ['less']);
+});
+
+/*
+ * Compile API docs from typescript.
+ */
+gulp.task('docs', [], function(cb) {
+    child_process.exec("typedoc --out ./docs --module commonjs --target es5 --name Poster ./source/ts/", cb);
 });
 
 /*
