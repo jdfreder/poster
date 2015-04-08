@@ -3875,17 +3875,26 @@ var DocumentModel = (function (_super) {
         this._pending_tag_events = false;
     }
     Object.defineProperty(DocumentModel.prototype, "rows", {
+        /**
+         * Shallow copy of the array.  Modifying this won't modify the
+         * contents of the Poster instance.
+         */
         get: function () {
-            // Return a shallow copy of the array so it cannot be modified.
             return [].concat(this._rows);
         },
         enumerable: true,
         configurable: true
     });
     Object.defineProperty(DocumentModel.prototype, "text", {
+        /**
+         * Gets the text of the Poster instance
+         */
         get: function () {
             return this._get_text();
         },
+        /**
+         * Sets the text of the Poster instance
+         */
         set: function (value) {
             this._set_text(value);
         },
@@ -3896,14 +3905,14 @@ var DocumentModel = (function (_super) {
      * Acquire a lock on tag events
      *
      * Prevents tag events from firing.
-     * @return {integer} lock count
+     * @return lock count
      */
     DocumentModel.prototype.acquire_tag_event_lock = function () {
         return this._tag_lock++;
     };
     /**
      * Release a lock on tag events
-     * @return {integer} lock count
+     * @return lock count
      */
     DocumentModel.prototype.release_tag_event_lock = function () {
         this._tag_lock--;
@@ -3918,7 +3927,6 @@ var DocumentModel = (function (_super) {
     };
     /**
      * Triggers the tag change events.
-     * @return {null}
      */
     DocumentModel.prototype.trigger_tag_events = function (rows) {
         if (this._tag_lock === 0) {
@@ -3937,12 +3945,12 @@ var DocumentModel = (function (_super) {
     };
     /**
      * Sets a 'tag' on the text specified.
-     * @param {integer} start_row - row the tag starts on
-     * @param {integer} start_char - index, in the row, of the first tagged character
-     * @param {integer} end_row - row the tag ends on
-     * @param {integer} end_char - index, in the row, of the last tagged character
-     * @param {string} tag_name
-     * @param {any} tag_value - overrides any previous tags
+     * @param start_row - row the tag starts on
+     * @param start_char - index, in the row, of the first tagged character
+     * @param end_row - row the tag ends on
+     * @param end_char - index, in the row, of the last tagged character
+     * @param tag_name
+     * @param tag_value - overrides any previous tags
      */
     DocumentModel.prototype.set_tag = function (start_row, start_char, end_row, end_char, tag_name, tag_value) {
         var coords = this.validate_coords.apply(this, arguments);
@@ -3968,9 +3976,6 @@ var DocumentModel = (function (_super) {
     };
     /**
      * Removed all of the tags on the document.
-     * @param  {integer} start_row
-     * @param  {integer} end_row
-     * @return {null}
      */
     DocumentModel.prototype.clear_tags = function (start_row, end_row) {
         start_row = start_row !== undefined ? start_row : 0;
@@ -3984,10 +3989,7 @@ var DocumentModel = (function (_super) {
     };
     /**
      * Get the tag value applied to the character.
-     * @param  {string} tag_name
-     * @param  {integer} row_index
-     * @param  {integer} char_index
-     * @return {object} value or undefined
+     * @return value or undefined
      */
     DocumentModel.prototype.get_tag_value = function (tag_name, row_index, char_index) {
         // Loop through the tags on this row.
@@ -4005,12 +4007,7 @@ var DocumentModel = (function (_super) {
     };
     /**
      * Get the tag value ranges applied to the specific range.
-     * @param  {string} tag_name
-     * @param  {integer} start_row
-     * @param  {integer} start_char
-     * @param  {integer} end_row
-     * @param  {integer} end_char
-     * @return {array} array of tag value ranges ([row_index, start_char, end_char, tag_value])
+     * @return array of tag value ranges ([row_index, start_char, end_char, tag_value])
      */
     DocumentModel.prototype.get_tags = function (tag_name, start_row, start_char, end_row, end_char) {
         var coords = this.validate_coords.call(this, start_row, start_char, end_row, end_char);
@@ -4041,9 +4038,6 @@ var DocumentModel = (function (_super) {
     };
     /**
      * Adds text efficiently somewhere in the document.
-     * @param {integer} row_index
-     * @param {integer} char_index
-     * @param {string} text
      */
     DocumentModel.prototype.add_text = function (row_index, char_index, text) {
         var coords = this.validate_coords.apply(this, Array.prototype.slice.call(arguments, 0, 2));
@@ -4080,11 +4074,6 @@ var DocumentModel = (function (_super) {
     };
     /**
      * Removes a block of text from the document
-     * @param  {integer} start_row
-     * @param  {integer} start_char
-     * @param  {integer} end_row
-     * @param  {integer} end_char
-     * @return {null}
      */
     DocumentModel.prototype.remove_text = function (start_row, start_char, end_row, end_char) {
         var coords = this.validate_coords.apply(this, arguments);
@@ -4118,8 +4107,6 @@ var DocumentModel = (function (_super) {
     };
     /**
      * Remove a row from the document.
-     * @param  {integer} row_index
-     * @return {null}
      */
     DocumentModel.prototype.remove_row = function (row_index) {
         if (0 < row_index && row_index < this._rows.length) {
@@ -4131,11 +4118,6 @@ var DocumentModel = (function (_super) {
     };
     /**
      * Gets a chunk of text.
-     * @param  {integer} start_row
-     * @param  {integer} start_char
-     * @param  {integer} end_row
-     * @param  {integer} end_char
-     * @return {string}
      */
     DocumentModel.prototype.get_text = function (start_row, start_char, end_row, end_char) {
         var coords = this.validate_coords.apply(this, arguments);
@@ -4156,8 +4138,8 @@ var DocumentModel = (function (_super) {
     };
     /**
      * Add a row to the document
-     * @param {integer} row_index
-     * @param {string} text - new row's text
+     * @param row_index
+     * @param text - new row's text
      */
     DocumentModel.prototype.add_row = function (row_index, text) {
         var new_rows = [];
@@ -4175,12 +4157,8 @@ var DocumentModel = (function (_super) {
     };
     /**
      * Validates row, character coordinates in the document.
-     * @param  {integer} start_row
-     * @param  {integer} start_char
-     * @param  {integer} (optional) end_row
-     * @param  {integer} (optional) end_char
-     * @return {dictionary} dictionary containing validated coordinates {start_row,
-     *                      start_char, end_row, end_char}
+     * @return dictionary containing validated coordinates {start_row,
+     *         start_char, end_row, end_char}
      */
     DocumentModel.prototype.validate_coords = function (start_row, start_char, end_row, end_char) {
         // Make sure the values aren't undefined.
@@ -4237,7 +4215,6 @@ var DocumentModel = (function (_super) {
     };
     /**
      * Gets the text of the document.
-     * @return {string}
      */
     DocumentModel.prototype._get_text = function () {
         return this._rows.join('\n');
@@ -4245,7 +4222,6 @@ var DocumentModel = (function (_super) {
     /**
      * Sets the text of the document.
      * Complexity O(N) for N rows
-     * @param {string} value
      */
     DocumentModel.prototype._set_text = function (value) {
         this._rows = value.split('\n');
@@ -4255,7 +4231,6 @@ var DocumentModel = (function (_super) {
     };
     /**
      * Updates _row's partner arrays.
-     * @return {null}
      */
     DocumentModel.prototype._resized_rows = function () {
         while (this._row_tags.length < this._rows.length) {
@@ -4289,19 +4264,20 @@ var color = require('./draw/renderers/color');
 var highlighter = require('./syntax/prism');
 /**
  * Visual representation of a DocumentModel instance
- * @param {Canvas} canvas instance
- * @param {DocumentModel} model instance
- * @param {Cursors} cursors_model instance
- * @param {Style} style - describes rendering style
- * @param {function} has_focus - function that checks if the text area has focus
- * @param {function} move_focal_point - function that moves the focal point
  */
 var DocumentView = (function (_super) {
     __extends(DocumentView, _super);
-    function DocumentView(canvas, model, cursors_model, style, has_focus, move_focal_point) {
-        this._model = model;
+    /**
+     * @param scrolling_canvas
+     * @param model
+     * @param cursors_model
+     * @param style - describes rendering style
+     * @param has_focus - function that checks if the text area has focus
+     * @param move_focal_point - function that moves the focal point
+     */
+    function DocumentView(scrolling_canvas, model, cursors_model, style, has_focus, move_focal_point) {
         // Create child renderers.
-        var row_renderer = new highlighted_row.HighlightedRowRenderer(model, canvas, style);
+        var row_renderer = new highlighted_row.HighlightedRowRenderer(model, scrolling_canvas, style);
         row_renderer.margin_left = 2;
         row_renderer.margin_top = 2;
         this.row_renderer = row_renderer;
@@ -4313,21 +4289,21 @@ var DocumentView = (function (_super) {
             var height = row_renderer.get_row_height(row_index);
             var left = row_renderer.measure_partial_row_width(row_index, char_index) + row_renderer.margin_left;
             var bottom = top + height;
-            var canvas_height = canvas.height - 20;
-            if (bottom > canvas.scroll_top + canvas_height) {
-                canvas.scroll_top = bottom - canvas_height;
+            var canvas_height = scrolling_canvas.height - 20;
+            if (bottom > scrolling_canvas.scroll_top + canvas_height) {
+                scrolling_canvas.scroll_top = bottom - canvas_height;
             }
-            else if (top < canvas.scroll_top) {
-                canvas.scroll_top = top;
+            else if (top < scrolling_canvas.scroll_top) {
+                scrolling_canvas.scroll_top = top;
             }
-            var canvas_width = canvas.width - 20;
-            if (left > canvas.scroll_left + canvas_width) {
-                canvas.scroll_left = left - canvas_width;
+            var canvas_width = scrolling_canvas.width - 20;
+            if (left > scrolling_canvas.scroll_left + canvas_width) {
+                scrolling_canvas.scroll_left = left - canvas_width;
             }
-            else if (left - row_renderer.margin_left < canvas.scroll_left) {
-                canvas.scroll_left = Math.max(0, left - row_renderer.margin_left);
+            else if (left - row_renderer.margin_left < scrolling_canvas.scroll_left) {
+                scrolling_canvas.scroll_left = Math.max(0, left - row_renderer.margin_left);
             }
-            move_focal_point(left - canvas.scroll_left, top - canvas.scroll_top - canvas.height);
+            move_focal_point(left - scrolling_canvas.scroll_left, top - scrolling_canvas.scroll_top - scrolling_canvas.height);
         });
         var cursors_renderer = new cursors.CursorsRenderer(cursors_model, style, row_renderer, has_focus);
         var selections_renderer = new selections.SelectionsRenderer(cursors_model, style, row_renderer, has_focus, cursors_renderer);
@@ -4348,10 +4324,10 @@ var DocumentView = (function (_super) {
             selections_renderer,
             row_renderer,
             cursors_renderer,
-        ], canvas);
+        ], scrolling_canvas);
         // Hookup render events.
         this._canvas.on('redraw', utils.proxy(this.render, this));
-        this._model.on('changed', utils.proxy(canvas.redraw, canvas));
+        model.on('changed', utils.proxy(scrolling_canvas.redraw, scrolling_canvas));
     }
     Object.defineProperty(DocumentView.prototype, "language", {
         get: function () {
@@ -4391,7 +4367,7 @@ var Animator = (function (_super) {
     }
     /**
      * Get the time in the animation
-     * @return {float} between 0 and 1
+     * @return between 0 and 1
      */
     Animator.prototype.time = function () {
         var elapsed = Date.now() - this._start;
@@ -4420,33 +4396,127 @@ var __extends = this.__extends || function (d, b) {
 var utils = require('../utils/utils');
 var config_mod = require('../utils/config');
 var config = config_mod.config;
+var CompositeOperationEnum = (function () {
+    function CompositeOperationEnum(value) {
+        this.value = value;
+    }
+    CompositeOperationEnum.prototype.toString = function () {
+        return this.value;
+    };
+    // Possible values.
+    CompositeOperationEnum.source_over = new CompositeOperationEnum('source-over');
+    CompositeOperationEnum.source_atop = new CompositeOperationEnum('source-atop');
+    CompositeOperationEnum.source_in = new CompositeOperationEnum('source-in');
+    CompositeOperationEnum.source_out = new CompositeOperationEnum('source-out');
+    CompositeOperationEnum.destination_over = new CompositeOperationEnum('destination-over');
+    CompositeOperationEnum.destination_atop = new CompositeOperationEnum('destination-atop');
+    CompositeOperationEnum.destination_in = new CompositeOperationEnum('destination-in');
+    CompositeOperationEnum.destination_out = new CompositeOperationEnum('destination-out');
+    CompositeOperationEnum.lighter = new CompositeOperationEnum('lighter');
+    CompositeOperationEnum.copy = new CompositeOperationEnum('copy');
+    CompositeOperationEnum.xor = new CompositeOperationEnum('xor');
+    return CompositeOperationEnum;
+})();
+exports.CompositeOperationEnum = CompositeOperationEnum;
+var TextAlignmentEnum = (function () {
+    function TextAlignmentEnum(value) {
+        this.value = value;
+    }
+    TextAlignmentEnum.prototype.toString = function () {
+        return this.value;
+    };
+    // Possible values.
+    TextAlignmentEnum.start = new TextAlignmentEnum('start');
+    TextAlignmentEnum.end = new TextAlignmentEnum('end');
+    TextAlignmentEnum.center = new TextAlignmentEnum('center');
+    TextAlignmentEnum.left = new TextAlignmentEnum('left');
+    TextAlignmentEnum.right = new TextAlignmentEnum('right');
+    return TextAlignmentEnum;
+})();
+exports.TextAlignmentEnum = TextAlignmentEnum;
+var TextBaselineEnum = (function () {
+    function TextBaselineEnum(value) {
+        this.value = value;
+    }
+    TextBaselineEnum.prototype.toString = function () {
+        return this.value;
+    };
+    // Possible values.
+    TextBaselineEnum.alphabetic = new TextBaselineEnum('alphabetic');
+    TextBaselineEnum.top = new TextBaselineEnum('top');
+    TextBaselineEnum.hanging = new TextBaselineEnum('hanging');
+    TextBaselineEnum.middle = new TextBaselineEnum('middle');
+    TextBaselineEnum.ideographic = new TextBaselineEnum('ideographic');
+    TextBaselineEnum.bottom = new TextBaselineEnum('bottom');
+    return TextBaselineEnum;
+})();
+exports.TextBaselineEnum = TextBaselineEnum;
+var LineCapEnum = (function () {
+    function LineCapEnum(value) {
+        this.value = value;
+    }
+    LineCapEnum.prototype.toString = function () {
+        return this.value;
+    };
+    // Possible values.
+    LineCapEnum.butt = new LineCapEnum('butt');
+    LineCapEnum.round = new LineCapEnum('round');
+    LineCapEnum.square = new LineCapEnum('square');
+    return LineCapEnum;
+})();
+exports.LineCapEnum = LineCapEnum;
+var LineJoinEnum = (function () {
+    function LineJoinEnum(value) {
+        this.value = value;
+    }
+    LineJoinEnum.prototype.toString = function () {
+        return this.value;
+    };
+    // Possible values.
+    LineJoinEnum.bevel = new LineJoinEnum('bevel');
+    LineJoinEnum.round = new LineJoinEnum('round');
+    LineJoinEnum.miter = new LineJoinEnum('miter');
+    return LineJoinEnum;
+})();
+exports.LineJoinEnum = LineJoinEnum;
 /**
  * HTML canvas with drawing convinience functions.
  */
 var Canvas = (function (_super) {
     __extends(Canvas, _super);
     function Canvas() {
-        this._rendered_region = [null, null, null, null]; // x1,y1,x2,y2
         _super.call(this);
+        this._text_size_cache_size = 1000;
+        this._rendered_region = {
+            x1: null,
+            y1: null,
+            x2: null,
+            y2: null
+        };
         this._layout();
         this._last_set_options = {};
         this._text_size_cache = {};
         this._text_size_array = [];
-        this._text_size_cache_size = 1000;
         // Set default size.
         this.width = 400;
         this.height = 300;
     }
+    Object.defineProperty(Canvas.prototype, "context", {
+        get: function () {
+            return this._context;
+        },
+        enumerable: true,
+        configurable: true
+    });
     Object.defineProperty(Canvas.prototype, "height", {
         /**
          * Height of the canvas
-         * @return {float}
          */
         get: function () {
             return this._canvas.height / 2;
         },
         set: function (value) {
-            this._canvas.setAttribute('height', value * 2);
+            this._canvas.setAttribute('height', String(value * 2));
             // Stretch the image for retina support.
             this.scale(2, 2);
             this._touch();
@@ -4457,13 +4527,12 @@ var Canvas = (function (_super) {
     Object.defineProperty(Canvas.prototype, "width", {
         /**
          * Width of the canvas
-         * @return {float}
          */
         get: function () {
             return this._canvas.width / 2;
         },
         set: function (value) {
-            this._canvas.setAttribute('width', value * 2);
+            this._canvas.setAttribute('width', String(value * 2));
             // Stretch the image for retina support.
             this.scale(2, 2);
             this._touch();
@@ -4474,8 +4543,7 @@ var Canvas = (function (_super) {
     Object.defineProperty(Canvas.prototype, "rendered_region", {
         /**
          * Region of the canvas that has been rendered to
-         * @return {dictionary} dictionary describing a rectangle {x,y,width,height}
-         *                      null if canvas has changed since last check
+         * @return null if canvas has changed since last check
          */
         get: function () {
             return this.get_rendered_region(true);
@@ -4483,32 +4551,37 @@ var Canvas = (function (_super) {
         enumerable: true,
         configurable: true
     });
-    /**
-     * Layout the elements for the canvas.
-     * Creates `this.el`
-     */
-    Canvas.prototype._layout = function () {
-        this._canvas = document.createElement('canvas');
-        this._canvas.setAttribute('class', 'poster hidden-canvas');
-        this.context = this._canvas.getContext('2d');
-        // Stretch the image for retina support.
-        this.scale(2, 2);
-    };
+    Object.defineProperty(Canvas.prototype, "canvas", {
+        /**
+         * HTML 5 Canvas element
+         */
+        get: function () {
+            return this._canvas;
+        },
+        enumerable: true,
+        configurable: true
+    });
     /**
      * Gets the region of the canvas that has been rendered to.
-     * @param  {boolean} (optional) reset - resets the region.
+     * @param  [reset] - resets the region.
      */
     Canvas.prototype.get_rendered_region = function (reset) {
         var rendered_region = this._rendered_region;
         if (rendered_region[0] === null)
             return null;
-        if (reset)
-            this._rendered_region = [null, null, null, null];
+        if (reset) {
+            this._rendered_region = {
+                x1: null,
+                y1: null,
+                x2: null,
+                y2: null
+            };
+        }
         return {
-            x: this._tx(rendered_region[0], true),
-            y: this._ty(rendered_region[1], true),
-            width: (this._tx(rendered_region[2]) - this._tx(rendered_region[0])),
-            height: (this._ty(rendered_region[3]) - this._ty(rendered_region[1])),
+            x: this.tx(rendered_region[0], true),
+            y: this.ty(rendered_region[1], true),
+            width: (this.tx(rendered_region[2]) - this.tx(rendered_region[0])),
+            height: (this.ty(rendered_region[3]) - this.ty(rendered_region[1])),
         };
     };
     /**
@@ -4528,15 +4601,10 @@ var Canvas = (function (_super) {
     };
     /**
      * Draws a rectangle
-     * @param  {float} x
-     * @param  {float} y
-     * @param  {float} width
-     * @param  {float} height
-     * @param  {dictionary} options, see _apply_options() for details
      */
     Canvas.prototype.draw_rectangle = function (x, y, width, height, options) {
-        var tx = this._tx(x);
-        var ty = this._ty(y);
+        var tx = this.tx(x);
+        var ty = this.ty(y);
         this.context.beginPath();
         this.context.rect(tx, ty, width, height);
         this._do_draw(options);
@@ -4544,14 +4612,10 @@ var Canvas = (function (_super) {
     };
     /**
      * Draws a circle
-     * @param  {float} x
-     * @param  {float} y
-     * @param  {float} r
-     * @param  {dictionary} options, see _apply_options() for details
      */
     Canvas.prototype.draw_circle = function (x, y, r, options) {
-        var tx = this._tx(x);
-        var ty = this._ty(y);
+        var tx = this.tx(x);
+        var ty = this.ty(y);
         this.context.beginPath();
         this.context.arc(tx, ty, r, 0, 2 * Math.PI);
         this._do_draw(options);
@@ -4559,43 +4623,32 @@ var Canvas = (function (_super) {
     };
     /**
      * Draws an image
-     * @param  {img element} img
-     * @param  {float} x
-     * @param  {float} y
-     * @param  {float} (optional) width
-     * @param  {float} (optional) height
-     * @param  {object} (optional) clip_bounds - Where to clip from the source.
      */
     Canvas.prototype.draw_image = function (img, x, y, width, height, clip_bounds) {
-        var tx = this._tx(x);
-        var ty = this._ty(y);
+        var tx = this.tx(x);
+        var ty = this.ty(y);
         width = width || img.width;
         height = height || img.height;
-        img = img._canvas ? img._canvas : img;
+        var html_img = img.canvas ? img.canvas : img;
         if (clip_bounds) {
             // Horizontally offset the image operation by one pixel along each 
             // border to eliminate the strange white l&r border artifacts.
             var hoffset = 1;
-            this.context.drawImage(img, (this._tx(clip_bounds.x) - hoffset) * 2, this._ty(clip_bounds.y) * 2, (clip_bounds.width + 2 * hoffset) * 2, clip_bounds.height * 2, tx - hoffset, ty, width + 2 * hoffset, height);
+            this.context.drawImage(html_img, (this.tx(clip_bounds.x) - hoffset) * 2, this.ty(clip_bounds.y) * 2, (clip_bounds.width + 2 * hoffset) * 2, clip_bounds.height * 2, tx - hoffset, ty, width + 2 * hoffset, height);
         }
         else {
-            this.context.drawImage(img, tx, ty, width, height);
+            this.context.drawImage(html_img, tx, ty, width, height);
         }
         this._touch(tx, ty, tx + width, ty + height);
     };
     /**
      * Draws a line
-     * @param  {float} x1
-     * @param  {float} y1
-     * @param  {float} x2
-     * @param  {float} y2
-     * @param  {dictionary} options, see _apply_options() for details
      */
     Canvas.prototype.draw_line = function (x1, y1, x2, y2, options) {
-        var tx1 = this._tx(x1);
-        var ty1 = this._ty(y1);
-        var tx2 = this._tx(x2);
-        var ty2 = this._ty(y2);
+        var tx1 = this.tx(x1);
+        var ty1 = this.ty(y1);
+        var tx2 = this.tx(x2);
+        var ty2 = this.ty(y2);
         this.context.beginPath();
         this.context.moveTo(tx1, ty1);
         this.context.lineTo(tx2, ty2);
@@ -4604,11 +4657,8 @@ var Canvas = (function (_super) {
     };
     /**
      * Draws a poly line
-     * @param  {array} points - array of points.  Each point is
-     *                          an array itself, of the form [x, y]
-     *                          where x and y are floating point
-     *                          values.
-     * @param  {dictionary} options, see _apply_options() for details
+     * @param  points - array of points.  Each point is an array itself, of the
+     *                  form [x, y] where x and y are floating point values.
      */
     Canvas.prototype.draw_polyline = function (points, options) {
         if (points.length < 2) {
@@ -4617,15 +4667,15 @@ var Canvas = (function (_super) {
         else {
             this.context.beginPath();
             var point = points[0];
-            this.context.moveTo(this._tx(point[0]), this._ty(point[1]));
+            this.context.moveTo(this.tx(point[0]), this.ty(point[1]));
             var minx = this.width;
             var miny = this.height;
             var maxx = 0;
             var maxy = 0;
             for (var i = 1; i < points.length; i++) {
                 point = points[i];
-                var tx = this._tx(point[0]);
-                var ty = this._ty(point[1]);
+                var tx = this.tx(point[0]);
+                var ty = this.ty(point[1]);
                 this.context.lineTo(tx, ty);
                 minx = Math.min(tx, minx);
                 miny = Math.min(ty, miny);
@@ -4638,14 +4688,10 @@ var Canvas = (function (_super) {
     };
     /**
      * Draws a text string
-     * @param  {float} x
-     * @param  {float} y
-     * @param  {string} text string or callback that resolves to a string.
-     * @param  {dictionary} options, see _apply_options() for details
      */
     Canvas.prototype.draw_text = function (x, y, text, options) {
-        var tx = this._tx(x);
-        var ty = this._ty(y);
+        var tx = this.tx(x);
+        var ty = this.ty(y);
         text = this._process_tabs(text);
         options = this._apply_options(options);
         // 'fill' the text by default when neither a stroke or fill 
@@ -4664,11 +4710,6 @@ var Canvas = (function (_super) {
     };
     /**
      * Get's a chunk of the canvas as a raw image.
-     * @param  {float} (optional) x
-     * @param  {float} (optional) y
-     * @param  {float} (optional) width
-     * @param  {float} (optional) height
-     * @return {image} canvas image data
      */
     Canvas.prototype.get_raw_image = function (x, y, width, height) {
         console.warn('get_raw_image image is slow, use canvas references instead with draw_image');
@@ -4676,13 +4717,13 @@ var Canvas = (function (_super) {
             x = 0;
         }
         else {
-            x = this._tx(x);
+            x = this.tx(x);
         }
         if (y === undefined) {
             y = 0;
         }
         else {
-            y = this._ty(y);
+            y = this.ty(y);
         }
         if (width === undefined)
             width = this.width;
@@ -4694,8 +4735,13 @@ var Canvas = (function (_super) {
         width = 2 * width;
         height = 2 * height;
         // Update the cached image if it's not the requested one.
-        var region = [x, y, width, height];
-        if (!(this._cached_timestamp === this._modified && utils.compare_arrays(region, this._cached_region))) {
+        var region = {
+            x1: x,
+            y1: y,
+            x2: width,
+            y2: height
+        };
+        if (!(this._cached_timestamp === this._modified && utils.compare_objects(region, this._cached_region))) {
             this._cached_image = this.context.getImageData(x, y, width, height);
             this._cached_timestamp = this._modified;
             this._cached_region = region;
@@ -4705,24 +4751,17 @@ var Canvas = (function (_super) {
     };
     /**
      * Put's a raw image on the canvas somewhere.
-     * @param  {float} x
-     * @param  {float} y
-     * @return {image} canvas image data
      */
     Canvas.prototype.put_raw_image = function (img, x, y) {
         console.warn('put_raw_image image is slow, use draw_image instead');
-        var tx = this._tx(x);
-        var ty = this._ty(y);
+        var tx = this.tx(x);
+        var ty = this.ty(y);
         // Multiply by two for pixel doubling.
         var ret = this.context.putImageData(img, tx * 2, ty * 2);
         this._touch(tx, ty, this.width, this.height); // Don't know size of image
-        return ret;
     };
     /**
      * Measures the width of a text string.
-     * @param  {string} text
-     * @param  {dictionary} options, see _apply_options() for details
-     * @return {float} width
      */
     Canvas.prototype.measure_text = function (text, options) {
         options = this._apply_options(options);
@@ -4741,11 +4780,11 @@ var Canvas = (function (_super) {
     };
     /**
      * Create a linear gradient
-     * @param  {float} x1
-     * @param  {float} y1
-     * @param  {float} x2
-     * @param  {float} y2
-     * @param  {array} color_stops - array of [float, color] pairs
+     * @param x1
+     * @param y1
+     * @param x2
+     * @param y2
+     * @param color_stops - array of [float, color] pairs
      */
     Canvas.prototype.gradient = function (x1, y1, x2, y2, color_stops) {
         var gradient = this.context.createLinearGradient(x1, y1, x2, y2);
@@ -4756,12 +4795,11 @@ var Canvas = (function (_super) {
     };
     /**
      * Clear's the canvas.
-     * @param  {object} (optional) region, {x,y,width,height}
      */
     Canvas.prototype.clear = function (region) {
         if (region) {
-            var tx = this._tx(region.x);
-            var ty = this._ty(region.y);
+            var tx = this.tx(region.x);
+            var ty = this.ty(region.y);
             this.context.clearRect(tx, ty, region.width, region.height);
             this._touch(tx, ty, tx + region.width, ty + region.height);
         }
@@ -4772,17 +4810,40 @@ var Canvas = (function (_super) {
     };
     /**
      * Scale the current drawing.
-     * @param  {float} x
-     * @param  {float} y
      */
     Canvas.prototype.scale = function (x, y) {
         this.context.scale(x, y);
         this._touch();
     };
     /**
+     * Transform an x value before rendering.
+     * @param x
+     * @param [inverse] - perform inverse transformation
+     */
+    Canvas.prototype.tx = function (x, inverse) {
+        return x;
+    };
+    /**
+     * Transform a y value before rendering.
+     * @param y
+     * @param [inverse] - perform inverse transformation
+     */
+    Canvas.prototype.ty = function (y, inverse) {
+        return y;
+    };
+    /**
+     * Layout the elements for the canvas.
+     * Creates `this.el`
+     */
+    Canvas.prototype._layout = function () {
+        this._canvas = document.createElement('canvas');
+        this._canvas.setAttribute('class', 'poster hidden-canvas');
+        this._context = this._canvas.getContext('2d');
+        // Stretch the image for retina support.
+        this.scale(2, 2);
+    };
+    /**
      * Finishes the drawing operation using the set of provided options.
-     * @param  {dictionary} (optional) dictionary that
-     *  resolves to a dictionary.
      */
     Canvas.prototype._do_draw = function (options) {
         options = this._apply_options(options);
@@ -4798,49 +4859,16 @@ var Canvas = (function (_super) {
     };
     /**
      * Applies a dictionary of drawing options to the pen.
-     * @param  {dictionary} options
-     *      alpha {float} Opacity (0-1)
-     *      composite_operation {string} How new images are
-     *          drawn onto an existing image.  Possible values
-     *          are `source-over`, `source-atop`, `source-in`,
-     *          `source-out`, `destination-over`,
-     *          `destination-atop`, `destination-in`,
-     *          `destination-out`, `lighter`, `copy`, or `xor`.
-     *      line_cap {string} End cap style for lines.
-     *          Possible values are 'butt', 'round', or 'square'.
-     *      line_join {string} How to render where two lines
-     *          meet.  Possible values are 'bevel', 'round', or
-     *          'miter'.
-     *      line_width {float} How thick lines are.
-     *      line_miter_limit {float} Max length of miters.
-     *      line_color {string} Color of the line.
-     *      fill_color {string} Color to fill the shape.
-     *      color {string} Color to stroke and fill the shape.
-     *          Lower priority to line_color and fill_color.
-     *      font_style {string}
-     *      font_variant {string}
-     *      font_weight {string}
-     *      font_size {string}
-     *      font_family {string}
-     *      text_align {string} Horizontal alignment of text.
-     *          Possible values are `start`, `end`, `center`,
-     *          `left`, or `right`.
-     *      text_baseline {string} Vertical alignment of text.
-     *          Possible values are `alphabetic`, `top`,
-     *          `hanging`, `middle`, `ideographic`, or
-     *          `bottom`.
-     * @return {dictionary} options, resolved.
      */
     Canvas.prototype._apply_options = function (options) {
         options = options || {};
-        options = utils.resolve_callable(options);
         // Special options.
         var set_options = {};
         set_options.globalAlpha = (options.alpha === undefined ? 1.0 : options.alpha);
-        set_options.globalCompositeOperation = options.composite_operation || 'source-over';
+        set_options.globalCompositeOperation = (options.composite_operation || CompositeOperationEnum.source_over).toString();
         // Line style.
-        set_options.lineCap = options.line_cap || 'butt';
-        set_options.lineJoin = options.line_join || 'bevel';
+        set_options.lineCap = (options.line_cap || LineCapEnum.butt).toString();
+        set_options.lineJoin = (options.line_join || LineJoinEnum.bevel).toString();
         set_options.lineWidth = options.line_width === undefined ? 1.0 : options.line_width;
         set_options.miterLimit = options.line_miter_limit === undefined ? 10 : options.line_miter_limit;
         this.context.strokeStyle = options.line_color || options.color || 'black'; // TODO: Support gradient
@@ -4871,8 +4899,8 @@ var Canvas = (function (_super) {
         var font = font_style + ' ' + font_variant + ' ' + font_weight + ' ' + font_size + ' ' + font_family;
         set_options.font = font;
         // Text style.
-        set_options.textAlign = options.text_align || 'left';
-        set_options.textBaseline = options.text_baseline || 'top';
+        set_options.textAlign = (options.text_align || TextAlignmentEnum.left).toString();
+        set_options.textBaseline = (options.text_baseline || TextBaselineEnum.top).toString();
         // TODO: Support shadows.
         // Empty the measure text cache if the font is changed.
         if (set_options.font !== this._last_set_options.font) {
@@ -4898,7 +4926,12 @@ var Canvas = (function (_super) {
         var all_undefined = (x1 === undefined && y1 === undefined && x2 === undefined && y2 === undefined);
         var one_nan = (isNaN(x1 * x2 * y1 * y2));
         if (one_nan || all_undefined) {
-            this._rendered_region = [0, 0, this.width, this.height];
+            this._rendered_region = {
+                x1: 0,
+                y1: 0,
+                x2: this.width,
+                y2: this.height
+            };
             return;
         }
         // Set the render region.
@@ -4910,34 +4943,14 @@ var Canvas = (function (_super) {
                 return comparison.call(undefined, old_value, new_value);
             }
         };
-        this._rendered_region[0] = comparitor(this._rendered_region[0], comparitor(x1, x2, Math.min), Math.min);
-        this._rendered_region[1] = comparitor(this._rendered_region[1], comparitor(y1, y2, Math.min), Math.min);
-        this._rendered_region[2] = comparitor(this._rendered_region[2], comparitor(x1, x2, Math.max), Math.max);
-        this._rendered_region[3] = comparitor(this._rendered_region[3], comparitor(y1, y2, Math.max), Math.max);
-    };
-    /**
-     * Transform an x value before rendering.
-     * @param  {float} x
-     * @param  {boolean} inverse - perform inverse transformation
-     * @return {float}
-     */
-    Canvas.prototype._tx = function (x, inverse) {
-        return x;
-    };
-    /**
-     * Transform a y value before rendering.
-     * @param  {float} y
-     * @param  {boolean} inverse - perform inverse transformation
-     * @return {float}
-     */
-    Canvas.prototype._ty = function (y, inverse) {
-        return y;
+        this._rendered_region.x1 = comparitor(this._rendered_region.x1, comparitor(x1, x2, Math.min), Math.min);
+        this._rendered_region.y1 = comparitor(this._rendered_region.y1, comparitor(y1, y2, Math.min), Math.min);
+        this._rendered_region.x2 = comparitor(this._rendered_region.x2, comparitor(x1, x2, Math.max), Math.max);
+        this._rendered_region.y2 = comparitor(this._rendered_region.y2, comparitor(y1, y2, Math.max), Math.max);
     };
     /**
      * Convert tab characters to the config defined number of space
      * characters for rendering.
-     * @param  {string} s - input string
-     * @return {string} output string
      */
     Canvas.prototype._process_tabs = function (s) {
         var space_tab = '';
@@ -4980,7 +4993,7 @@ var BatchRenderer = (function (_super) {
         // the full image by copying them all again.
         this._renderers.forEach(function (renderer) {
             renderer.on('changed', function () {
-                var rendered_region = renderer._canvas.rendered_region;
+                var rendered_region = renderer.canvas.rendered_region;
                 _this._copy_renderers(rendered_region);
             });
         });
@@ -5018,7 +5031,7 @@ var BatchRenderer = (function (_super) {
         var _this = this;
         this._renderers.push(renderer);
         renderer.on('changed', function () {
-            var rendered_region = renderer._canvas.rendered_region;
+            var rendered_region = renderer.canvas.rendered_region;
             _this._copy_renderers(rendered_region);
         });
     };
@@ -5034,9 +5047,7 @@ var BatchRenderer = (function (_super) {
     };
     /**
      * Render to the canvas
-     * @param {dictionary} (optional) scroll - How much the canvas was scrolled.  This
-     *                     is a dictionary of the form {x: float, y: float}
-     * @return {null}
+     * @param [scroll] - How much the canvas was scrolled.
      */
     BatchRenderer.prototype.render = function (scroll) {
         var _this = this;
@@ -5046,8 +5057,8 @@ var BatchRenderer = (function (_super) {
                 this._renderers.forEach(function (renderer) {
                     // Apply the rendering coordinate transforms of the parent.
                     if (!renderer.options.parent_independent) {
-                        renderer._canvas._tx = utils.proxy(_this._canvas._tx, _this._canvas);
-                        renderer._canvas._ty = utils.proxy(_this._canvas._ty, _this._canvas);
+                        renderer.canvas.tx = utils.proxy(_this._canvas.tx, _this._canvas);
+                        renderer.canvas.ty = utils.proxy(_this._canvas.ty, _this._canvas);
                     }
                 });
                 // Tell each renderer to render and keep track of the region
@@ -5056,7 +5067,7 @@ var BatchRenderer = (function (_super) {
                 this._renderers.forEach(function (renderer) {
                     // Tell the renderer to render itself.
                     renderer.render(scroll);
-                    var new_region = renderer._canvas.rendered_region;
+                    var new_region = renderer.canvas.rendered_region;
                     if (rendered_region === null) {
                         rendered_region = new_region;
                     }
@@ -5086,7 +5097,6 @@ var BatchRenderer = (function (_super) {
     };
     /**
      * Copies all the renderer layers to the canvas.
-     * @return {null}
      */
     BatchRenderer.prototype._copy_renderers = function (region) {
         var _this = this;
@@ -5099,17 +5109,15 @@ var BatchRenderer = (function (_super) {
     };
     /**
      * Copy a renderer to the canvas.
-     * @param  {RendererBase} renderer
-     * @param  {object} (optional) region
      */
     BatchRenderer.prototype._copy_renderer = function (renderer, region) {
         if (region) {
             // Copy a region.
-            this._canvas.draw_image(renderer._canvas, region.x, region.y, region.width, region.height, region);
+            this._canvas.draw_image(renderer.canvas, region.x, region.y, region.width, region.height, region);
         }
         else {
             // Copy the entire image.
-            this._canvas.draw_image(renderer._canvas, this.left, this.top, this._canvas.width, this._canvas.height);
+            this._canvas.draw_image(renderer.canvas, this.left, this.top, this._canvas.width, this._canvas.height);
         }
     };
     return BatchRenderer;
@@ -5181,9 +5189,7 @@ var ColorRenderer = (function (_super) {
     });
     /**
      * Render to the canvas
-     * @param {dictionary} (optional) scroll - How much the canvas was scrolled.  This
-     *                     is a dictionary of the form {x: float, y: float}
-     * @return {null}
+     * @param [scroll] - How much the canvas was scrolled.
      */
     ColorRenderer.prototype.render = function (scroll) {
         if (!this._rendered) {
@@ -5193,7 +5199,6 @@ var ColorRenderer = (function (_super) {
     };
     /**
      * Render a frame.
-     * @return {null}
      */
     ColorRenderer.prototype._render = function () {
         this._canvas.clear();
@@ -5231,11 +5236,6 @@ var CursorsRenderer = (function (_super) {
         this._cursors = cursors;
         this._last_drawn_cursors = [];
         this._row_renderer = row_renderer;
-        // TODO: Remove the following block.
-        this._get_visible_rows = utils.proxy(row_renderer.get_visible_rows, row_renderer);
-        this._get_row_height = utils.proxy(row_renderer.get_row_height, row_renderer);
-        this._get_row_top = utils.proxy(row_renderer.get_row_top, row_renderer);
-        this._measure_partial_row = utils.proxy(row_renderer.measure_partial_row_width, row_renderer);
         this._blink_animator = new animator.Animator(1000);
         this._fps = 2;
         // Start the cursor rendering clock.
@@ -5254,7 +5254,6 @@ var CursorsRenderer = (function (_super) {
      * Render to the canvas
      * Note: This method is called often, so it's important that it's
      * optimized for speed.
-     * @return {null}
      */
     CursorsRenderer.prototype.render = function (scroll) {
         var _this = this;
@@ -5281,26 +5280,26 @@ var CursorsRenderer = (function (_super) {
         if (this._has_focus() && this._blink_animator.time() < 0.5) {
             this._cursors.cursors.forEach(function (cursor) {
                 // Get the visible rows.
-                var visible_rows = _this._get_visible_rows();
+                var visible_rows = _this._row_renderer.get_visible_rows();
                 // If a cursor doesn't have a position, render it at the
                 // beginning of the document.
                 var row_index = cursor.primary_row || 0;
                 var char_index = cursor.primary_char || 0;
                 // Draw the cursor.
-                var height = _this._get_row_height(row_index);
-                var multiplier = _this.style.cursor_height || 1.0;
+                var height = _this._row_renderer.get_row_height(row_index);
+                var multiplier = _this.style.get('cursor_height', 1.0);
                 var offset = (height - (multiplier * height)) / 2;
                 height *= multiplier;
                 if (visible_rows.top_row <= row_index && row_index <= visible_rows.bottom_row) {
                     var cursor_box = {
-                        x: char_index === 0 ? _this._row_renderer.margin_left : _this._measure_partial_row(row_index, char_index) + _this._row_renderer.margin_left,
-                        y: _this._get_row_top(row_index) + offset,
-                        width: _this.style.cursor_width === undefined ? 1.0 : _this.style.cursor_width,
+                        x: char_index === 0 ? _this._row_renderer.margin_left : _this._row_renderer.measure_partial_row_width(row_index, char_index) + _this._row_renderer.margin_left,
+                        y: _this._row_renderer.get_row_top(row_index) + offset,
+                        width: _this.style.get('cursor_width', 1.0),
                         height: height,
                     };
                     _this._last_drawn_cursors.push(cursor_box);
                     _this._canvas.draw_rectangle(cursor_box.x, cursor_box.y, cursor_box.width, cursor_box.height, {
-                        fill_color: _this.style.cursor || 'back',
+                        fill_color: _this.style.get('cursor', 'back'),
                     });
                 }
             });
@@ -5309,7 +5308,6 @@ var CursorsRenderer = (function (_super) {
     };
     /**
      * Clock for rendering the cursor.
-     * @return {null}
      */
     CursorsRenderer.prototype._render_clock = function () {
         // If the canvas is focused, redraw.
@@ -5350,6 +5348,7 @@ var utils = require('../../utils/utils');
 var row = require('./row');
 var config_mod = require('../../utils/config');
 var config = config_mod.config;
+;
 /**
  * Render the text rows of a DocumentModel.
  * @param {DocumentModel} model instance
@@ -5381,10 +5380,6 @@ var HighlightedRowRenderer = (function (_super) {
     }
     /**
      * Render a single row
-     * @param  {integer} index
-     * @param  {float} x
-     * @param  {float} y
-     * @return {null}
      */
     HighlightedRowRenderer.prototype._render_row = function (index, x, y) {
         if (index < 0 || this._model._rows.length <= index)
@@ -5404,9 +5399,7 @@ var HighlightedRowRenderer = (function (_super) {
     };
     /**
      * Get render groups for a row.
-     * @param  {integer} index of the row
-     * @return {array} array of renderings, each rendering is an array of
-     *                 the form {options, text}.
+     * @param index of the row
      */
     HighlightedRowRenderer.prototype._get_groups = function (index) {
         if (index < 0 || this._model._rows.length <= index)
@@ -5431,8 +5424,7 @@ var HighlightedRowRenderer = (function (_super) {
     };
     /**
      * Creates a style options dictionary from a syntax tag.
-     * @param  {string} syntax
-     * @return {null}
+     * @param syntax
      */
     HighlightedRowRenderer.prototype._get_options = function (syntax) {
         var render_options = utils.shallow_copy(this._base_options);
@@ -5451,19 +5443,17 @@ var HighlightedRowRenderer = (function (_super) {
             }
             // Style if the syntax item is defined in the style.
             if (syntax && this.style[syntax]) {
-                render_options.color = this.style[syntax];
+                render_options.color = this.style.get(syntax);
             }
             else {
-                render_options.color = this.style.text || 'black';
+                render_options.color = this.style.get('text') || 'black';
             }
         }
         return render_options;
     };
     /**
      * Compare two syntaxs.
-     * @param  {string} a - syntax
-     * @param  {string} b - syntax
-     * @return {bool} true if a and b are equal
+     * @return true if a and b are equal
      */
     HighlightedRowRenderer.prototype._compare_syntax = function (a, b) {
         return a === b;
@@ -5492,9 +5482,16 @@ var RendererBase = (function (_super) {
     __extends(RendererBase, _super);
     function RendererBase(default_canvas, options) {
         _super.call(this);
-        this.options = options || {};
         this._canvas = default_canvas ? default_canvas : new canvas.Canvas();
+        this.options = options || {};
     }
+    Object.defineProperty(RendererBase.prototype, "canvas", {
+        get: function () {
+            return this._canvas;
+        },
+        enumerable: true,
+        configurable: true
+    });
     Object.defineProperty(RendererBase.prototype, "width", {
         get: function () {
             return this._canvas.width;
@@ -5517,23 +5514,21 @@ var RendererBase = (function (_super) {
     });
     Object.defineProperty(RendererBase.prototype, "top", {
         get: function () {
-            return -this._canvas._ty(0);
+            return -this._canvas.ty(0);
         },
         enumerable: true,
         configurable: true
     });
     Object.defineProperty(RendererBase.prototype, "left", {
         get: function () {
-            return -this._canvas._tx(0);
+            return -this._canvas.tx(0);
         },
         enumerable: true,
         configurable: true
     });
     /**
      * Render to the canvas
-     * @param {dictionary} (optional) scroll - How much the canvas was scrolled.  This
-     *                     is a dictionary of the form {x: float, y: float}
-     * @return {null}
+     * @param [scroll] - How much the canvas was scrolled
      */
     RendererBase.prototype.render = function (scroll) {
         throw new Error('Not implemented');
@@ -5665,9 +5660,7 @@ var RowRenderer = (function (_super) {
      * Render to the canvas
      * Note: This method is called often, so it's important that it's
      * optimized for speed.
-     * @param {dictionary} (optional) scroll - How much the canvas was scrolled.  This
-     *                     is a dictionary of the form {x: float, y: float}
-     * @return {null}
+     * @param [scroll] - How much the canvas was scrolled.
      */
     RowRenderer.prototype.render = function (scroll) {
         // If only the y axis was scrolled, blit the good contents and just render
@@ -5681,15 +5674,82 @@ var RowRenderer = (function (_super) {
         this._canvas.draw_image(this._text_canvas, this._scrolling_canvas.scroll_left, this.get_row_top(visible_rows.top_row));
     };
     /**
+     * Gets the row and character indicies closest to given control space coordinates.
+     * @param cursor_x - x value, 0 is the left of the canvas.
+     * @param cursor_y - y value, 0 is the top of the canvas.
+     */
+    RowRenderer.prototype.get_row_char = function (cursor_x, cursor_y) {
+        var row_index = Math.floor((cursor_y - this._margin_top) / this.get_row_height());
+        // Find the character index.
+        var widths = [0];
+        try {
+            for (var length = 1; length <= this._model._rows[row_index].length; length++) {
+                widths.push(this.measure_partial_row_width(row_index, length));
+            }
+        }
+        catch (e) {
+        }
+        var coords = this._model.validate_coords(row_index, utils.find_closest(widths, cursor_x - this._margin_left));
+        return {
+            row_index: coords.start_row,
+            char_index: coords.start_char,
+        };
+    };
+    /**
+     * Measures the partial width of a text row.
+     * @param  index
+     * @param  [length] - number of characters
+     * @return width
+     */
+    RowRenderer.prototype.measure_partial_row_width = function (index, length) {
+        if (0 > index || index >= this._model._rows.length) {
+            return 0;
+        }
+        var text = this._model._rows[index];
+        text = (length === undefined) ? text : text.substring(0, length);
+        return this._canvas.measure_text(text, this._base_options);
+    };
+    /**
+     * Measures the height of a text row as if it were rendered.
+     */
+    RowRenderer.prototype.get_row_height = function (index) {
+        return this._base_options.font_size + this._line_spacing;
+    };
+    /**
+     * Gets the top of the row when rendered
+     */
+    RowRenderer.prototype.get_row_top = function (index) {
+        return index * this.get_row_height() + this._margin_top;
+    };
+    /**
+     * Gets the visible rows.
+     */
+    RowRenderer.prototype.get_visible_rows = function () {
+        // Find the row closest to the scroll top.  If that row is below
+        // the scroll top, use the partially displayed row above it.
+        var top_row = Math.max(0, Math.floor((this._scrolling_canvas.scroll_top - this._margin_top) / this.get_row_height()));
+        // Find the row closest to the scroll bottom.  If that row is above
+        // the scroll bottom, use the partially displayed row below it.
+        var row_count = Math.ceil(this._canvas.height / this.get_row_height());
+        var bottom_row = top_row + row_count;
+        // Row count + 1 to include first row.
+        return { top_row: top_row, bottom_row: bottom_row, row_count: row_count + 1 };
+    };
+    /**
+     * Render a single row
+     */
+    RowRenderer.prototype._render_row = function (index, x, y) {
+        this._text_canvas.draw_text(x, y, this._model._rows[index], this._base_options);
+    };
+    /**
      * Render text to the text canvas.
      *
      * Later, the main rendering function can use this rendered text to draw the
      * base canvas.
-     * @param  {float} x_offset - horizontal offset of the text
-     * @param  {integer} top_row
-     * @param  {boolean} force_redraw - redraw the contents even if they are
-     *                                the same as the cached contents.
-     * @return {null}
+     * @param x_offset - horizontal offset of the text
+     * @param top_row
+     * @param force_redraw - redraw the contents even if they are
+     *                       the same as the cached contents.
      */
     RowRenderer.prototype._render_text_canvas = function (x_offset, top_row, force_redraw) {
         // Try to reuse some of the already rendered text if possible.
@@ -5744,89 +5804,17 @@ var RowRenderer = (function (_super) {
         this._last_rendered_offset = x_offset;
     };
     /**
-     * Gets the row and character indicies closest to given control space coordinates.
-     * @param  {float} cursor_x - x value, 0 is the left of the canvas.
-     * @param  {float} cursor_y - y value, 0 is the top of the canvas.
-     * @return {dictionary} dictionary of the form {row_index, char_index}
-     */
-    RowRenderer.prototype.get_row_char = function (cursor_x, cursor_y) {
-        var row_index = Math.floor((cursor_y - this._margin_top) / this.get_row_height());
-        // Find the character index.
-        var widths = [0];
-        try {
-            for (var length = 1; length <= this._model._rows[row_index].length; length++) {
-                widths.push(this.measure_partial_row_width(row_index, length));
-            }
-        }
-        catch (e) {
-        }
-        var coords = this._model.validate_coords(row_index, utils.find_closest(widths, cursor_x - this._margin_left));
-        return {
-            row_index: coords.start_row,
-            char_index: coords.start_char,
-        };
-    };
-    /**
-     * Measures the partial width of a text row.
-     * @param  {integer} index
-     * @param  {integer} (optional) length - number of characters
-     * @return {float} width
-     */
-    RowRenderer.prototype.measure_partial_row_width = function (index, length) {
-        if (0 > index || index >= this._model._rows.length) {
-            return 0;
-        }
-        var text = this._model._rows[index];
-        text = (length === undefined) ? text : text.substring(0, length);
-        return this._canvas.measure_text(text, this._base_options);
-    };
-    /**
      * Measures a strings width.
-     * @param  {string} text - text to measure the width of
-     * @param  {integer} [index] - row index, can be used to apply size sensitive
-     *                             formatting to the text.
-     * @return {float} width
+     * @param text - text to measure the width of
+     * @param [index] - row index, can be used to apply size sensitive
+     *        formatting to the text.
      */
     RowRenderer.prototype._measure_text_width = function (text, index) {
         return this._canvas.measure_text(text, this._base_options);
     };
     /**
-     * Measures the height of a text row as if it were rendered.
-     * @param  {integer} (optional) index
-     * @return {float} height
-     */
-    RowRenderer.prototype.get_row_height = function (index) {
-        return this._base_options.font_size + this._line_spacing;
-    };
-    /**
-     * Gets the top of the row when rendered
-     * @param  {integer} index
-     * @return {null}
-     */
-    RowRenderer.prototype.get_row_top = function (index) {
-        return index * this.get_row_height() + this._margin_top;
-    };
-    /**
-     * Gets the visible rows.
-     * @return {dictionary} dictionary containing information about
-     *                      the visible rows.  Format {top_row,
-     *                      bottom_row, row_count}.
-     */
-    RowRenderer.prototype.get_visible_rows = function () {
-        // Find the row closest to the scroll top.  If that row is below
-        // the scroll top, use the partially displayed row above it.
-        var top_row = Math.max(0, Math.floor((this._scrolling_canvas.scroll_top - this._margin_top) / this.get_row_height()));
-        // Find the row closest to the scroll bottom.  If that row is above
-        // the scroll bottom, use the partially displayed row below it.
-        var row_count = Math.ceil(this._canvas.height / this.get_row_height());
-        var bottom_row = top_row + row_count;
-        // Row count + 1 to include first row.
-        return { top_row: top_row, bottom_row: bottom_row, row_count: row_count + 1 };
-    };
-    /**
      * Handles when the model's value changes
      * Complexity: O(N) for N rows of text.
-     * @return {null}
      */
     RowRenderer.prototype._handle_value_changed = function () {
         // Calculate the document width.
@@ -5847,7 +5835,6 @@ var RowRenderer = (function (_super) {
     };
     /**
      * Handles when one of the model's rows change
-     * @return {null}
      */
     RowRenderer.prototype._handle_row_changed = function (text, index) {
         var new_width = this._measure_row_width(index) + this._margin_left;
@@ -5870,9 +5857,6 @@ var RowRenderer = (function (_super) {
      * Handles when one or more rows are added to the model
      *
      * Assumes constant row height.
-     * @param  {integer} start
-     * @param  {integer} end
-     * @return {null}
      */
     RowRenderer.prototype._handle_rows_added = function (start, end) {
         this._scrolling_canvas.scroll_height += (end - start + 1) * this.get_row_height();
@@ -5891,9 +5875,8 @@ var RowRenderer = (function (_super) {
      * Handles when one or more rows are removed from the model
      *
      * Assumes constant row height.
-     * @param  {array} rows
-     * @param  {integer} [index]
-     * @return {null}
+     * @param  rows - indicies
+     * @param  [index]
      */
     RowRenderer.prototype._handle_rows_removed = function (rows, index) {
         // Decrease the scrolling height based on the number of rows removed.
@@ -5910,26 +5893,13 @@ var RowRenderer = (function (_super) {
         this._scrolling_canvas.scroll_width = this._find_largest_width();
     };
     /**
-     * Render a single row
-     * @param  {integer} index
-     * @param  {float} x
-     * @param  {float} y
-     * @return {null}
-     */
-    RowRenderer.prototype._render_row = function (index, x, y) {
-        this._text_canvas.draw_text(x, y, this._model._rows[index], this._base_options);
-    };
-    /**
      * Measures the width of a text row as if it were rendered.
-     * @param  {integer} index
-     * @return {float} width
      */
     RowRenderer.prototype._measure_row_width = function (index) {
         return this.measure_partial_row_width(index, this._model._rows[index].length);
     };
     /**
      * Find the largest width in the width row count dictionary.
-     * @return {float} width
      */
     RowRenderer.prototype._find_largest_width = function () {
         var values = Object.keys(this._row_width_counts);
@@ -5950,7 +5920,6 @@ var __extends = this.__extends || function (d, b) {
     __.prototype = b.prototype;
     d.prototype = new __();
 };
-var utils = require('../../utils/utils');
 var renderer = require('./renderer');
 var config_mod = require('../../utils/config');
 var config = config_mod.config;
@@ -5979,11 +5948,6 @@ var SelectionsRenderer = (function (_super) {
         this.style.on('change', rerender);
         config.on('change', rerender);
         this._row_renderer = row_renderer;
-        // TODO: Remove the following block.
-        this._get_visible_rows = utils.proxy(row_renderer.get_visible_rows, row_renderer);
-        this._get_row_height = utils.proxy(row_renderer.get_row_height, row_renderer);
-        this._get_row_top = utils.proxy(row_renderer.get_row_top, row_renderer);
-        this._measure_partial_row = utils.proxy(row_renderer.measure_partial_row_width, row_renderer);
         // When the cursor is hidden/shown, redraw the selection.
         cursors_renderer.on('toggle', function () {
             _this.render();
@@ -5995,7 +5959,6 @@ var SelectionsRenderer = (function (_super) {
      * Render to the canvas
      * Note: This method is called often, so it's important that it's
      * optimized for speed.
-     * @return {null}
      */
     SelectionsRenderer.prototype.render = function (scroll) {
         var _this = this;
@@ -6021,27 +5984,27 @@ var SelectionsRenderer = (function (_super) {
         // Only render if the canvas has focus.
         this._cursors.cursors.forEach(function (cursor) {
             // Get the visible rows.
-            var visible_rows = _this._get_visible_rows();
+            var visible_rows = _this._row_renderer.get_visible_rows();
             // Draw the selection box.
             if (cursor.start_row !== null && cursor.start_char !== null && cursor.end_row !== null && cursor.end_char !== null) {
                 for (var i = Math.max(cursor.start_row, visible_rows.top_row); i <= Math.min(cursor.end_row, visible_rows.bottom_row); i++) {
                     var left = _this._row_renderer.margin_left;
                     if (i == cursor.start_row && cursor.start_char > 0) {
-                        left += _this._measure_partial_row(i, cursor.start_char);
+                        left += _this._row_renderer.measure_partial_row_width(i, cursor.start_char);
                     }
                     var selection_color;
                     if (_this._has_focus()) {
-                        selection_color = _this.style.selection || 'skyblue';
+                        selection_color = _this.style.get('selection', 'skyblue');
                     }
                     else {
-                        selection_color = _this.style.selection_unfocused || 'gray';
+                        selection_color = _this.style.get('selection_unfocused', 'gray');
                     }
                     var width;
                     if (i !== cursor.end_row) {
-                        width = _this._measure_partial_row(i) - left + _this._row_renderer.margin_left + newline_width;
+                        width = _this._row_renderer.measure_partial_row_width(i) - left + _this._row_renderer.margin_left + newline_width;
                     }
                     else {
-                        width = _this._measure_partial_row(i, cursor.end_char);
+                        width = _this._row_renderer.measure_partial_row_width(i, cursor.end_char);
                         // If this isn't the first selected row, make sure atleast the newline
                         // is visibily selected at the beginning of the row by making sure that
                         // the selection box is atleast the size of a newline character (as
@@ -6052,26 +6015,27 @@ var SelectionsRenderer = (function (_super) {
                         width = width - left + _this._row_renderer.margin_left;
                     }
                     var block = {
-                        left: left,
-                        top: _this._get_row_top(i),
+                        x: left,
+                        y: _this._row_renderer.get_row_top(i),
                         width: width,
-                        height: _this._get_row_height(i)
+                        height: _this._row_renderer.get_row_height(i)
                     };
-                    _this._canvas.draw_rectangle(block.left, block.top, block.width, block.height, {
+                    _this._canvas.draw_rectangle(block.x, block.y, block.width, block.height, {
                         fill_color: selection_color,
                     });
                     if (_this._dirty === null) {
-                        _this._dirty = {};
-                        _this._dirty.x1 = block.left;
-                        _this._dirty.y1 = block.top;
-                        _this._dirty.x2 = block.left + block.width;
-                        _this._dirty.y2 = block.top + block.height;
+                        _this._dirty = {
+                            x1: block.x,
+                            y1: block.y,
+                            x2: block.x + block.width,
+                            y2: block.y + block.height
+                        };
                     }
                     else {
-                        _this._dirty.x1 = Math.min(block.left, _this._dirty.x1);
-                        _this._dirty.y1 = Math.min(block.top, _this._dirty.y1);
-                        _this._dirty.x2 = Math.max(block.left + block.width, _this._dirty.x2);
-                        _this._dirty.y2 = Math.max(block.top + block.height, _this._dirty.y2);
+                        _this._dirty.x1 = Math.min(block.x, _this._dirty.x1);
+                        _this._dirty.y1 = Math.min(block.y, _this._dirty.y1);
+                        _this._dirty.x2 = Math.max(block.x + block.width, _this._dirty.x2);
+                        _this._dirty.y2 = Math.max(block.y + block.height, _this._dirty.y2);
                     }
                 }
             }
@@ -6082,7 +6046,7 @@ var SelectionsRenderer = (function (_super) {
 exports.SelectionsRenderer = SelectionsRenderer;
 
 }).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/selections.js","/draw/renderers")
-},{"../../utils/config":38,"../../utils/utils":40,"./renderer":22,"1YiZ5S":4,"buffer":1}],25:[function(require,module,exports){
+},{"../../utils/config":38,"./renderer":22,"1YiZ5S":4,"buffer":1}],25:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -6174,13 +6138,12 @@ var ScrollingCanvas = (function (_super) {
     Object.defineProperty(ScrollingCanvas.prototype, "height", {
         /**
          * Height of the canvas
-         * @return {float}
          */
         get: function () {
             return this._canvas.height / 2;
         },
         set: function (value) {
-            this._canvas.setAttribute('height', value * 2);
+            this._canvas.setAttribute('height', String(value * 2));
             this.el.setAttribute('style', 'width: ' + this.width + 'px; height: ' + value + 'px;');
             this.trigger('resize', { height: value });
             this._try_redraw();
@@ -6193,13 +6156,12 @@ var ScrollingCanvas = (function (_super) {
     Object.defineProperty(ScrollingCanvas.prototype, "width", {
         /**
          * Width of the canvas
-         * @return {float}
          */
         get: function () {
             return this._canvas.width / 2;
         },
         set: function (value) {
-            this._canvas.setAttribute('width', value * 2);
+            this._canvas.setAttribute('width', String(value * 2));
             this.el.setAttribute('style', 'width: ' + value + 'px; height: ' + this.height + 'px;');
             this.trigger('resize', { width: value });
             this._try_redraw();
@@ -6212,7 +6174,6 @@ var ScrollingCanvas = (function (_super) {
     Object.defineProperty(ScrollingCanvas.prototype, "focused", {
         /**
          * Is the canvas or related elements focused?
-         * @return {boolean}
          */
         get: function () {
             return document.activeElement === this.el || document.activeElement === this._scroll_bars || document.activeElement === this._dummy || document.activeElement === this._canvas;
@@ -6222,25 +6183,38 @@ var ScrollingCanvas = (function (_super) {
     });
     /**
      * Causes the canvas contents to be redrawn.
-     * @return {null}
      */
     ScrollingCanvas.prototype.redraw = function (scroll) {
         this.clear();
         this.trigger('redraw', scroll);
     };
     /**
+     * Transform an x value based on scroll position.
+     * @param x
+     * @param [inverse] - perform inverse transformation
+     */
+    ScrollingCanvas.prototype.tx = function (x, inverse) {
+        return x - (inverse ? -1 : 1) * this.scroll_left;
+    };
+    /**
+     * Transform a y value based on scroll position.
+     * @param y
+     * @param [inverse] - perform inverse transformation
+     */
+    ScrollingCanvas.prototype.ty = function (y, inverse) {
+        return y - (inverse ? -1 : 1) * this.scroll_top;
+    };
+    /**
      * Layout the elements for the canvas.
      * Creates `this.el`
-     *
-     * @return {null}
      */
     ScrollingCanvas.prototype._layout = function () {
-        canvas.Canvas.prototype._layout.call(this);
+        _super.prototype._layout.call(this);
         // Change the canvas class so it's not hidden.
         this._canvas.setAttribute('class', 'canvas');
         this.el = document.createElement('div');
         this.el.setAttribute('class', 'poster scroll-window');
-        this.el.setAttribute('tabindex', 0);
+        this.el.setAttribute('tabindex', '0');
         this._scroll_bars = document.createElement('div');
         this._scroll_bars.setAttribute('class', 'scroll-bars');
         this._touch_pane = document.createElement('div');
@@ -6254,7 +6228,6 @@ var ScrollingCanvas = (function (_super) {
     };
     /**
      * Bind to the events of the canvas.
-     * @return {null}
      */
     ScrollingCanvas.prototype._bind_events = function () {
         var _this = this;
@@ -6293,7 +6266,7 @@ var ScrollingCanvas = (function (_super) {
     };
     /**
      * Queries to see if redraw is okay, and then redraws if it is.
-     * @return {boolean} true if redraw happened.
+     * @return true if redraw happened.
      */
     ScrollingCanvas.prototype._try_redraw = function (scroll) {
         if (this._query_redraw()) {
@@ -6304,38 +6277,17 @@ var ScrollingCanvas = (function (_super) {
     };
     /**
      * Trigger the 'query_redraw' event.
-     * @return {boolean} true if control should redraw itself.
+     * @return true if control should redraw itself.
      */
     ScrollingCanvas.prototype._query_redraw = function () {
         return this.trigger('query_redraw').every(function (x) { return x; });
     };
     /**
      * Moves the dummy element that causes the scrollbar to appear.
-     * @param  {float} x
-     * @param  {float} y
-     * @return {null}
      */
     ScrollingCanvas.prototype._move_dummy = function (x, y) {
         this._dummy.setAttribute('style', 'left: ' + String(x) + 'px; top: ' + String(y) + 'px;');
         this._touch_pane.setAttribute('style', 'width: ' + String(Math.max(x, this._scroll_bars.clientWidth)) + 'px; ' + 'height: ' + String(Math.max(y, this._scroll_bars.clientHeight)) + 'px;');
-    };
-    /**
-     * Transform an x value based on scroll position.
-     * @param  {float} x
-     * @param  {boolean} inverse - perform inverse transformation
-     * @return {float}
-     */
-    ScrollingCanvas.prototype._tx = function (x, inverse) {
-        return x - (inverse ? -1 : 1) * this.scroll_left;
-    };
-    /**
-     * Transform a y value based on scroll position.
-     * @param  {float} y
-     * @param  {boolean} inverse - perform inverse transformation
-     * @return {float}
-     */
-    ScrollingCanvas.prototype._ty = function (y, inverse) {
-        return y - (inverse ? -1 : 1) * this.scroll_top;
     };
     return ScrollingCanvas;
 })(canvas.Canvas);
@@ -6454,7 +6406,7 @@ window.poster = {
 // Expose prism so the user can load custom language files.
 window.Prism = prism;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/fake_1506270.js","/")
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/fake_7ec0984a.js","/")
 },{"./document_controller":13,"./document_model":14,"./document_view":15,"./draw/renderers/renderer":22,"./draw/scrolling_canvas":25,"./plugins/manager":31,"./plugins/plugin":32,"./styles/style":35,"./utils/config":38,"./utils/utils":40,"1YiZ5S":4,"buffer":1,"prismjs":5}],27:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
@@ -6497,7 +6449,7 @@ var Gutter = (function (_super) {
     });
     /**
      * Sets the gutter's width.
-     * @param {integer} value - width in pixels
+     * @param value - width in pixels
      */
     Gutter.prototype._set_width = function (value) {
         if (this._gutter_width !== value) {
@@ -6567,6 +6519,12 @@ var GutterRenderer = (function (_super) {
         }
     };
     /**
+     * Unregister the event listeners
+     */
+    GutterRenderer.prototype.unregister = function () {
+        this._gutter.off('changed', this._render);
+    };
+    /**
      * Renders the gutter
      */
     GutterRenderer.prototype._render = function () {
@@ -6587,14 +6545,6 @@ var GutterRenderer = (function (_super) {
                 alpha: 0.35,
             });
         }
-    };
-    /**
-     * Unregister the event listeners
-     * @param  {Poster} poster
-     * @param  {Gutter} gutter
-     */
-    GutterRenderer.prototype.unregister = function () {
-        this._gutter.off('changed', this._render);
     };
     return GutterRenderer;
 })(renderer.RendererBase);
@@ -6651,8 +6601,8 @@ var __extends = this.__extends || function (d, b) {
 };
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var renderer = require('../../draw/renderers/renderer');
-var utils = require('../../utils/utils');
 var canvas = require('../../draw/canvas');
+var utils = require('../../utils/utils');
 /**
  * Renderers the line numbers.
  */
@@ -6715,6 +6665,22 @@ var LineNumbersRenderer = (function (_super) {
             this._render();
         }
     };
+    LineNumbersRenderer.prototype.rerender = function () {
+        // Draw everything.
+        this._character_width = null;
+        this._text_canvas.erase_options_cache();
+        this._text_canvas.clear();
+        this._render_rows(this._top_row, this._visible_row_count);
+        // Render the buffer at the correct offset.
+        this._canvas.clear();
+        this._canvas.draw_image(this._text_canvas, 0, this._row_renderer.get_row_top(this._top_row) - this._row_renderer.top);
+    };
+    /**
+     * Unregister the event listeners
+     */
+    LineNumbersRenderer.prototype.unregister = function () {
+        this._gutter.off('changed', this._render);
+    };
     /**
      * Renders the line numbers
      */
@@ -6764,20 +6730,8 @@ var LineNumbersRenderer = (function (_super) {
         this._canvas.clear();
         this._canvas.draw_image(this._text_canvas, 0, this._row_renderer.get_row_top(this._top_row) - this._row_renderer.top);
     };
-    LineNumbersRenderer.prototype.rerender = function () {
-        // Draw everything.
-        this._character_width = null;
-        this._text_canvas.erase_options_cache();
-        this._text_canvas.clear();
-        this._render_rows(this._top_row, this._visible_row_count);
-        // Render the buffer at the correct offset.
-        this._canvas.clear();
-        this._canvas.draw_image(this._text_canvas, 0, this._row_renderer.get_row_top(this._top_row) - this._row_renderer.top);
-    };
     /**
      * Renders a set of line numbers.
-     * @param  {integer} start_row
-     * @param  {integer} num_rows
      */
     LineNumbersRenderer.prototype._render_rows = function (start_row, num_rows) {
         var lines = this._plugin.poster.model._rows.length;
@@ -6792,7 +6746,7 @@ var LineNumbersRenderer = (function (_super) {
                 this._text_canvas.draw_text(10, y, String(i + 1), {
                     font_family: 'monospace',
                     font_size: 14,
-                    color: this._plugin.poster.style.gutter_text || 'black',
+                    color: this._plugin.poster.style.get('gutter_text', 'black'),
                 });
             }
         }
@@ -6818,14 +6772,6 @@ var LineNumbersRenderer = (function (_super) {
         this._tmp_canvas.width = this._gutter.gutter_width;
         this.rerender();
         this.trigger('changed');
-    };
-    /**
-     * Unregister the event listeners
-     * @param  {Poster} poster
-     * @param  {Gutter} gutter
-     */
-    LineNumbersRenderer.prototype.unregister = function () {
-        this._gutter.off('changed', this._render);
     };
     return LineNumbersRenderer;
 })(renderer.RendererBase);
@@ -6856,21 +6802,19 @@ var PluginManager = (function (_super) {
         this._plugins = [];
         // Populate built-in plugin list.
         this._internal_plugins = {};
-        this._internal_plugins.gutter = gutter.Gutter;
-        this._internal_plugins.linenumbers = linenumbers.LineNumbers;
+        this._internal_plugins['gutter'] = gutter.Gutter;
+        this._internal_plugins['linenumbers'] = linenumbers.LineNumbers;
     }
     Object.defineProperty(PluginManager.prototype, "plugins", {
+        /**
+         * Get a readonly copy of the loaded plugins.
+         */
         get: function () {
             return [].concat(this._plugins);
         },
         enumerable: true,
         configurable: true
     });
-    /**
-     * Loads a plugin
-     * @param  {string or PluginBase} plugin
-     * @returns {boolean} success
-     */
     PluginManager.prototype.load = function (plugin) {
         if (!(plugin instanceof pluginbase.PluginBase)) {
             var plugin_class = this._internal_plugins[plugin];
@@ -6880,30 +6824,24 @@ var PluginManager = (function (_super) {
         }
         if (plugin instanceof pluginbase.PluginBase) {
             this._plugins.push(plugin);
-            plugin._load(this, this._poster);
+            plugin.handle_load(this, this._poster);
             return true;
         }
         return false;
     };
     /**
      * Unloads a plugin
-     * @param  {PluginBase} plugin
-     * @returns {boolean} success
+     * @returns success
      */
     PluginManager.prototype.unload = function (plugin) {
         var index = this._plugins.indexOf(plugin);
         if (index != -1) {
             this._plugins.splice(index, 1);
-            plugin._unload();
+            plugin.handle_unload();
             return true;
         }
         return false;
     };
-    /**
-     * Finds the instance of a plugin.
-     * @param  {string or type} plugin_class - name of internal plugin or plugin class
-     * @return {array} of plugin instances
-     */
     PluginManager.prototype.find = function (plugin_class) {
         if (this._internal_plugins[plugin_class] !== undefined) {
             plugin_class = this._internal_plugins[plugin_class];
@@ -6950,33 +6888,13 @@ var PluginBase = (function (_super) {
         configurable: true
     });
     /**
-     * Loads the plugin
-     */
-    PluginBase.prototype._load = function (manager, poster) {
-        this._poster = poster;
-        this._manager = manager;
-        this.loaded = true;
-        this.trigger('load');
-    };
-    /**
      * Unloads this plugin
      */
     PluginBase.prototype.unload = function () {
         this._manager.unload(this);
     };
     /**
-     * Trigger unload event
-     */
-    PluginBase.prototype._unload = function () {
-        for (var i = 0; i < this._renderers.length; i++) {
-            this._unregister_renderer(this._renderers[i]);
-        }
-        this.loaded = false;
-        this.trigger('unload');
-    };
-    /**
      * Registers a renderer
-     * @param  {RendererBase} renderer
      */
     PluginBase.prototype.register_renderer = function (renderer) {
         this._renderers.push(renderer);
@@ -6984,7 +6902,6 @@ var PluginBase = (function (_super) {
     };
     /**
      * Unregisters a renderer and removes it from the internal list.
-     * @param  {RendererBase} renderer
      */
     PluginBase.prototype.unregister_renderer = function (renderer) {
         var index = this._renderers.indexOf(renderer);
@@ -6994,8 +6911,26 @@ var PluginBase = (function (_super) {
         this._unregister_renderer(renderer);
     };
     /**
+     * Loads the plugin
+     */
+    PluginBase.prototype.handle_load = function (manager, poster) {
+        this._poster = poster;
+        this._manager = manager;
+        this.loaded = true;
+        this.trigger('load');
+    };
+    /**
+     * Trigger unload event
+     */
+    PluginBase.prototype.handle_unload = function () {
+        for (var i = 0; i < this._renderers.length; i++) {
+            this._unregister_renderer(this._renderers[i]);
+        }
+        this.loaded = false;
+        this.trigger('unload');
+    };
+    /**
      * Unregisters a renderer
-     * @param  {RendererBase} renderer
      */
     PluginBase.prototype._unregister_renderer = function (renderer) {
         this.poster.view.remove_renderer(renderer);
@@ -7044,13 +6979,13 @@ exports.style = {
 }).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/styles/peacock.js","/styles")
 },{"1YiZ5S":4,"buffer":1}],35:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
     __.prototype = b.prototype;
     d.prototype = new __();
 };
+// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var utils = require('../utils/utils');
 var styles = require('./init');
 /**
@@ -7062,7 +6997,7 @@ var Style = (function (_super) {
         _super.call(this, [
             'comment',
             'string',
-            'class-name',
+            'class_name',
             'keyword',
             'boolean',
             'function',
@@ -7085,11 +7020,12 @@ var Style = (function (_super) {
         this.load('peacock');
     }
     /**
-     * Load a rendering style
-     * @param  {string or dictionary} style - name of the built-in style
-     *         or style dictionary itself.
-     * @return {boolean} success
+     * Get the value of a property of this instance.
      */
+    Style.prototype.get = function (name, default_value) {
+        name = name.replace(/-/g, '_');
+        return this[name] !== undefined ? this[name] : default_value;
+    };
     Style.prototype.load = function (style) {
         try {
             // Load the style if it's built-in.
@@ -7142,7 +7078,6 @@ var HighlighterBase = (function (_super) {
     }
     /**
      * Highlight the document
-     * @return {null}
      */
     HighlighterBase.prototype.highlight = function (start_row, end_row) {
         throw new Error('Not implemented');
@@ -7153,7 +7088,6 @@ var HighlighterBase = (function (_super) {
      * If a highlight operation is already queued, don't queue
      * another one.  This ensures that the highlighting is
      * frame rate locked.  Highlighting is an expensive operation.
-     * @return {null}
      */
     HighlighterBase.prototype._queue_highlighter = function () {
         var _this = this;
@@ -7175,14 +7109,12 @@ var HighlighterBase = (function (_super) {
     };
     /**
      * Handles when the visible row indicies are changed.
-     * @return {null}
      */
     HighlighterBase.prototype._handle_scroll = function (start_row, end_row) {
         this._queue_highlighter();
     };
     /**
      * Handles when the text changes.
-     * @return {null}
      */
     HighlighterBase.prototype._handle_text_change = function () {
         this._queue_highlighter();
@@ -7231,7 +7163,6 @@ var PrismHighlighter = (function (_super) {
     });
     /**
      * Highlight the document
-     * @return {null}
      */
     PrismHighlighter.prototype.highlight = function (start_row, end_row) {
         var _this = this;
@@ -7309,10 +7240,25 @@ var PrismHighlighter = (function (_super) {
             }
         });
     };
+    PrismHighlighter.prototype.load = function (language) {
+        try {
+            // Check if the language exists.
+            if (prism.languages[language] === undefined) {
+                throw new Error('Language does not exist!');
+            }
+            this._language = prism.languages[language];
+            this._queue_highlighter();
+            return true;
+        }
+        catch (e) {
+            console.error('Error loading language', e);
+            this._language = null;
+            return false;
+        }
+    };
     /**
      * Find each part of text that needs to be highlighted.
-     * @param  {string} text
-     * @return {array} list containing items of the form [start_index, end_index, tag]
+     * @return list containing items of the form [start_index, end_index, tag]
      */
     PrismHighlighter.prototype._highlight = function (text) {
         // Tokenize using prism.js
@@ -7345,27 +7291,6 @@ var PrismHighlighter = (function (_super) {
         tags.forEach(function (tag) { return set.set(tag[0], tag[1] - 1, tag[2]); });
         return set.array;
     };
-    /**
-     * Loads a syntax by language name.
-     * @param  {string or dictionary} language
-     * @return {boolean} success
-     */
-    PrismHighlighter.prototype.load = function (language) {
-        try {
-            // Check if the language exists.
-            if (prism.languages[language] === undefined) {
-                throw new Error('Language does not exist!');
-            }
-            this._language = prism.languages[language];
-            this._queue_highlighter();
-            return true;
-        }
-        catch (e) {
-            console.error('Error loading language', e);
-            this._language = null;
-            return false;
-        }
-    };
     return PrismHighlighter;
 })(highlighter.HighlighterBase);
 exports.PrismHighlighter = PrismHighlighter;
@@ -7374,15 +7299,29 @@ exports.PrismHighlighter = PrismHighlighter;
 },{"../utils/superset":39,"./highlighter":36,"1YiZ5S":4,"buffer":1,"prismjs":5}],38:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
 var utils = require('./utils');
-exports.config = new utils.PosterClass([
-    'highlight_draw',
-    'highlight_blit',
-    'newline_width',
-    'tab_width',
-    'use_spaces',
-    'history_group_delay',
-]);
+var Config = (function (_super) {
+    __extends(Config, _super);
+    function Config() {
+        _super.call(this, [
+            'highlight_draw',
+            'highlight_blit',
+            'newline_width',
+            'tab_width',
+            'use_spaces',
+            'history_group_delay',
+        ]);
+    }
+    return Config;
+})(utils.PosterClass);
+exports.Config = Config;
+exports.config = new Config();
 // Set defaults
 exports.config.tab_width = 4;
 exports.config.use_spaces = true;
@@ -7424,19 +7363,19 @@ var Superset = (function (_super) {
     };
     /**
      * Set the state of a region.
-     * @param {integer} start - index, inclusive
-     * @param {integer} stop - index, inclusive
-     * @param {object} state
+     * @param start - index, inclusive
+     * @param stop - index, inclusive
+     * @param state
      */
     Superset.prototype.set = function (start, stop, state) {
         this._set(start, stop, state, 0);
     };
     /**
      * Set the state of a region.
-     * @param {integer} start - index, inclusive
-     * @param {integer} stop - index, inclusive
-     * @param {object} state
-     * @param {integer} integer - current recursion index
+     * @param start - index, inclusive
+     * @param stop - index, inclusive
+     * @param state
+     * @param index - current recursion index
      */
     Superset.prototype._set = function (start, stop, state, index) {
         // Make sure start and stop are in correct order.
@@ -7468,10 +7407,6 @@ var Superset = (function (_super) {
     };
     /**
      * Inserts an entry.
-     * @param  {integer} index
-     * @param  {integer} start
-     * @param  {integer} end
-     * @param  {object} state
      */
     Superset.prototype._insert = function (index, start, end, state) {
         if (start > end)
@@ -7499,11 +7434,11 @@ exports.Superset = Superset;
 }).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/utils/superset.js","/utils")
 },{"./utils":40,"1YiZ5S":4,"buffer":1}],40:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
-// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+;
 /**
  * Base class with helpful utilities
- * @param {array} [eventful_properties] list of property names (strings)
- *                to create and wire change events to.
+ * @param [eventful_properties] list of property names (strings)
+ *        to create and wire change events to.
  */
 var PosterClass = (function () {
     function PosterClass(eventful_properties) {
@@ -7529,10 +7464,6 @@ var PosterClass = (function () {
     }
     /**
      * Define a property for the class
-     * @param  {string} name
-     * @param  {function} getter
-     * @param  {function} setter
-     * @return {null}
      */
     PosterClass.prototype.property = function (name, getter, setter) {
         Object.defineProperty(this, name, {
@@ -7543,10 +7474,6 @@ var PosterClass = (function () {
     };
     /**
      * Register an event listener
-     * @param  {string} event
-     * @param  {function} handler
-     * @param  {object} context
-     * @return {null}
      */
     PosterClass.prototype.on = function (event, handler, context) {
         event = event.trim().toLowerCase();
@@ -7559,9 +7486,6 @@ var PosterClass = (function () {
     };
     /**
      * Unregister one or all event listeners for a specific event
-     * @param  {string} event
-     * @param  {callback} (optional) handler
-     * @return {null}
      */
     PosterClass.prototype.off = function (event, handler) {
         event = event.trim().toLowerCase();
@@ -7580,10 +7504,8 @@ var PosterClass = (function () {
      *
      * A global event handler fires for any event that's
      * triggered.
-     * @param  {string} handler - function that accepts one
-     *                            argument, the name of the
-     *                            event,
-     * @return {null}
+     * @param handler - function that accepts one argument,
+     *        the name of the event.
      */
     PosterClass.prototype.on_all = function (handler) {
         var index = this._on_all.indexOf(handler);
@@ -7593,8 +7515,7 @@ var PosterClass = (function () {
     };
     /**
      * Unregister a global event handler.
-     * @param  {[type]} handler
-     * @return {boolean} true if a handler was removed
+     * @return true if a handler was removed
      */
     PosterClass.prototype.off_all = function (handler) {
         var index = this._on_all.indexOf(handler);
@@ -7606,8 +7527,7 @@ var PosterClass = (function () {
     };
     /**
      * Triggers the callbacks of an event to fire.
-     * @param  {string} event
-     * @return {array} array of return values
+     * @return array of return values
      */
     PosterClass.prototype.trigger = function (event) {
         var _this = this;
@@ -7634,18 +7554,7 @@ var PosterClass = (function () {
 })();
 exports.PosterClass = PosterClass;
 /**
- * Cause one class to inherit from another
- * @param  {type} child
- * @param  {type} parent
- * @return {null}
- */
-exports.inherit = function (child, parent) {
-    child.prototype = Object.create(parent.prototype, {});
-};
-/**
  * Checks if a value is callable
- * @param  {any} value
- * @return {boolean}
  */
 exports.callable = function (value) {
     return typeof value == 'function';
@@ -7653,8 +7562,6 @@ exports.callable = function (value) {
 /**
  * Calls the value if it's callable and returns it's return.
  * Otherwise returns the value as-is.
- * @param  {any} value
- * @return {any}
  */
 exports.resolve_callable = function (value) {
     if (exports.callable(value)) {
@@ -7666,7 +7573,6 @@ exports.resolve_callable = function (value) {
 };
 /**
  * Creates a proxy to a function so it is called in the correct context.
- * @return {function} proxied function.
  */
 exports.proxy = function (f, context) {
     if (f === undefined) {
@@ -7683,8 +7589,6 @@ exports.proxy = function (f, context) {
  * a list in place in Javascript.
  * Benchmark: http://jsperf.com/empty-javascript-array
  * Complexity: O(N)
- * @param  {array} array
- * @return {null}
  */
 exports.clear_array = function (array) {
     while (array.length > 0) {
@@ -7693,8 +7597,6 @@ exports.clear_array = function (array) {
 };
 /**
  * Checks if a value is an array
- * @param  {any} x
- * @return {boolean} true if value is an array
  */
 exports.is_array = function (x) {
     return x instanceof Array;
@@ -7704,9 +7606,9 @@ exports.is_array = function (x) {
  *
  * Interpolation search algorithm.
  * Complexity: O(lg(lg(N)))
- * @param  {array} sorted - sorted array of numbers
- * @param  {float} x - number to try to find
- * @return {integer} index of the value that's closest to x
+ * @param sorted - sorted array of numbers
+ * @param x - number to try to find
+ * @return index of the value that's closest to x
  */
 exports.find_closest = function (sorted, x) {
     var min = sorted[0];
@@ -7744,9 +7646,7 @@ exports.find_closest = function (sorted, x) {
     }
 };
 /**
- * Make a shallow copy of a dictionary.
- * @param  {dictionary} x
- * @return {dictionary}
+ * Make a shallow copy of an object.
  */
 exports.shallow_copy = function (x) {
     var y = {};
@@ -7759,9 +7659,9 @@ exports.shallow_copy = function (x) {
 };
 /**
  * Hooks a function.
- * @param  {object} obj - object to hook
- * @param  {string} method - name of the function to hook
- * @param  {function} hook - function to call before the original
+ * @param obj - object to hook
+ * @param method - name of the function to hook
+ * @param hook - function to call before the original
  * @return hook reference, object with an `unhook` method
  */
 exports.hook = function (obj, method, hook) {
@@ -7807,8 +7707,6 @@ exports.hook = function (obj, method, hook) {
 };
 /**
  * Cancels event bubbling.
- * @param  {event} e
- * @return {null}
  */
 exports.cancel_bubble = function (e) {
     if (e.stopPropagation)
@@ -7820,7 +7718,7 @@ exports.cancel_bubble = function (e) {
 };
 /**
  * Generates a random color string
- * @return {string} hexadecimal color string
+ * @return hexadecimal color string
  */
 exports.random_color = function () {
     var random_byte = function () {
@@ -7831,9 +7729,6 @@ exports.random_color = function () {
 };
 /**
  * Compare two arrays by contents for equality.
- * @param  {array} x
- * @param  {array} y
- * @return {boolean}
  */
 exports.compare_arrays = function (x, y) {
     if (x.length != y.length)
@@ -7845,13 +7740,28 @@ exports.compare_arrays = function (x, y) {
     return true;
 };
 /**
- * Find all the occurances of a regular expression inside a string.
- * @param  {string} text - string to look in
- * @param  {string} re - regular expression to find
- * @return {array} array of [start_index, end_index] pairs
+ * Compare two objects by contents for equality.
  */
-exports.findall = function (text, re, flags) {
-    re = new RegExp(re, flags || 'gm');
+exports.compare_objects = function (x, y) {
+    // Make sure the objects have the same keys.
+    var keys = Object.keys(x);
+    if (!exports.compare_arrays(keys, Object.keys(y)))
+        return false;
+    for (var i = 0; i < keys.length; i++) {
+        var key = keys[i];
+        if (x[key] !== y[key])
+            return false;
+    }
+    return true;
+};
+/**
+ * Find all the occurances of a regular expression inside a string.
+ * @param text - string to look in
+ * @param regular_expression - regular expression to find
+ * @return array of [start_index, end_index] pairs
+ */
+exports.findall = function (text, regular_expression, flags) {
+    var re = new RegExp(regular_expression, flags || 'gm');
     var results;
     var found = [];
     while ((results = re.exec(text)) !== null) {
@@ -7863,16 +7773,14 @@ exports.findall = function (text, re, flags) {
 };
 /**
  * Checks if the character isn't text.
- * @param  {char} c - character
- * @return {boolean} true if the character is not text.
+ * @return true if the character is not text.
  */
 exports.not_text = function (c) {
     return 'abcdefghijklmnopqrstuvwxyz1234567890_'.indexOf(c.toLowerCase()) == -1;
 };
 /**
  * Merges objects
- * @param  {array} objects
- * @return {object} new object, result of merged objects
+ * @return new object, result of merged objects
  */
 exports.merge = function (objects) {
     var result = {};
@@ -7887,12 +7795,11 @@ exports.merge = function (objects) {
 };
 /**
  * Convert arguments object to an array of arguments.
- * @param  {IArguments} arguments_obj - `arguments`
+ * @param  arguments_obj - `arguments`
  */
 exports.args = function (arguments_obj) {
     return Array.prototype.slice.call(arguments_obj);
 };
-;
 
 }).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/utils/utils.js","/utils")
 },{"1YiZ5S":4,"buffer":1}]},{},[26])
