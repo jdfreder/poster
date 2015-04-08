@@ -1,25 +1,28 @@
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+import generics = require('./generics');
 
 export interface IHook {
     unhook: () => void;
 }
 
+export interface ICallback { (...args: any[]): any };
+
 /**
  * Base class with helpful utilities
- * @param {array} [eventful_properties] list of property names (strings)
- *                to create and wire change events to.
+ * @param [eventful_properties] list of property names (strings)
+ *        to create and wire change events to.
  */
 export class PosterClass {
-    private _events;
-    private _on_all;
+    private _events: generics.IDictionary<([ICallback, any])[]>;
+    private _on_all: ICallback[];
 
-    constructor(eventful_properties?) {
+    public constructor(eventful_properties?: string[]) {
         this._events = {};
         this._on_all = [];
 
         // Construct eventful properties.
         if (eventful_properties && eventful_properties.length>0) {
-            for (var i=0; i<eventful_properties.length; i++) {
+            for (var i:number=0; i<eventful_properties.length; i++) {
                 (name => {
                     this.property(name, function() {
                         return this['_' + name];
@@ -37,12 +40,8 @@ export class PosterClass {
 
     /**
      * Define a property for the class
-     * @param  {string} name
-     * @param  {function} getter
-     * @param  {function} setter
-     * @return {null}
      */
-    property(name, getter, setter) {
+    public property(name: string, getter: ICallback, setter: ICallback): void {
         Object.defineProperty(this, name, {
             get: getter,
             set: setter,
@@ -51,12 +50,8 @@ export class PosterClass {
     }
     /**
      * Register an event listener
-     * @param  {string} event
-     * @param  {function} handler
-     * @param  {object} context
-     * @return {null}
      */
-    on(event, handler, context?) {
+    public on(event: string, handler: ICallback, context?: any): void {
         event = event.trim().toLowerCase();
 
         // Make sure a list for the event exists.
@@ -68,11 +63,8 @@ export class PosterClass {
 
     /**
      * Unregister one or all event listeners for a specific event
-     * @param  {string} event
-     * @param  {callback} (optional) handler
-     * @return {null}
      */
-    off(event, handler?) {
+    public off(event: string, handler?: ICallback): void {
         event = event.trim().toLowerCase();
         
         // If a handler is specified, remove all the callbacks
@@ -90,13 +82,11 @@ export class PosterClass {
      * 
      * A global event handler fires for any event that's
      * triggered.
-     * @param  {string} handler - function that accepts one
-     *                            argument, the name of the
-     *                            event,
-     * @return {null}
+     * @param handler - function that accepts one argument, 
+     *        the name of the event.
      */
-    on_all(handler) {
-        var index = this._on_all.indexOf(handler);
+    public on_all(handler: ICallback): void {
+        var index: number = this._on_all.indexOf(handler);
         if (index === -1) {
             this._on_all.push(handler);
         }
@@ -104,11 +94,10 @@ export class PosterClass {
 
     /**
      * Unregister a global event handler.
-     * @param  {[type]} handler
-     * @return {boolean} true if a handler was removed
+     * @return true if a handler was removed
      */
-    off_all(handler) {
-        var index = this._on_all.indexOf(handler);
+    public off_all(handler: ICallback): boolean {
+        var index: number = this._on_all.indexOf(handler);
         if (index != -1) {
             this._on_all.splice(index, 1);
             return true;
@@ -118,10 +107,9 @@ export class PosterClass {
 
     /**
      * Triggers the callbacks of an event to fire.
-     * @param  {string} event
-     * @return {array} array of return values
+     * @return array of return values
      */
-    trigger(event, ...pargs) {
+    public trigger(event: string, ...pargs: any[]): any[] {
         event = event.trim().toLowerCase();
 
         // Convert arguments to an array and call callbacks.
@@ -132,9 +120,9 @@ export class PosterClass {
         this._on_all.forEach(handler => handler.apply(this, [event].concat(args)));
 
         // Trigger individual handlers second.
-        var events = this._events[event];
+        var events: ([ICallback, any])[] = this._events[event];
         if (events) {
-            var returns = [];
+            var returns: any[] = [];
             events.forEach(callback => returns.push(callback[0].apply(callback[1], args)));
             return returns;
         }
@@ -143,31 +131,17 @@ export class PosterClass {
 }
 
 /**
- * Cause one class to inherit from another
- * @param  {type} child
- * @param  {type} parent
- * @return {null}
- */
-export var inherit = function(child, parent) {
-    child.prototype = Object.create(parent.prototype, {});
-};
-
-/**
  * Checks if a value is callable
- * @param  {any} value
- * @return {boolean}
  */
-export var callable = function(value) {
+export var callable = function(value: any): boolean {
     return typeof value == 'function';
 };
 
 /**
  * Calls the value if it's callable and returns it's return.
  * Otherwise returns the value as-is.
- * @param  {any} value
- * @return {any}
  */
-export var resolve_callable = function(value) {
+export var resolve_callable = function(value: any): any {
     if (callable(value)) {
         return value.call(this);
     } else {
@@ -177,9 +151,8 @@ export var resolve_callable = function(value) {
 
 /**
  * Creates a proxy to a function so it is called in the correct context.
- * @return {function} proxied function.
  */
-export var proxy = function(f, context) {
+export var proxy = function(f: ICallback, context: any): ICallback {
     if (f===undefined) { throw new Error('f cannot be undefined'); }
     return function() { return f.apply(context, arguments); };
 };
@@ -191,10 +164,8 @@ export var proxy = function(f, context) {
  * a list in place in Javascript. 
  * Benchmark: http://jsperf.com/empty-javascript-array
  * Complexity: O(N)
- * @param  {array} array
- * @return {null}
  */
-export var clear_array = function(array) {
+export var clear_array = function(array: any[]): void {
     while (array.length > 0) {
         array.pop();
     }
@@ -202,10 +173,8 @@ export var clear_array = function(array) {
 
 /**
  * Checks if a value is an array
- * @param  {any} x
- * @return {boolean} true if value is an array
  */
-export var is_array = function(x) {
+export var is_array = function(x: any): boolean {
     return x instanceof Array;
 };
 
@@ -214,13 +183,13 @@ export var is_array = function(x) {
  * 
  * Interpolation search algorithm.  
  * Complexity: O(lg(lg(N)))
- * @param  {array} sorted - sorted array of numbers
- * @param  {float} x - number to try to find
- * @return {integer} index of the value that's closest to x
+ * @param sorted - sorted array of numbers
+ * @param x - number to try to find
+ * @return index of the value that's closest to x
  */
-export var find_closest = function(sorted, x) {
-    var min = sorted[0];
-    var max = sorted[sorted.length-1];
+export var find_closest = function(sorted: number[], x: number): number {
+    var min: number = sorted[0];
+    var max: number = sorted[sorted.length-1];
     if (x < min) return 0;
     if (x > max) return sorted.length-1;
     if (sorted.length == 2) {
@@ -230,9 +199,9 @@ export var find_closest = function(sorted, x) {
             return 1;
         }
     }
-    var rate = (max - min) / sorted.length;
+    var rate: number = (max - min) / sorted.length;
     if (rate === 0) return 0;
-    var guess = Math.floor(x / rate);
+    var guess: number = Math.floor(x / rate);
     if (sorted[guess] == x) {
         return guess;
     } else if (guess > 0 && sorted[guess-1] < x && x < sorted[guess]) {
@@ -247,11 +216,9 @@ export var find_closest = function(sorted, x) {
 };
 
 /**
- * Make a shallow copy of a dictionary.
- * @param  {dictionary} x
- * @return {dictionary}
+ * Make a shallow copy of an object.
  */
-export var shallow_copy = function(x) {
+export var shallow_copy = function(x: any): any {
     var y: any = {};
     for (var key in x) {
         if (x.hasOwnProperty(key)) {
@@ -263,12 +230,12 @@ export var shallow_copy = function(x) {
 
 /**
  * Hooks a function.
- * @param  {object} obj - object to hook
- * @param  {string} method - name of the function to hook
- * @param  {function} hook - function to call before the original
+ * @param obj - object to hook
+ * @param method - name of the function to hook
+ * @param hook - function to call before the original
  * @return hook reference, object with an `unhook` method
  */
-export var hook = function(obj, method, hook): IHook {
+export var hook = function(obj: any, method: string, hook: ICallback): IHook {
 
     // If the original has already been hooked, add this hook to the list 
     // of hooks.
@@ -315,10 +282,8 @@ export var hook = function(obj, method, hook): IHook {
 
 /**
  * Cancels event bubbling.
- * @param  {event} e
- * @return {null}
  */
-export var cancel_bubble = function(e) {
+export var cancel_bubble = function(e: Event): void {
     if (e.stopPropagation) e.stopPropagation();
     if (e.cancelBubble !== null) e.cancelBubble = true;
     if (e.preventDefault) e.preventDefault();
@@ -326,11 +291,11 @@ export var cancel_bubble = function(e) {
 
 /**
  * Generates a random color string
- * @return {string} hexadecimal color string
+ * @return hexadecimal color string
  */
-export var random_color = function() {
-    var random_byte = function() { 
-        var b = Math.round(Math.random() * 255).toString(16);
+export var random_color = function(): string {
+    var random_byte = function(): string { 
+        var b: string = Math.round(Math.random() * 255).toString(16);
         return b.length == 1 ? '0' + b : b;
     };
     return '#' + random_byte() + random_byte() + random_byte();
@@ -338,11 +303,8 @@ export var random_color = function() {
 
 /**
  * Compare two arrays by contents for equality.
- * @param  {array} x
- * @param  {array} y
- * @return {boolean}
  */
-export var compare_arrays = function(x, y) {
+export var compare_arrays = function(x: any[], y: any[]): boolean {
     if (x.length != y.length) return false;
     for (var i=0; i<x.length; i++) {
         if (x[i]!==y[i]) return false;
@@ -368,14 +330,14 @@ export var compare_objects = function(x: any, y: any): boolean {
 
 /**
  * Find all the occurances of a regular expression inside a string.
- * @param  {string} text - string to look in
- * @param  {string} re - regular expression to find
- * @return {array} array of [start_index, end_index] pairs
+ * @param text - string to look in
+ * @param regular_expression - regular expression to find
+ * @return array of [start_index, end_index] pairs
  */
-export var findall = function(text, re, flags) {
-    re = new RegExp(re, flags || 'gm');
-    var results;
-    var found = [];
+export var findall = function(text: string, regular_expression: string, flags: string): ([number, number])[] {
+    var re: RegExp = new RegExp(regular_expression, flags || 'gm');
+    var results: any;
+    var found: ([number, number])[] = [];
     while ((results = re.exec(text)) !== null) {
         var end_index = results.index + (results[0].length || 1);
         found.push([results.index, end_index]);
@@ -386,21 +348,19 @@ export var findall = function(text, re, flags) {
 
 /**
  * Checks if the character isn't text.
- * @param  {char} c - character
- * @return {boolean} true if the character is not text.
+ * @return true if the character is not text.
  */
-export var not_text = function(c) {
+export var not_text = function(c: string): boolean {
     return 'abcdefghijklmnopqrstuvwxyz1234567890_'.indexOf(c.toLowerCase()) == -1;
 };
 
 /**
  * Merges objects
- * @param  {array} objects
- * @return {object} new object, result of merged objects
+ * @return new object, result of merged objects
  */
-export var merge = function(objects) {
-    var result = {};
-    for (var i = 0; i < objects.length; i++) {
+export var merge = function(objects: any[]): any {
+    var result: any = {};
+    for (var i: number = 0; i < objects.length; i++) {
         for (var key in objects[i]) {
             if (objects[i].hasOwnProperty(key)) {
                 result[key] = objects[i][key];
@@ -412,15 +372,8 @@ export var merge = function(objects) {
 
 /**
  * Convert arguments object to an array of arguments.
- * @param  {IArguments} arguments_obj - `arguments`
+ * @param  arguments_obj - `arguments`
  */
 export var args = function(arguments_obj: IArguments): any[] {
     return <any[]>Array.prototype.slice.call(arguments_obj);
-};
-
-/**
- * Generic callback interface.
- */
-export interface ICallback{
-    (...params: any[]): any;
 };
