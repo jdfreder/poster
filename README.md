@@ -3,7 +3,7 @@ Demo at [http://jdfreder.github.io/poster/](http://jdfreder.github.io/poster/).
 
 ## Install
 First install [node.js](https://nodejs.org/download/).  
-Then install Poster inside the directory you will be using it:  
+Then install Poster inside the directory that you will be using it in:  
 
 ```
 npm install posterjs
