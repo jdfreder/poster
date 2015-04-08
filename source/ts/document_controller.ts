@@ -7,18 +7,19 @@ import default_keymap = require('./control/default');
 import cursors = require('./control/cursors');
 import clipboard = require('./control/clipboard');
 import history = require('./control/history');
+import document_model = require('./document_model');
 
 /**
  * Controller for a DocumentModel.
  */
 export class DocumentController extends utils.PosterClass {
-    public clipboard;
-    public normalizer;
-    public map;
-    public history;
-    public cursors;
+    public clipboard: clipboard.Clipboard;
+    public normalizer: normalizer.Normalizer;
+    public map: keymap.Map;
+    public history: history.History;
+    public cursors: cursors.Cursors;
 
-    constructor(el, model) {
+    public constructor(el: HTMLElement, model: document_model.DocumentModel) {
         super();
         this.clipboard = new clipboard.Clipboard(el);
         this.normalizer = new normalizer.Normalizer();

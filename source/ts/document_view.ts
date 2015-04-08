@@ -8,66 +8,75 @@ import highlighted_row = require('./draw/renderers/highlighted_row');
 import cursors = require('./draw/renderers/cursors');
 import selections = require('./draw/renderers/selections');
 import color = require('./draw/renderers/color');
+import scrolling_canvas = require('./draw/scrolling_canvas');
 import highlighter = require('./syntax/prism');
+import document_model = require('./document_model');
+import style = require('./styles/style');
+import cursors_model = require('./control/cursors');
 
 /**
  * Visual representation of a DocumentModel instance
- * @param {Canvas} canvas instance
- * @param {DocumentModel} model instance
- * @param {Cursors} cursors_model instance
- * @param {Style} style - describes rendering style
- * @param {function} has_focus - function that checks if the text area has focus
- * @param {function} move_focal_point - function that moves the focal point
  */
 export class DocumentView extends batch.BatchRenderer {
-    public row_renderer;
-    public highlighter;
+    public row_renderer: highlighted_row.HighlightedRowRenderer;
+    public highlighter: highlighter.PrismHighlighter;
 
-    private _model;
-    private _language;
+    private _language: string;
 
-    constructor(canvas, model, cursors_model, style, has_focus, move_focal_point) {
-        this._model = model;
+    /**
+     * @param scrolling_canvas
+     * @param model
+     * @param cursors_model
+     * @param style - describes rendering style
+     * @param has_focus - function that checks if the text area has focus
+     * @param move_focal_point - function that moves the focal point
+     */
+    public constructor(scrolling_canvas: scrolling_canvas.ScrollingCanvas, 
+        model: document_model.DocumentModel, 
+        cursors_model: cursors_model.Cursors, 
+        style: style.Style, 
+        has_focus: () => boolean, 
+        move_focal_point: (x: number, y: number) => void) {
 
         // Create child renderers.
-        var row_renderer = new highlighted_row.HighlightedRowRenderer(model, canvas, style);
+        var row_renderer: highlighted_row.HighlightedRowRenderer = new highlighted_row.HighlightedRowRenderer(model, scrolling_canvas, style);
         row_renderer.margin_left = 2;
         row_renderer.margin_top = 2;
         this.row_renderer = row_renderer;
         
         // Make sure changes made to the cursor(s) are within the visible region.
         cursors_model.on('change', cursor => {
-            var row_index = cursor.primary_row;
-            var char_index = cursor.primary_char;
+            var row_index: number = cursor.primary_row;
+            var char_index: number = cursor.primary_char;
 
-            var top = row_renderer.get_row_top(row_index);
-            var height = row_renderer.get_row_height(row_index);
-            var left = row_renderer.measure_partial_row_width(row_index, char_index) + row_renderer.margin_left;
-            var bottom = top + height;
+            var top: number = row_renderer.get_row_top(row_index);
+            var height: number = row_renderer.get_row_height(row_index);
+            var left: number = row_renderer.measure_partial_row_width(row_index, char_index) + row_renderer.margin_left;
+            var bottom: number = top + height;
 
-            var canvas_height = canvas.height - 20;
-            if (bottom > canvas.scroll_top + canvas_height) {
-                canvas.scroll_top = bottom - canvas_height;
-            } else if (top < canvas.scroll_top) {
-                canvas.scroll_top = top;
+            var canvas_height: number = scrolling_canvas.height - 20;
+            if (bottom > scrolling_canvas.scroll_top + canvas_height) {
+                scrolling_canvas.scroll_top = bottom - canvas_height;
+            } else if (top < scrolling_canvas.scroll_top) {
+                scrolling_canvas.scroll_top = top;
             }
 
-            var canvas_width = canvas.width - 20;
-            if (left > canvas.scroll_left + canvas_width) {
-                canvas.scroll_left = left - canvas_width;
-            } else if (left - row_renderer.margin_left < canvas.scroll_left) {
-                canvas.scroll_left = Math.max(0, left - row_renderer.margin_left);
+            var canvas_width: number = scrolling_canvas.width - 20;
+            if (left > scrolling_canvas.scroll_left + canvas_width) {
+                scrolling_canvas.scroll_left = left - canvas_width;
+            } else if (left - row_renderer.margin_left < scrolling_canvas.scroll_left) {
+                scrolling_canvas.scroll_left = Math.max(0, left - row_renderer.margin_left);
             }
 
-            move_focal_point(left - canvas.scroll_left, top - canvas.scroll_top - canvas.height);
+            move_focal_point(left - scrolling_canvas.scroll_left, top - scrolling_canvas.scroll_top - scrolling_canvas.height);
         });
 
-        var cursors_renderer = new cursors.CursorsRenderer(
+        var cursors_renderer: cursors.CursorsRenderer = new cursors.CursorsRenderer(
             cursors_model, 
             style, 
             row_renderer,
             has_focus);
-        var selections_renderer = new selections.SelectionsRenderer(
+        var selections_renderer: selections.SelectionsRenderer = new selections.SelectionsRenderer(
             cursors_model, 
             style, 
             row_renderer,
@@ -75,7 +84,7 @@ export class DocumentView extends batch.BatchRenderer {
             cursors_renderer);
 
         // Create the background renderer
-        var color_renderer = new color.ColorRenderer();
+        var color_renderer: color.ColorRenderer = new color.ColorRenderer();
         color_renderer.color = style.background || 'white';
         style.on('changed:style', function() { color_renderer.color = style.background; });
 
@@ -92,18 +101,18 @@ export class DocumentView extends batch.BatchRenderer {
             selections_renderer,
             row_renderer,
             cursors_renderer,
-        ], canvas);
+        ], scrolling_canvas);
 
         // Hookup render events.
         this._canvas.on('redraw', utils.proxy(this.render, this));
-        this._model.on('changed', utils.proxy(canvas.redraw, canvas));
+        model.on('changed', utils.proxy(scrolling_canvas.redraw, scrolling_canvas));
     }
 
-    get language() {
+    public get language(): string {
         return this._language;
     }
 
-    set language(value) {
+    public set language(value: string) {
         this.highlighter.load(value);
         this._language = value;
     }
