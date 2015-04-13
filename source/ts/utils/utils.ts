@@ -377,3 +377,15 @@ export var merge = function(objects: any[]): any {
 export var args = function(arguments_obj: IArguments): any[] {
     return <any[]>Array.prototype.slice.call(arguments_obj);
 };
+
+var _hashed_objects: number = 0;
+
+/**
+ * Generates a unique hash for an object.
+ */
+export var hash = function(x: any): string {
+    if (x.__hash__ === undefined) {
+        x.__hash__ = _hashed_objects++;
+    }
+    return x.__hash__;
+};

@@ -28,14 +28,14 @@ export class Normalizer extends utils.PosterClass {
         hooks.push(utils.hook(el, 'onmousedown',  this._proxy('down', this._handle_mouse_event, el)));
         hooks.push(utils.hook(el, 'onmouseup',  this._proxy('up', this._handle_mouse_event, el)));
         hooks.push(utils.hook(el, 'onmousemove',  this._proxy('move', this._handle_mousemove_event, el)));
-        this._el_hooks[el.toString()] = hooks;
+        this._el_hooks[utils.hash(el)] = hooks;
     }
 
     /**
      * Stops listening to an element.
      */
     public stop_listening_to(el: HTMLElement): void {
-        var key: string = el.toString();
+        var key: string = utils.hash(el);
         if (this._el_hooks[key] !== undefined) {
             this._el_hooks[key].forEach(hook => hook.unhook());
             delete this._el_hooks[key];
