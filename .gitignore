@@ -29,3 +29,7 @@ node_modules
 
 # Temporary build step, JS files.
 tmp
+
+# docs and build, for now
+docs
+build
