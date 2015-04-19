@@ -30,6 +30,6 @@ node_modules
 # Temporary build step, JS files.
 tmp
 
-# Ignore build and docs in master.
-build
-docs
+# Don't ignore build and docs for the github io page.
+# build
+# docs
