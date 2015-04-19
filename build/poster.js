@@ -1110,8 +1110,8 @@ function assert (test, message) {
   if (!test) throw new Error(message || 'Failed assertion')
 }
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../node_modules/gulp-browserify/node_modules/browserify/node_modules/buffer/index.js","/../node_modules/gulp-browserify/node_modules/browserify/node_modules/buffer")
-},{"1YiZ5S":4,"base64-js":2,"buffer":1,"ieee754":3}],2:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../node_modules/gulp-browserify/node_modules/browserify/node_modules/buffer/index.js","/../../node_modules/gulp-browserify/node_modules/browserify/node_modules/buffer")
+},{"base64-js":2,"buffer":1,"ieee754":3,"oMfpAn":4}],2:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
@@ -1127,16 +1127,12 @@ var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 	var NUMBER = '0'.charCodeAt(0)
 	var LOWER  = 'a'.charCodeAt(0)
 	var UPPER  = 'A'.charCodeAt(0)
-	var PLUS_URL_SAFE = '-'.charCodeAt(0)
-	var SLASH_URL_SAFE = '_'.charCodeAt(0)
 
 	function decode (elt) {
 		var code = elt.charCodeAt(0)
-		if (code === PLUS ||
-		    code === PLUS_URL_SAFE)
+		if (code === PLUS)
 			return 62 // '+'
-		if (code === SLASH ||
-		    code === SLASH_URL_SAFE)
+		if (code === SLASH)
 			return 63 // '/'
 		if (code < NUMBER)
 			return -1 //no match
@@ -1238,8 +1234,8 @@ var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 	exports.fromByteArray = uint8ToBase64
 }(typeof exports === 'undefined' ? (this.base64js = {}) : exports))
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../node_modules/gulp-browserify/node_modules/browserify/node_modules/buffer/node_modules/base64-js/lib/b64.js","/../node_modules/gulp-browserify/node_modules/browserify/node_modules/buffer/node_modules/base64-js/lib")
-},{"1YiZ5S":4,"buffer":1}],3:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../node_modules/gulp-browserify/node_modules/browserify/node_modules/buffer/node_modules/base64-js/lib/b64.js","/../../node_modules/gulp-browserify/node_modules/browserify/node_modules/buffer/node_modules/base64-js/lib")
+},{"buffer":1,"oMfpAn":4}],3:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 exports.read = function(buffer, offset, isLE, mLen, nBytes) {
   var e, m,
@@ -1326,8 +1322,8 @@ exports.write = function(buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128;
 };
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../node_modules/gulp-browserify/node_modules/browserify/node_modules/buffer/node_modules/ieee754/index.js","/../node_modules/gulp-browserify/node_modules/browserify/node_modules/buffer/node_modules/ieee754")
-},{"1YiZ5S":4,"buffer":1}],4:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../node_modules/gulp-browserify/node_modules/browserify/node_modules/buffer/node_modules/ieee754/index.js","/../../node_modules/gulp-browserify/node_modules/browserify/node_modules/buffer/node_modules/ieee754")
+},{"buffer":1,"oMfpAn":4}],4:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // shim for using process in browser
 
@@ -1393,8 +1389,8 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../node_modules/gulp-browserify/node_modules/browserify/node_modules/process/browser.js","/../node_modules/gulp-browserify/node_modules/browserify/node_modules/process")
-},{"1YiZ5S":4,"buffer":1}],5:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../node_modules/gulp-browserify/node_modules/browserify/node_modules/process/browser.js","/../../node_modules/gulp-browserify/node_modules/browserify/node_modules/process")
+},{"buffer":1,"oMfpAn":4}],5:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 
 /* **********************************************
@@ -2007,70 +2003,65 @@ if (Prism.languages.markup) {
      Begin prism-file-highlight.js
 ********************************************** */
 
-(function () {
-	if (!self.Prism || !self.document || !document.querySelector) {
-		return;
-	}
+(function(){
 
-	self.Prism.fileHighlight = function() {
+if (!self.Prism || !self.document || !document.querySelector) {
+	return;
+}
 
-		var Extensions = {
-			'js': 'javascript',
-			'html': 'markup',
-			'svg': 'markup',
-			'xml': 'markup',
-			'py': 'python',
-			'rb': 'ruby',
-			'ps1': 'powershell',
-			'psm1': 'powershell'
-		};
+var Extensions = {
+	'js': 'javascript',
+	'html': 'markup',
+	'svg': 'markup',
+	'xml': 'markup',
+	'py': 'python',
+	'rb': 'ruby',
+	'ps1': 'powershell',
+	'psm1': 'powershell'
+};
 
-		Array.prototype.slice.call(document.querySelectorAll('pre[data-src]')).forEach(function(pre) {
-			var src = pre.getAttribute('data-src');
-			var extension = (src.match(/\.(\w+)$/) || [,''])[1];
-			var language = Extensions[extension] || extension;
+Array.prototype.slice.call(document.querySelectorAll('pre[data-src]')).forEach(function(pre) {
+	var src = pre.getAttribute('data-src');
+	var extension = (src.match(/\.(\w+)$/) || [,''])[1];
+	var language = Extensions[extension] || extension;
+	
+	var code = document.createElement('code');
+	code.className = 'language-' + language;
+	
+	pre.textContent = '';
+	
+	code.textContent = 'Loading…';
+	
+	pre.appendChild(code);
+	
+	var xhr = new XMLHttpRequest();
+	
+	xhr.open('GET', src, true);
 
-			var code = document.createElement('code');
-			code.className = 'language-' + language;
-
-			pre.textContent = '';
-
-			code.textContent = 'Loading…';
-
-			pre.appendChild(code);
-
-			var xhr = new XMLHttpRequest();
-
-			xhr.open('GET', src, true);
-
-			xhr.onreadystatechange = function() {
-				if (xhr.readyState == 4) {
-
-					if (xhr.status < 400 && xhr.responseText) {
-						code.textContent = xhr.responseText;
-
-						Prism.highlightElement(code);
-					}
-					else if (xhr.status >= 400) {
-						code.textContent = '✖ Error ' + xhr.status + ' while fetching file: ' + xhr.statusText;
-					}
-					else {
-						code.textContent = '✖ Error: File does not exist or is empty';
-					}
-				}
-			};
-
-			xhr.send(null);
-		});
-
+	xhr.onreadystatechange = function() {
+		if (xhr.readyState == 4) {
+			
+			if (xhr.status < 400 && xhr.responseText) {
+				code.textContent = xhr.responseText;
+			
+				Prism.highlightElement(code);
+			}
+			else if (xhr.status >= 400) {
+				code.textContent = '✖ Error ' + xhr.status + ' while fetching file: ' + xhr.statusText;
+			}
+			else {
+				code.textContent = '✖ Error: File does not exist or is empty';
+			}
+		}
 	};
-
-	self.Prism.fileHighlight();
+	
+	xhr.send(null);
+});
 
 })();
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../node_modules/prismjs/prism.js","/../node_modules/prismjs")
-},{"1YiZ5S":4,"buffer":1}],6:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../node_modules/prismjs/prism.js","/../../node_modules/prismjs")
+},{"buffer":1,"oMfpAn":4}],6:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -2172,8 +2163,8 @@ var Clipboard = (function (_super) {
 })(utils.PosterClass);
 exports.Clipboard = Clipboard;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/clipboard.js","/control")
-},{"../utils/utils":40,"1YiZ5S":4,"buffer":1}],7:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/clipboard.js","/control")
+},{"../utils/utils":40,"buffer":1,"oMfpAn":4}],7:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -2962,8 +2953,8 @@ var Cursor = (function (_super) {
 })(utils.PosterClass);
 exports.Cursor = Cursor;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/cursor.js","/control")
-},{"../utils/config":38,"../utils/utils":40,"./map":11,"1YiZ5S":4,"buffer":1}],8:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/cursor.js","/control")
+},{"../utils/config":38,"../utils/utils":40,"./map":11,"buffer":1,"oMfpAn":4}],8:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -3172,8 +3163,8 @@ var Cursors = (function (_super) {
 })(utils.PosterClass);
 exports.Cursors = Cursors;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/cursors.js","/control")
-},{"../utils/utils":40,"./cursor":7,"./map":11,"1YiZ5S":4,"buffer":1}],9:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/cursors.js","/control")
+},{"../utils/utils":40,"./cursor":7,"./map":11,"buffer":1,"oMfpAn":4}],9:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var _map;
 if (navigator.appVersion.indexOf("Mac") != -1) {
@@ -3235,8 +3226,8 @@ _map['shift-tab'] = 'cursor.unindent';
 _map['escape'] = 'cursors.single';
 exports.map = _map;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/default.js","/control")
-},{"1YiZ5S":4,"buffer":1}],10:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/default.js","/control")
+},{"buffer":1,"oMfpAn":4}],10:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -3375,8 +3366,8 @@ var History = (function (_super) {
 })(utils.PosterClass);
 exports.History = History;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/history.js","/control")
-},{"../utils/utils":40,"./map":11,"1YiZ5S":4,"buffer":1}],11:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/history.js","/control")
+},{"../utils/utils":40,"./map":11,"buffer":1,"oMfpAn":4}],11:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -3642,8 +3633,8 @@ var Map = (function (_super) {
 })(utils.PosterClass);
 exports.Map = Map;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/map.js","/control")
-},{"../utils/utils":40,"1YiZ5S":4,"buffer":1}],12:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/map.js","/control")
+},{"../utils/utils":40,"buffer":1,"oMfpAn":4}],12:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -3677,13 +3668,13 @@ var Normalizer = (function (_super) {
         hooks.push(utils.hook(el, 'onmousedown', this._proxy('down', this._handle_mouse_event, el)));
         hooks.push(utils.hook(el, 'onmouseup', this._proxy('up', this._handle_mouse_event, el)));
         hooks.push(utils.hook(el, 'onmousemove', this._proxy('move', this._handle_mousemove_event, el)));
-        this._el_hooks[el.toString()] = hooks;
+        this._el_hooks[utils.hash(el)] = hooks;
     };
     /**
      * Stops listening to an element.
      */
     Normalizer.prototype.stop_listening_to = function (el) {
-        var key = el.toString();
+        var key = utils.hash(el);
         if (this._el_hooks[key] !== undefined) {
             this._el_hooks[key].forEach(function (hook) { return hook.unhook(); });
             delete this._el_hooks[key];
@@ -3813,8 +3804,8 @@ var Normalizer = (function (_super) {
 })(utils.PosterClass);
 exports.Normalizer = Normalizer;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/normalizer.js","/control")
-},{"../utils/utils":40,"1YiZ5S":4,"buffer":1}],13:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/normalizer.js","/control")
+},{"../utils/utils":40,"buffer":1,"oMfpAn":4}],13:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -3850,8 +3841,8 @@ var DocumentController = (function (_super) {
 })(utils.PosterClass);
 exports.DocumentController = DocumentController;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/document_controller.js","/")
-},{"./control/clipboard":6,"./control/cursors":8,"./control/default":9,"./control/history":10,"./control/map":11,"./control/normalizer":12,"./utils/utils":40,"1YiZ5S":4,"buffer":1}],14:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/document_controller.js","/")
+},{"./control/clipboard":6,"./control/cursors":8,"./control/default":9,"./control/history":10,"./control/map":11,"./control/normalizer":12,"./utils/utils":40,"buffer":1,"oMfpAn":4}],14:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -4244,8 +4235,8 @@ var DocumentModel = (function (_super) {
 })(utils.PosterClass);
 exports.DocumentModel = DocumentModel;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/document_model.js","/")
-},{"./utils/superset":39,"./utils/utils":40,"1YiZ5S":4,"buffer":1}],15:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/document_model.js","/")
+},{"./utils/superset":39,"./utils/utils":40,"buffer":1,"oMfpAn":4}],15:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -4344,8 +4335,8 @@ var DocumentView = (function (_super) {
 })(batch.BatchRenderer);
 exports.DocumentView = DocumentView;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/document_view.js","/")
-},{"./draw/renderers/batch":18,"./draw/renderers/color":19,"./draw/renderers/cursors":20,"./draw/renderers/highlighted_row":21,"./draw/renderers/selections":24,"./syntax/prism":37,"./utils/utils":40,"1YiZ5S":4,"buffer":1}],16:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/document_view.js","/")
+},{"./draw/renderers/batch":18,"./draw/renderers/color":19,"./draw/renderers/cursors":20,"./draw/renderers/highlighted_row":21,"./draw/renderers/selections":24,"./syntax/prism":37,"./utils/utils":40,"buffer":1,"oMfpAn":4}],16:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -4383,8 +4374,8 @@ var Animator = (function (_super) {
 })(utils.PosterClass);
 exports.Animator = Animator;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/animator.js","/draw")
-},{"../utils/utils":40,"1YiZ5S":4,"buffer":1}],17:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/animator.js","/draw")
+},{"../utils/utils":40,"buffer":1,"oMfpAn":4}],17:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -4963,8 +4954,8 @@ var Canvas = (function (_super) {
 })(utils.PosterClass);
 exports.Canvas = Canvas;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/canvas.js","/draw")
-},{"../utils/config":38,"../utils/utils":40,"1YiZ5S":4,"buffer":1}],18:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/canvas.js","/draw")
+},{"../utils/config":38,"../utils/utils":40,"buffer":1,"oMfpAn":4}],18:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -5124,8 +5115,8 @@ var BatchRenderer = (function (_super) {
 })(renderer.RendererBase);
 exports.BatchRenderer = BatchRenderer;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/batch.js","/draw/renderers")
-},{"../../utils/config":38,"../../utils/utils":40,"./renderer":22,"1YiZ5S":4,"buffer":1}],19:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/batch.js","/draw/renderers")
+},{"../../utils/config":38,"../../utils/utils":40,"./renderer":22,"buffer":1,"oMfpAn":4}],19:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -5208,8 +5199,8 @@ var ColorRenderer = (function (_super) {
 })(renderer.RendererBase);
 exports.ColorRenderer = ColorRenderer;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/color.js","/draw/renderers")
-},{"./renderer":22,"1YiZ5S":4,"buffer":1}],20:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/color.js","/draw/renderers")
+},{"./renderer":22,"buffer":1,"oMfpAn":4}],20:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -5334,8 +5325,8 @@ var CursorsRenderer = (function (_super) {
 })(renderer.RendererBase);
 exports.CursorsRenderer = CursorsRenderer;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/cursors.js","/draw/renderers")
-},{"../../utils/utils":40,"../animator":16,"./renderer":22,"1YiZ5S":4,"buffer":1}],21:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/cursors.js","/draw/renderers")
+},{"../../utils/utils":40,"../animator":16,"./renderer":22,"buffer":1,"oMfpAn":4}],21:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -5462,8 +5453,8 @@ var HighlightedRowRenderer = (function (_super) {
 })(row.RowRenderer);
 exports.HighlightedRowRenderer = HighlightedRowRenderer;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/highlighted_row.js","/draw/renderers")
-},{"../../utils/config":38,"../../utils/utils":40,"./row":23,"1YiZ5S":4,"buffer":1}],22:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/highlighted_row.js","/draw/renderers")
+},{"../../utils/config":38,"../../utils/utils":40,"./row":23,"buffer":1,"oMfpAn":4}],22:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -5537,8 +5528,8 @@ var RendererBase = (function (_super) {
 })(utils.PosterClass);
 exports.RendererBase = RendererBase;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/renderer.js","/draw/renderers")
-},{"../../utils/utils":40,"../canvas":17,"1YiZ5S":4,"buffer":1}],23:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/renderer.js","/draw/renderers")
+},{"../../utils/utils":40,"../canvas":17,"buffer":1,"oMfpAn":4}],23:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -5910,8 +5901,8 @@ var RowRenderer = (function (_super) {
 })(renderer.RendererBase);
 exports.RowRenderer = RowRenderer;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/row.js","/draw/renderers")
-},{"../../utils/utils":40,"../canvas":17,"./renderer":22,"1YiZ5S":4,"buffer":1}],24:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/row.js","/draw/renderers")
+},{"../../utils/utils":40,"../canvas":17,"./renderer":22,"buffer":1,"oMfpAn":4}],24:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -6045,8 +6036,8 @@ var SelectionsRenderer = (function (_super) {
 })(renderer.RendererBase);
 exports.SelectionsRenderer = SelectionsRenderer;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/selections.js","/draw/renderers")
-},{"../../utils/config":38,"./renderer":22,"1YiZ5S":4,"buffer":1}],25:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/selections.js","/draw/renderers")
+},{"../../utils/config":38,"./renderer":22,"buffer":1,"oMfpAn":4}],25:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -6293,8 +6284,8 @@ var ScrollingCanvas = (function (_super) {
 })(canvas.Canvas);
 exports.ScrollingCanvas = ScrollingCanvas;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/scrolling_canvas.js","/draw")
-},{"../utils/utils":40,"./canvas":17,"1YiZ5S":4,"buffer":1}],26:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/scrolling_canvas.js","/draw")
+},{"../utils/utils":40,"./canvas":17,"buffer":1,"oMfpAn":4}],26:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -6406,8 +6397,8 @@ window.poster = {
 // Expose prism so the user can load custom language files.
 window.Prism = prism;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/fake_7ec0984a.js","/")
-},{"./document_controller":13,"./document_model":14,"./document_view":15,"./draw/renderers/renderer":22,"./draw/scrolling_canvas":25,"./plugins/manager":31,"./plugins/plugin":32,"./styles/style":35,"./utils/config":38,"./utils/utils":40,"1YiZ5S":4,"buffer":1,"prismjs":5}],27:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/fake_5d64511a.js","/")
+},{"./document_controller":13,"./document_model":14,"./document_view":15,"./draw/renderers/renderer":22,"./draw/scrolling_canvas":25,"./plugins/manager":31,"./plugins/plugin":32,"./styles/style":35,"./utils/config":38,"./utils/utils":40,"buffer":1,"oMfpAn":4,"prismjs":5}],27:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -6480,8 +6471,8 @@ var Gutter = (function (_super) {
 })(plugin.PluginBase);
 exports.Gutter = Gutter;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/gutter/gutter.js","/plugins/gutter")
-},{"../plugin":32,"./renderer":28,"1YiZ5S":4,"buffer":1}],28:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/gutter/gutter.js","/plugins/gutter")
+},{"../plugin":32,"./renderer":28,"buffer":1,"oMfpAn":4}],28:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -6550,8 +6541,8 @@ var GutterRenderer = (function (_super) {
 })(renderer.RendererBase);
 exports.GutterRenderer = GutterRenderer;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/gutter/renderer.js","/plugins/gutter")
-},{"../../draw/renderers/renderer":22,"1YiZ5S":4,"buffer":1}],29:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/gutter/renderer.js","/plugins/gutter")
+},{"../../draw/renderers/renderer":22,"buffer":1,"oMfpAn":4}],29:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -6590,8 +6581,8 @@ var LineNumbers = (function (_super) {
 })(plugin.PluginBase);
 exports.LineNumbers = LineNumbers;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/linenumbers/linenumbers.js","/plugins/linenumbers")
-},{"../plugin":32,"./renderer":30,"1YiZ5S":4,"buffer":1}],30:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/linenumbers/linenumbers.js","/plugins/linenumbers")
+},{"../plugin":32,"./renderer":30,"buffer":1,"oMfpAn":4}],30:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -6777,8 +6768,8 @@ var LineNumbersRenderer = (function (_super) {
 })(renderer.RendererBase);
 exports.LineNumbersRenderer = LineNumbersRenderer;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/linenumbers/renderer.js","/plugins/linenumbers")
-},{"../../draw/canvas":17,"../../draw/renderers/renderer":22,"../../utils/utils":40,"1YiZ5S":4,"buffer":1}],31:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/linenumbers/renderer.js","/plugins/linenumbers")
+},{"../../draw/canvas":17,"../../draw/renderers/renderer":22,"../../utils/utils":40,"buffer":1,"oMfpAn":4}],31:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -6858,8 +6849,8 @@ var PluginManager = (function (_super) {
 })(utils.PosterClass);
 exports.PluginManager = PluginManager;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/manager.js","/plugins")
-},{"../utils/utils":40,"./gutter/gutter":27,"./linenumbers/linenumbers":29,"./plugin":32,"1YiZ5S":4,"buffer":1}],32:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/manager.js","/plugins")
+},{"../utils/utils":40,"./gutter/gutter":27,"./linenumbers/linenumbers":29,"./plugin":32,"buffer":1,"oMfpAn":4}],32:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -6939,16 +6930,16 @@ var PluginBase = (function (_super) {
 })(utils.PosterClass);
 exports.PluginBase = PluginBase;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/plugin.js","/plugins")
-},{"../utils/utils":40,"1YiZ5S":4,"buffer":1}],33:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/plugin.js","/plugins")
+},{"../utils/utils":40,"buffer":1,"oMfpAn":4}],33:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var peacock = require('./peacock');
 exports.styles = {
     "peacock": peacock,
 };
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/styles/init.js","/styles")
-},{"./peacock":34,"1YiZ5S":4,"buffer":1}],34:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/styles/init.js","/styles")
+},{"./peacock":34,"buffer":1,"oMfpAn":4}],34:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 exports.style = {
     comment: '#7a7267',
@@ -6976,8 +6967,8 @@ exports.style = {
     ],
 };
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/styles/peacock.js","/styles")
-},{"1YiZ5S":4,"buffer":1}],35:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/styles/peacock.js","/styles")
+},{"buffer":1,"oMfpAn":4}],35:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -7048,8 +7039,8 @@ var Style = (function (_super) {
 })(utils.PosterClass);
 exports.Style = Style;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/styles/style.js","/styles")
-},{"../utils/utils":40,"./init":33,"1YiZ5S":4,"buffer":1}],36:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/styles/style.js","/styles")
+},{"../utils/utils":40,"./init":33,"buffer":1,"oMfpAn":4}],36:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -7123,8 +7114,8 @@ var HighlighterBase = (function (_super) {
 })(utils.PosterClass);
 exports.HighlighterBase = HighlighterBase;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/syntax/highlighter.js","/syntax")
-},{"../utils/utils":40,"1YiZ5S":4,"buffer":1}],37:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/syntax/highlighter.js","/syntax")
+},{"../utils/utils":40,"buffer":1,"oMfpAn":4}],37:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -7295,8 +7286,8 @@ var PrismHighlighter = (function (_super) {
 })(highlighter.HighlighterBase);
 exports.PrismHighlighter = PrismHighlighter;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/syntax/prism.js","/syntax")
-},{"../utils/superset":39,"./highlighter":36,"1YiZ5S":4,"buffer":1,"prismjs":5}],38:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/syntax/prism.js","/syntax")
+},{"../utils/superset":39,"./highlighter":36,"buffer":1,"oMfpAn":4,"prismjs":5}],38:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -7327,8 +7318,8 @@ exports.config.tab_width = 4;
 exports.config.use_spaces = true;
 exports.config.history_group_delay = 100;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/utils/config.js","/utils")
-},{"./utils":40,"1YiZ5S":4,"buffer":1}],39:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/utils/config.js","/utils")
+},{"./utils":40,"buffer":1,"oMfpAn":4}],39:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -7431,8 +7422,8 @@ var Superset = (function (_super) {
 })(utils.PosterClass);
 exports.Superset = Superset;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/utils/superset.js","/utils")
-},{"./utils":40,"1YiZ5S":4,"buffer":1}],40:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/utils/superset.js","/utils")
+},{"./utils":40,"buffer":1,"oMfpAn":4}],40:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 ;
 /**
@@ -7800,6 +7791,16 @@ exports.merge = function (objects) {
 exports.args = function (arguments_obj) {
     return Array.prototype.slice.call(arguments_obj);
 };
+var _hashed_objects = 0;
+/**
+ * Generates a unique hash for an object.
+ */
+exports.hash = function (x) {
+    if (x.__hash__ === undefined) {
+        x.__hash__ = _hashed_objects++;
+    }
+    return x.__hash__;
+};
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/utils/utils.js","/utils")
-},{"1YiZ5S":4,"buffer":1}]},{},[26])
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/utils/utils.js","/utils")
+},{"buffer":1,"oMfpAn":4}]},{},[26])
