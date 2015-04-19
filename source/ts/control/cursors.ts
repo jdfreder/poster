@@ -20,9 +20,11 @@ export class Cursors extends utils.PosterClass {
     private _selecting_text: boolean;
     private _clipboard: clipboard.Clipboard;
     private _history: history.IHistory;
+    private _el: HTMLElement;
     
-    public constructor(model: document_model.DocumentModel, clipboard: clipboard.Clipboard, history: history.IHistory) {
+    public constructor(el: HTMLElement, model: document_model.DocumentModel, clipboard: clipboard.Clipboard, history: history.IHistory) {
         super();
+        this._el = el;
         this._model = model;
         this.get_row_char = undefined;
         this.cursors = [];
@@ -145,8 +147,9 @@ export class Cursors extends utils.PosterClass {
      * @param  e - mouse event containing the coordinates.
      */
     public set_selection(e: MouseEvent): void {
-        var x: number = e.offsetX;
-        var y: number = e.offsetY;
+        var touchpane: ClientRect = this._el.getBoundingClientRect();
+        var x: number = e.clientX - touchpane.left;
+        var y: number = e.clientY - touchpane.top;
         if (this._selecting_text && this.get_row_char) {
             var location: row_renderer.ICharacterCoords = this.get_row_char(x, y);
             this.cursors[this.cursors.length-1].set_primary(location.row_index, location.char_index);

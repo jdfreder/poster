@@ -18,16 +18,20 @@ export class Normalizer extends utils.PosterClass {
     /**
      * Listen to the events of an element.
      */
-    public listen_to(el: HTMLElement): void {
+    public listen_to(el: HTMLElement, mouse: boolean = true, keyboard: boolean = true): void {
         var hooks = [];
-        hooks.push(utils.hook(el, 'onkeypress', this._proxy('press', this._handle_keypress_event, el)));
-        hooks.push(utils.hook(el, 'onkeydown',  this._proxy('down', this._handle_keyboard_event, el)));
-        hooks.push(utils.hook(el, 'onkeyup',  this._proxy('up', this._handle_keyboard_event, el)));
-        hooks.push(utils.hook(el, 'ondblclick',  this._proxy('dblclick', this._handle_mouse_event, el)));
-        hooks.push(utils.hook(el, 'onclick',  this._proxy('click', this._handle_mouse_event, el)));
-        hooks.push(utils.hook(el, 'onmousedown',  this._proxy('down', this._handle_mouse_event, el)));
-        hooks.push(utils.hook(el, 'onmouseup',  this._proxy('up', this._handle_mouse_event, el)));
-        hooks.push(utils.hook(el, 'onmousemove',  this._proxy('move', this._handle_mousemove_event, el)));
+        if (keyboard) {
+            hooks.push(utils.hook(el, 'onkeypress', this._proxy('press', this._handle_keypress_event, el)));
+            hooks.push(utils.hook(el, 'onkeydown',  this._proxy('down', this._handle_keyboard_event, el)));
+            hooks.push(utils.hook(el, 'onkeyup',  this._proxy('up', this._handle_keyboard_event, el)));
+            hooks.push(utils.hook(el, 'ondblclick',  this._proxy('dblclick', this._handle_mouse_event, el)));
+            hooks.push(utils.hook(el, 'onclick',  this._proxy('click', this._handle_mouse_event, el)));
+        }
+        if (mouse) { 
+            hooks.push(utils.hook(el, 'onmousedown',  this._proxy('down', this._handle_mouse_event, el)));
+            hooks.push(utils.hook(el, 'onmouseup',  this._proxy('up', this._handle_mouse_event, el)));
+            hooks.push(utils.hook(el, 'onmousemove',  this._proxy('move', this._handle_mousemove_event, el)));
+        }
         this._el_hooks[utils.hash(el)] = hooks;
     }
 
