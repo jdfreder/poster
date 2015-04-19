@@ -24,10 +24,10 @@ export class DocumentController extends utils.PosterClass {
         this.clipboard = new clipboard.Clipboard(el);
         this.normalizer = new normalizer.Normalizer();
         this.normalizer.listen_to(el);
-        this.normalizer.listen_to(this.clipboard.hidden_input);
+        this.normalizer.listen_to(this.clipboard.hidden_input, false, true);
         this.map = new keymap.Map(this.normalizer);
         this.map.map(default_keymap.map);
         this.history = new history.History(this.map)
-        this.cursors = new cursors.Cursors(model, this.clipboard, this.history);
+        this.cursors = new cursors.Cursors(el, model, this.clipboard, this.history);
     }
 }
