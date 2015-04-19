@@ -262,7 +262,7 @@ export class Canvas extends utils.PosterClass {
      */
     public get_rendered_region(reset: boolean): IRectangle {
         var rendered_region = this._rendered_region;
-        if (rendered_region[0] === null) return null;
+        if (rendered_region.x1 === null) return null;
 
         if (reset) {
             this._rendered_region = {
@@ -274,10 +274,10 @@ export class Canvas extends utils.PosterClass {
         }
 
         return {
-            x: this.tx(rendered_region[0], true),
-            y: this.ty(rendered_region[1], true),
-            width: (this.tx(rendered_region[2]) - this.tx(rendered_region[0])), 
-            height: (this.ty(rendered_region[3]) - this.ty(rendered_region[1])),
+            x: this.tx(rendered_region.x1, true),
+            y: this.ty(rendered_region.y1, true),
+            width: (this.tx(rendered_region.x2) - this.tx(rendered_region.x1)), 
+            height: (this.ty(rendered_region.y2) - this.ty(rendered_region.y1)),
         };
     }
 
