@@ -6406,7 +6406,7 @@ window.poster = {
 // Expose prism so the user can load custom language files.
 window.Prism = prism;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/fake_97dbeb89.js","/")
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/fake_cd42d56b.js","/")
 },{"./document_controller":13,"./document_model":14,"./document_view":15,"./draw/renderers/renderer":22,"./draw/scrolling_canvas":25,"./plugins/manager":31,"./plugins/plugin":32,"./styles/style":35,"./utils/config":38,"./utils/utils":40,"1YiZ5S":4,"buffer":1,"prismjs":5}],27:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
