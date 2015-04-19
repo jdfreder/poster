@@ -2981,8 +2981,9 @@ var utils = require('../utils/utils');
  */
 var Cursors = (function (_super) {
     __extends(Cursors, _super);
-    function Cursors(model, clipboard, history) {
+    function Cursors(el, model, clipboard, history) {
         _super.call(this);
+        this._el = el;
         this._model = model;
         this.get_row_char = undefined;
         this.cursors = [];
@@ -3086,8 +3087,9 @@ var Cursors = (function (_super) {
      * @param  e - mouse event containing the coordinates.
      */
     Cursors.prototype.set_selection = function (e) {
-        var x = e.offsetX;
-        var y = e.offsetY;
+        var touchpane = this._el.getBoundingClientRect();
+        var x = e.clientX - touchpane.left;
+        var y = e.clientY - touchpane.top;
         if (this._selecting_text && this.get_row_char) {
             var location = this.get_row_char(x, y);
             this.cursors[this.cursors.length - 1].set_primary(location.row_index, location.char_index);
@@ -3667,16 +3669,22 @@ var Normalizer = (function (_super) {
     /**
      * Listen to the events of an element.
      */
-    Normalizer.prototype.listen_to = function (el) {
+    Normalizer.prototype.listen_to = function (el, mouse, keyboard) {
+        if (mouse === void 0) { mouse = true; }
+        if (keyboard === void 0) { keyboard = true; }
         var hooks = [];
-        hooks.push(utils.hook(el, 'onkeypress', this._proxy('press', this._handle_keypress_event, el)));
-        hooks.push(utils.hook(el, 'onkeydown', this._proxy('down', this._handle_keyboard_event, el)));
-        hooks.push(utils.hook(el, 'onkeyup', this._proxy('up', this._handle_keyboard_event, el)));
-        hooks.push(utils.hook(el, 'ondblclick', this._proxy('dblclick', this._handle_mouse_event, el)));
-        hooks.push(utils.hook(el, 'onclick', this._proxy('click', this._handle_mouse_event, el)));
-        hooks.push(utils.hook(el, 'onmousedown', this._proxy('down', this._handle_mouse_event, el)));
-        hooks.push(utils.hook(el, 'onmouseup', this._proxy('up', this._handle_mouse_event, el)));
-        hooks.push(utils.hook(el, 'onmousemove', this._proxy('move', this._handle_mousemove_event, el)));
+        if (keyboard) {
+            hooks.push(utils.hook(el, 'onkeypress', this._proxy('press', this._handle_keypress_event, el)));
+            hooks.push(utils.hook(el, 'onkeydown', this._proxy('down', this._handle_keyboard_event, el)));
+            hooks.push(utils.hook(el, 'onkeyup', this._proxy('up', this._handle_keyboard_event, el)));
+            hooks.push(utils.hook(el, 'ondblclick', this._proxy('dblclick', this._handle_mouse_event, el)));
+            hooks.push(utils.hook(el, 'onclick', this._proxy('click', this._handle_mouse_event, el)));
+        }
+        if (mouse) {
+            hooks.push(utils.hook(el, 'onmousedown', this._proxy('down', this._handle_mouse_event, el)));
+            hooks.push(utils.hook(el, 'onmouseup', this._proxy('up', this._handle_mouse_event, el)));
+            hooks.push(utils.hook(el, 'onmousemove', this._proxy('move', this._handle_mousemove_event, el)));
+        }
         this._el_hooks[utils.hash(el)] = hooks;
     };
     /**
@@ -3840,11 +3848,11 @@ var DocumentController = (function (_super) {
         this.clipboard = new clipboard.Clipboard(el);
         this.normalizer = new normalizer.Normalizer();
         this.normalizer.listen_to(el);
-        this.normalizer.listen_to(this.clipboard.hidden_input);
+        this.normalizer.listen_to(this.clipboard.hidden_input, false, true);
         this.map = new keymap.Map(this.normalizer);
         this.map.map(default_keymap.map);
         this.history = new history.History(this.map);
-        this.cursors = new cursors.Cursors(model, this.clipboard, this.history);
+        this.cursors = new cursors.Cursors(el, model, this.clipboard, this.history);
     }
     return DocumentController;
 })(utils.PosterClass);
@@ -6406,7 +6414,7 @@ window.poster = {
 // Expose prism so the user can load custom language files.
 window.Prism = prism;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/fake_cd42d56b.js","/")
+}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/fake_5f07e977.js","/")
 },{"./document_controller":13,"./document_model":14,"./document_view":15,"./draw/renderers/renderer":22,"./draw/scrolling_canvas":25,"./plugins/manager":31,"./plugins/plugin":32,"./styles/style":35,"./utils/config":38,"./utils/utils":40,"1YiZ5S":4,"buffer":1,"prismjs":5}],27:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
