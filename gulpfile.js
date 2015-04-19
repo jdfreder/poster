@@ -22,8 +22,8 @@ gulp.task('watch', function() {
 /*
  * Compile API docs from typescript.
  */
-gulp.task('docs', [], function(cb) {
-    child_process.exec("typedoc --out ./docs --module commonjs --target es5 --name Poster ./source/ts/", cb);
+gulp.task('docs', ['typescript'], function(cb) {
+    child_process.exec("typedoc --mode file --out ./docs --module commonjs --target es5 --name Poster ./source/ts/", cb);
 });
 
 /*
@@ -39,7 +39,9 @@ gulp.task('typescript', [], function() {
        }));
 
     return merge([
-        tsResult.dts,
+        tsResult
+            .dts
+            .pipe(gulp.dest('./tmp')),
         tsResult
             .js
             .pipe(gulp.dest('./tmp'))]);
