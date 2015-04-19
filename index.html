@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <title>Poster</title>
+    <script type="text/javascript" src="build/poster.js"></script>
+    <link rel="stylesheet" type="text/css" href="build/poster.css">
+    <link rel="stylesheet" type="text/css" href="style.css">
+
+    <link rel="shortcut icon" href="images/256x256.png" />
+    <link rel="shortcut icon" href="images/128x128.png" />
+    <link rel="shortcut icon" href="images/64x64.png" />
+    <link rel="shortcut icon" href="images/32x32.png" />
+    <link rel="shortcut icon" href="images/16x16.png" />
+    <!-- Referenced again to force FF and Safari to use it if possible -->
+    <link rel="shortcut icon" href="images/256x256.png" /> 
+
+    <!-- Lato font: http://www.google.com/fonts/specimen/Lato -->
+    <link href='http://fonts.googleapis.com/css?family=Lato' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+  </head>
+
+  <body>
+    <div class="fill centered">
+        <B><I><font color="red">Under Construction<br></font></I></B>
+        <img src="http://jdfreder.github.io/poster/images/PosterLogoPath.svg" class="logo" />
+        <div class="demo-border">
+            <div id="demo"></div>
+        </div>
+        <div class="description">
+            Typescript and Javascript APIs available.  Released under the MIT license.
+        </div>
+        <div class="nav">
+            <div class='btn' onclick='window.location.href = "docs/index.html";'><i class="fa fa-book"></i>Docs</div>
+            <div class='btn' onclick='window.location.href = "https://github.com/jdfreder/poster/archive/master.zip";'><i class="fa fa-download"></i>Download</div>
+            <div class='btn' onclick='window.location.href = "https://github.com/jdfreder/poster";'><i class="fa fa-github"></i>Source</div>
+        </div>
+        <div class="node">
+            <input type="text" value="npm install posterjs" onclick="this.select()"/>
+        </div>
+    </div>
+
+    <a href="https://github.com/jdfreder/poster"><img style="position: fixed; top: 0; right: 0; border: 0; z-index: 3;" src="https://camo.githubusercontent.com/a6677b08c955af8400f44c6298f40e7d19cc5b2d/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677261795f3664366436642e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png"></a>
+
+    <script type="text/javascript">
+        var test_area = document.getElementById('demo');
+        var poster = new poster.Poster();
+        test_area.appendChild(poster.el);
+
+        // Test the API
+        poster.width = 400;
+        poster.height = 300;
+        poster.language = 'javascript';
+
+        // Test text
+        poster.value = "// language = 'javascript'\n\nvar say_hello = function() {\n    console.log('Hello World!');\n}\n";
+    </script>
+  </body>
+</html>
