@@ -571,11 +571,12 @@ export class Canvas extends utils.PosterClass {
         // Special options.
         var set_options: ICanvasOptions = {};
         set_options.globalAlpha = (options.alpha===undefined ? 1.0 : options.alpha);
-        set_options.globalCompositeOperation = (options.composite_operation || CompositeOperationEnum.source_over).toString().replace(/-/g, '_');
-        
+        set_options.globalCompositeOperation = CompositeOperationEnum[(options.composite_operation || CompositeOperationEnum.source_over)].replace(/_/g, '-');
+        console.log(set_options.globalCompositeOperation);
+
         // Line style.
-        set_options.lineCap = (options.line_cap || LineCapEnum.butt).toString();
-        set_options.lineJoin = (options.line_join || LineJoinEnum.bevel).toString();
+        set_options.lineCap = LineCapEnum[(options.line_cap || LineCapEnum.butt)];
+        set_options.lineJoin = LineJoinEnum[(options.line_join || LineJoinEnum.bevel)];
         set_options.lineWidth = options.line_width===undefined ? 1.0 : options.line_width;
         set_options.miterLimit = options.line_miter_limit===undefined ? 10 : options.line_miter_limit;
         this.context.strokeStyle = options.line_color || options.color || 'black'; // TODO: Support gradient
@@ -607,8 +608,8 @@ export class Canvas extends utils.PosterClass {
         set_options.font = font;
 
         // Text style.
-        set_options.textAlign = (options.text_align || TextAlignmentEnum.left).toString();
-        set_options.textBaseline = (options.text_baseline || TextBaselineEnum.top).toString();
+        set_options.textAlign = TextAlignmentEnum[(options.text_align || TextAlignmentEnum.left)];
+        set_options.textBaseline = TextBaselineEnum[(options.text_baseline || TextBaselineEnum.top)];
 
         // TODO: Support shadows.
         
