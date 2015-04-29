@@ -1,9 +1,11 @@
+# Poster
+[![Join the chat at https://gitter.im/jdfreder/poster](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/jdfreder/poster?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 HTML5 canvas based code editor.  
 Demo at [http://jdfreder.github.io/poster/](http://jdfreder.github.io/poster/).
 
 ## Install
 
-[![Join the chat at https://gitter.im/jdfreder/poster](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/jdfreder/poster?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 First install [node.js](https://nodejs.org/download/).  
 Then install Poster inside the directory that you will be using it in:  
 
