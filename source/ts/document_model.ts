@@ -11,6 +11,7 @@ export interface IRange {
     end_char: number;
 }
 
+
 /**
  * Model containing all of the document's data (text).
  */
@@ -282,7 +283,7 @@ export class DocumentModel extends utils.PosterClass {
      * Remove a row from the document.
      */
     public remove_row(row_index: number): void {
-        if (0 < row_index && row_index < this._rows.length) {
+        if (0 <= row_index && row_index < this._rows.length) {
             var rows_removed: string[] = this._rows.splice(row_index, 1);
             this._resized_rows();
             this.trigger('rows_removed', rows_removed);

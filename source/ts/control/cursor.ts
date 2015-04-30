@@ -362,9 +362,9 @@ export class Cursor extends utils.PosterClass {
                 var secondary_row: number = this.secondary_row;
                 var secondary_char: number = this.secondary_char;
                 var same_row = this.start_row === this.end_row;
-                this._historical(() => {
-                    this._model_add_text(this.start_row, this.start_char, char_typed);
-                    this._model_add_text(this.end_row, this.end_char+(same_row?1:0), right_char);
+                this.historical(() => {
+                    this.model_add_text(this.start_row, this.start_char, char_typed);
+                    this.model_add_text(this.end_row, this.end_char+(same_row?1:0), right_char);
                 });
                 this.primary_row = primary_row;
                 this.primary_char = primary_char+(same_row||this.primary_row<this.secondary_row?1:0);
@@ -375,9 +375,9 @@ export class Cursor extends utils.PosterClass {
 
             // No text is highlighted, text must be right padded.
             } else {
-                this._historical(() => {
-                    this._model_add_text(this.primary_row, this.primary_char, char_typed);
-                    this._model_add_text(this.primary_row, this.primary_char+1, right_char);
+                this.historical(() => {
+                    this.model_add_text(this.primary_row, this.primary_char, char_typed);
+                    this.model_add_text(this.primary_row, this.primary_char+1, right_char);
                 });
                 this.move_primary(1, 0);
                 this._reset_secondary();
@@ -385,8 +385,8 @@ export class Cursor extends utils.PosterClass {
             }
         } else { // If text isn't highlighted, default to normal keypress.
             this.remove_selected();
-            this._historical(() => {
-                this._model_add_text(this.primary_row, this.primary_char, char_typed);
+            this.historical(() => {
+                this.model_add_text(this.primary_row, this.primary_char, char_typed);
             });
             this.move_primary(1, 0);
             this._reset_secondary();
@@ -401,12 +401,12 @@ export class Cursor extends utils.PosterClass {
      */
     public indent(e: Event): boolean {
         var indent: string = this._make_indents()[0];
-        this._historical(() => {
+        this.historical(() => {
             if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
-                this._model_add_text(this.primary_row, this.primary_char, indent);
+                this.model_add_text(this.primary_row, this.primary_char, indent);
             } else {
                 for (var row = this.start_row; row <= this.end_row; row++) {
-                    this._model_add_text(row, 0, indent);
+                    this.model_add_text(row, 0, indent);
                 }
             }
         });
@@ -429,14 +429,14 @@ export class Cursor extends utils.PosterClass {
 
         // If no text is selected, remove the indent preceding the
         // cursor if it exists.
-        this._historical(() => {
+        this.historical(() => {
             if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
                 for (var i: number = 0; i < indents.length; i++) {
                     var indent = indents[i];
                     if (this.primary_char >= indent.length) {
                         var before = this._model.get_text(this.primary_row, this.primary_char-indent.length, this.primary_row, this.primary_char);
                         if (before == indent) {
-                            this._model_remove_text(this.primary_row, this.primary_char-indent.length, this.primary_row, this.primary_char);
+                            this.model_remove_text(this.primary_row, this.primary_char-indent.length, this.primary_row, this.primary_char);
                             removed_start = indent.length;
                             removed_end = indent.length;
                             break;
@@ -452,7 +452,7 @@ export class Cursor extends utils.PosterClass {
                         var indent = indents[i];
                         if (this._model._rows[row].length >= indent.length) {
                             if (this._model._rows[row].substring(0, indent.length) == indent) {
-                                this._model_remove_text(row, 0, row, indent.length);
+                                this.model_remove_text(row, 0, row, indent.length);
                                 if (row == this.start_row) removed_start = indent.length;
                                 if (row == this.end_row) removed_end = indent.length;
                                 break;
@@ -494,8 +494,8 @@ export class Cursor extends utils.PosterClass {
         }
         var indent: string = line_text.substring(0, left);
         
-        this._historical(() => {
-            this._model_add_text(this.primary_row, this.primary_char, '\n' + indent);
+        this.historical(() => {
+            this.model_add_text(this.primary_row, this.primary_char, '\n' + indent);
         });
         this.primary_row += 1;
         this.primary_char = indent.length;
@@ -511,8 +511,8 @@ export class Cursor extends utils.PosterClass {
      */
     public insert_text(text: string): boolean {
         this.remove_selected();
-        this._historical(() => {
-            this._model_add_text(this.primary_row, this.primary_char, text);
+        this.historical(() => {
+            this.model_add_text(this.primary_row, this.primary_char, text);
         });
         
         // Move cursor to the end.
@@ -534,8 +534,8 @@ export class Cursor extends utils.PosterClass {
      */
     public paste(text: string): void {
         if (this._copied_row === text) {
-            this._historical(() => {
-                this._model_add_row(this.primary_row, text);
+            this.historical(() => {
+                this.model_add_row(this.primary_row, text);
             });
             this.primary_row++;
             this.secondary_row++;
@@ -553,8 +553,8 @@ export class Cursor extends utils.PosterClass {
         if (this.primary_row !== this.secondary_row || this.primary_char !== this.secondary_char) {
             var row_index: number = this.start_row;
             var char_index: number = this.start_char;
-            this._historical(() => {
-                this._model_remove_text(this.start_row, this.start_char, this.end_row, this.end_char);
+            this.historical(() => {
+                this.model_remove_text(this.start_row, this.start_char, this.end_row, this.end_char);
             });
             this.primary_row = row_index;
             this.primary_char = char_index;
@@ -585,8 +585,8 @@ export class Cursor extends utils.PosterClass {
         var text = this.get();
         if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
             this._copied_row = this._model._rows[this.primary_row];    
-            this._historical(function() {
-                this._model_remove_row(this.primary_row);
+            this.historical(function() {
+                this.model_remove_row(this.primary_row);
             });
         } else {
             this._copied_row = null;
@@ -685,25 +685,26 @@ export class Cursor extends utils.PosterClass {
     }
 
     /**
-     * Reset the secondary cursor to the value of the primary.
+     * Record the before and after positions of the cursor for history.
+     * @param  f - executes with `this` context
      */
-    private _reset_secondary(): void {
-        this.secondary_row = this.primary_row;
-        this.secondary_char = this.primary_char;
-
-        this.trigger('change'); 
+    public historical(f: utils.ICallback): any {
+        this._start_historical_move();
+        var ret: any = f.apply(this);
+        this._end_historical_move();
+        return ret;
     }
 
     /**
      * Adds text to the model while keeping track of the history.
      */
-    private _model_add_text(row_index: number, char_index: number, text: string): void {
+    public model_add_text(row_index: number, char_index: number, text: string): void {
         var lines: string[] = text.split('\n');
         this._push_history(
-            '_model_add_text', 
-            [row_index, char_index, text], 
-            '_model_remove_text', 
-            [row_index, char_index, row_index + lines.length - 1, lines.length > 1 ? lines[lines.length-1].length : char_index + text.length], 
+            'model_add_text',
+            [row_index, char_index, text],
+            'model_remove_text',
+            [row_index, char_index, row_index + lines.length - 1, lines.length > 1 ? lines[lines.length - 1].length : char_index + text.length],
             config.history_group_delay || 100);
         this._model.add_text(row_index, char_index, text);
     }
@@ -711,13 +712,13 @@ export class Cursor extends utils.PosterClass {
     /**
      * Removes text from the model while keeping track of the history.
      */
-    private _model_remove_text(start_row: number, start_char: number, end_row: number, end_char: number): void {
+    public model_remove_text(start_row: number, start_char: number, end_row: number, end_char: number): void {
         var text: string = this._model.get_text(start_row, start_char, end_row, end_char);
         this._push_history(
-            '_model_remove_text', 
-            [start_row, start_char, end_row, end_char], 
-            '_model_add_text', 
-            [start_row, start_char, text], 
+            'model_remove_text',
+            [start_row, start_char, end_row, end_char],
+            'model_add_text',
+            [start_row, start_char, text],
             config.history_group_delay || 100);
         this._model.remove_text(start_row, start_char, end_row, end_char);
     }
@@ -725,12 +726,12 @@ export class Cursor extends utils.PosterClass {
     /**
      * Adds a row of text while keeping track of the history.
      */
-    private _model_add_row(row_index: number, text: string): void {
+    public model_add_row(row_index: number, text: string): void {
         this._push_history(
-            '_model_add_row', 
-            [row_index, text], 
-            '_model_remove_row', 
-            [row_index], 
+            'model_add_row',
+            [row_index, text],
+            'model_remove_row',
+            [row_index],
             config.history_group_delay || 100);
         this._model.add_row(row_index, text);
     }
@@ -738,25 +739,24 @@ export class Cursor extends utils.PosterClass {
     /**
      * Removes a row of text while keeping track of the history.
      */
-    private _model_remove_row(row_index: number): void {
+    public model_remove_row(row_index: number): void {
         this._push_history(
-            '_model_remove_row', 
-            [row_index], 
-            '_model_add_row', 
-            [row_index, this._model._rows[row_index]], 
+            'model_remove_row',
+            [row_index],
+            'model_add_row',
+            [row_index, this._model._rows[row_index]],
             config.history_group_delay || 100);
         this._model.remove_row(row_index);
     }
 
     /**
-     * Record the before and after positions of the cursor for history.
-     * @param  f - executes with `this` context
+     * Reset the secondary cursor to the value of the primary.
      */
-    private _historical(f: utils.ICallback): any {
-        this._start_historical_move();
-        var ret: any = f.apply(this);
-        this._end_historical_move();
-        return ret;
+    private _reset_secondary(): void {
+        this.secondary_row = this.primary_row;
+        this.secondary_char = this.primary_char;
+
+        this.trigger('change'); 
     }
 
     /**

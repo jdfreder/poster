@@ -4,6 +4,7 @@ import utils = require('../utils/utils');
 import pluginbase = require('./plugin');
 import gutter = require('./gutter/gutter');
 import linenumbers = require('./linenumbers/linenumbers');
+import commenthotkey = require('./commenthotkey/commenthotkey');
 import iposter = require('../i_poster');
 import generics = require('../utils/generics');
 
@@ -24,6 +25,7 @@ export class PluginManager extends utils.PosterClass {
         this._internal_plugins = {};
         this._internal_plugins['gutter'] = gutter.Gutter;
         this._internal_plugins['linenumbers'] = linenumbers.LineNumbers;
+        this._internal_plugins['commenthotkey'] = commenthotkey.CommentHotKey;
     }
 
     /**
