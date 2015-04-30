@@ -389,3 +389,17 @@ export var hash = function(x: any): string {
     }
     return x.__hash__;
 };
+
+/**
+ * Left trim a string.
+ */
+export var ltrim = function(x: string): string {
+    return x.replace(/^\s+/g, '');
+};
+
+/**
+ * Right trim a string.
+ */
+export var rtrim = function(x: string): string {
+    return x.replace(/\s+$/g, '');
+};
