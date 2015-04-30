@@ -572,7 +572,6 @@ export class Canvas extends utils.PosterClass {
         var set_options: ICanvasOptions = {};
         set_options.globalAlpha = (options.alpha===undefined ? 1.0 : options.alpha);
         set_options.globalCompositeOperation = CompositeOperationEnum[(options.composite_operation || CompositeOperationEnum.source_over)].replace(/_/g, '-');
-        console.log(set_options.globalCompositeOperation);
 
         // Line style.
         set_options.lineCap = LineCapEnum[(options.line_cap || LineCapEnum.butt)];
