@@ -338,13 +338,60 @@ export class Cursor extends utils.PosterClass {
     public keypress(e: KeyboardEvent): boolean {
         var char_code: number = e.which || e.keyCode;
         var char_typed: string = String.fromCharCode(char_code);
-        this.remove_selected();
-        this._historical(() => {
-            this._model_add_text(this.primary_row, this.primary_char, char_typed);
-        });
-        this.move_primary(1, 0);
-        this._reset_secondary();
-        return true;
+        var enclosing: boolean = '\'"[{(`<'.indexOf(char_typed) !== -1;
+        var highlighted: boolean = (this.primary_row !== this.secondary_row || this.primary_char !== this.secondary_char);
+
+        // Check if the primary character is the last character of the row,
+        // or if it is whitespace or a right closing character.
+        var current_char: string = this._model._rows[this.primary_row][this.primary_char];
+        var right_padded: boolean = 
+            this.primary_char === this._model._rows[this.primary_row].length ||
+            current_char.trim() === '' ||
+            ']}>)'.indexOf(current_char) !== -1;
+
+        if (enclosing && (highlighted || right_padded)) {
+            var right_char: string = char_typed;
+            var inverses = {'[': ']', '(': ')', '<': '>', '{': '}'};
+            if (inverses[right_char] !== undefined) right_char = inverses[right_char];
+
+            // If one or more characters are highlighted, surround them using
+            // the block characters.
+            if (highlighted) {
+                var primary_row: number = this.primary_row;
+                var primary_char: number = this.primary_char;
+                var secondary_row: number = this.secondary_row;
+                var secondary_char: number = this.secondary_char;
+                var same_row = this.start_row === this.end_row;
+                this._historical(() => {
+                    this._model_add_text(this.start_row, this.start_char, char_typed);
+                    this._model_add_text(this.end_row, this.end_char+(same_row?1:0), right_char);
+                });
+                this.primary_row = primary_row;
+                this.primary_char = primary_char+(same_row||this.primary_row<this.secondary_row?1:0);
+                this.secondary_row = secondary_row;
+                this.secondary_char = secondary_char+(same_row||this.primary_row>this.secondary_row?1:0);
+                this.trigger('change'); 
+                return true;
+
+            // No text is highlighted, text must be right padded.
+            } else {
+                this._historical(() => {
+                    this._model_add_text(this.primary_row, this.primary_char, char_typed);
+                    this._model_add_text(this.primary_row, this.primary_char+1, right_char);
+                });
+                this.move_primary(1, 0);
+                this._reset_secondary();
+                return true;
+            }
+        } else { // If text isn't highlighted, default to normal keypress.
+            this.remove_selected();
+            this._historical(() => {
+                this._model_add_text(this.primary_row, this.primary_char, char_typed);
+            });
+            this.move_primary(1, 0);
+            this._reset_secondary();
+            return true;
+        }
     }
 
     /**
