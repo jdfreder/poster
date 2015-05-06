@@ -1110,8 +1110,8 @@ function assert (test, message) {
   if (!test) throw new Error(message || 'Failed assertion')
 }
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../node_modules/gulp-browserify/node_modules/browserify/node_modules/buffer/index.js","/../node_modules/gulp-browserify/node_modules/browserify/node_modules/buffer")
-},{"1YiZ5S":4,"base64-js":2,"buffer":1,"ieee754":3}],2:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../node_modules/gulp-browserify/node_modules/browserify/node_modules/buffer/index.js","/../../node_modules/gulp-browserify/node_modules/browserify/node_modules/buffer")
+},{"base64-js":2,"buffer":1,"ieee754":3,"oMfpAn":4}],2:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
@@ -1127,16 +1127,12 @@ var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 	var NUMBER = '0'.charCodeAt(0)
 	var LOWER  = 'a'.charCodeAt(0)
 	var UPPER  = 'A'.charCodeAt(0)
-	var PLUS_URL_SAFE = '-'.charCodeAt(0)
-	var SLASH_URL_SAFE = '_'.charCodeAt(0)
 
 	function decode (elt) {
 		var code = elt.charCodeAt(0)
-		if (code === PLUS ||
-		    code === PLUS_URL_SAFE)
+		if (code === PLUS)
 			return 62 // '+'
-		if (code === SLASH ||
-		    code === SLASH_URL_SAFE)
+		if (code === SLASH)
 			return 63 // '/'
 		if (code < NUMBER)
 			return -1 //no match
@@ -1238,8 +1234,8 @@ var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 	exports.fromByteArray = uint8ToBase64
 }(typeof exports === 'undefined' ? (this.base64js = {}) : exports))
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../node_modules/gulp-browserify/node_modules/browserify/node_modules/buffer/node_modules/base64-js/lib/b64.js","/../node_modules/gulp-browserify/node_modules/browserify/node_modules/buffer/node_modules/base64-js/lib")
-},{"1YiZ5S":4,"buffer":1}],3:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../node_modules/gulp-browserify/node_modules/browserify/node_modules/buffer/node_modules/base64-js/lib/b64.js","/../../node_modules/gulp-browserify/node_modules/browserify/node_modules/buffer/node_modules/base64-js/lib")
+},{"buffer":1,"oMfpAn":4}],3:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 exports.read = function(buffer, offset, isLE, mLen, nBytes) {
   var e, m,
@@ -1326,8 +1322,8 @@ exports.write = function(buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128;
 };
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../node_modules/gulp-browserify/node_modules/browserify/node_modules/buffer/node_modules/ieee754/index.js","/../node_modules/gulp-browserify/node_modules/browserify/node_modules/buffer/node_modules/ieee754")
-},{"1YiZ5S":4,"buffer":1}],4:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../node_modules/gulp-browserify/node_modules/browserify/node_modules/buffer/node_modules/ieee754/index.js","/../../node_modules/gulp-browserify/node_modules/browserify/node_modules/buffer/node_modules/ieee754")
+},{"buffer":1,"oMfpAn":4}],4:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // shim for using process in browser
 
@@ -1393,8 +1389,8 @@ process.chdir = function (dir) {
     throw new Error('process.chdir is not supported');
 };
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../node_modules/gulp-browserify/node_modules/browserify/node_modules/process/browser.js","/../node_modules/gulp-browserify/node_modules/browserify/node_modules/process")
-},{"1YiZ5S":4,"buffer":1}],5:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../node_modules/gulp-browserify/node_modules/browserify/node_modules/process/browser.js","/../../node_modules/gulp-browserify/node_modules/browserify/node_modules/process")
+},{"buffer":1,"oMfpAn":4}],5:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 
 /* **********************************************
@@ -2007,70 +2003,65 @@ if (Prism.languages.markup) {
      Begin prism-file-highlight.js
 ********************************************** */
 
-(function () {
-	if (!self.Prism || !self.document || !document.querySelector) {
-		return;
-	}
+(function(){
 
-	self.Prism.fileHighlight = function() {
+if (!self.Prism || !self.document || !document.querySelector) {
+	return;
+}
 
-		var Extensions = {
-			'js': 'javascript',
-			'html': 'markup',
-			'svg': 'markup',
-			'xml': 'markup',
-			'py': 'python',
-			'rb': 'ruby',
-			'ps1': 'powershell',
-			'psm1': 'powershell'
-		};
+var Extensions = {
+	'js': 'javascript',
+	'html': 'markup',
+	'svg': 'markup',
+	'xml': 'markup',
+	'py': 'python',
+	'rb': 'ruby',
+	'ps1': 'powershell',
+	'psm1': 'powershell'
+};
 
-		Array.prototype.slice.call(document.querySelectorAll('pre[data-src]')).forEach(function(pre) {
-			var src = pre.getAttribute('data-src');
-			var extension = (src.match(/\.(\w+)$/) || [,''])[1];
-			var language = Extensions[extension] || extension;
+Array.prototype.slice.call(document.querySelectorAll('pre[data-src]')).forEach(function(pre) {
+	var src = pre.getAttribute('data-src');
+	var extension = (src.match(/\.(\w+)$/) || [,''])[1];
+	var language = Extensions[extension] || extension;
+	
+	var code = document.createElement('code');
+	code.className = 'language-' + language;
+	
+	pre.textContent = '';
+	
+	code.textContent = 'Loading…';
+	
+	pre.appendChild(code);
+	
+	var xhr = new XMLHttpRequest();
+	
+	xhr.open('GET', src, true);
 
-			var code = document.createElement('code');
-			code.className = 'language-' + language;
-
-			pre.textContent = '';
-
-			code.textContent = 'Loading…';
-
-			pre.appendChild(code);
-
-			var xhr = new XMLHttpRequest();
-
-			xhr.open('GET', src, true);
-
-			xhr.onreadystatechange = function() {
-				if (xhr.readyState == 4) {
-
-					if (xhr.status < 400 && xhr.responseText) {
-						code.textContent = xhr.responseText;
-
-						Prism.highlightElement(code);
-					}
-					else if (xhr.status >= 400) {
-						code.textContent = '✖ Error ' + xhr.status + ' while fetching file: ' + xhr.statusText;
-					}
-					else {
-						code.textContent = '✖ Error: File does not exist or is empty';
-					}
-				}
-			};
-
-			xhr.send(null);
-		});
-
+	xhr.onreadystatechange = function() {
+		if (xhr.readyState == 4) {
+			
+			if (xhr.status < 400 && xhr.responseText) {
+				code.textContent = xhr.responseText;
+			
+				Prism.highlightElement(code);
+			}
+			else if (xhr.status >= 400) {
+				code.textContent = '✖ Error ' + xhr.status + ' while fetching file: ' + xhr.statusText;
+			}
+			else {
+				code.textContent = '✖ Error: File does not exist or is empty';
+			}
+		}
 	};
-
-	self.Prism.fileHighlight();
+	
+	xhr.send(null);
+});
 
 })();
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../node_modules/prismjs/prism.js","/../node_modules/prismjs")
-},{"1YiZ5S":4,"buffer":1}],6:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/../../node_modules/prismjs/prism.js","/../../node_modules/prismjs")
+},{"buffer":1,"oMfpAn":4}],6:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -2172,8 +2163,8 @@ var Clipboard = (function (_super) {
 })(utils.PosterClass);
 exports.Clipboard = Clipboard;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/clipboard.js","/control")
-},{"../utils/utils":40,"1YiZ5S":4,"buffer":1}],7:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/clipboard.js","/control")
+},{"../utils/utils":41,"buffer":1,"oMfpAn":4}],7:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -2193,10 +2184,11 @@ var config = config_mod.config;
  */
 var Cursor = (function (_super) {
     __extends(Cursor, _super);
-    function Cursor(model, push_history) {
+    function Cursor(model, push_history, cursors) {
         _super.call(this);
         this._model = model;
         this._push_history = push_history;
+        this._cursors = cursors;
         this.primary_row = 0;
         this.primary_char = 0;
         this.secondary_row = 0;
@@ -2491,13 +2483,55 @@ var Cursor = (function (_super) {
         var _this = this;
         var char_code = e.which || e.keyCode;
         var char_typed = String.fromCharCode(char_code);
-        this.remove_selected();
-        this._historical(function () {
-            _this._model_add_text(_this.primary_row, _this.primary_char, char_typed);
-        });
-        this.move_primary(1, 0);
-        this._reset_secondary();
-        return true;
+        var enclosing = '\'"[{(`<'.indexOf(char_typed) !== -1;
+        var highlighted = (this.primary_row !== this.secondary_row || this.primary_char !== this.secondary_char);
+        // Check if the primary character is the last character of the row,
+        // or if it is whitespace or a right closing character.
+        var current_char = this._model._rows[this.primary_row][this.primary_char];
+        var right_padded = this.primary_char === this._model._rows[this.primary_row].length || current_char.trim() === '' || ']}>)'.indexOf(current_char) !== -1;
+        if (enclosing && (highlighted || right_padded)) {
+            var right_char = char_typed;
+            var inverses = { '[': ']', '(': ')', '<': '>', '{': '}' };
+            if (inverses[right_char] !== undefined)
+                right_char = inverses[right_char];
+            // If one or more characters are highlighted, surround them using
+            // the block characters.
+            if (highlighted) {
+                var primary_row = this.primary_row;
+                var primary_char = this.primary_char;
+                var secondary_row = this.secondary_row;
+                var secondary_char = this.secondary_char;
+                var same_row = this.start_row === this.end_row;
+                this.historical(function () {
+                    _this.model_add_text(_this.start_row, _this.start_char, char_typed);
+                    _this.model_add_text(_this.end_row, _this.end_char + (same_row ? 1 : 0), right_char);
+                });
+                this.primary_row = primary_row;
+                this.primary_char = primary_char + (same_row || this.primary_row < this.secondary_row ? 1 : 0);
+                this.secondary_row = secondary_row;
+                this.secondary_char = secondary_char + (same_row || this.primary_row > this.secondary_row ? 1 : 0);
+                this.trigger('change');
+                return true;
+            }
+            else {
+                this.historical(function () {
+                    _this.model_add_text(_this.primary_row, _this.primary_char, char_typed);
+                    _this.model_add_text(_this.primary_row, _this.primary_char + 1, right_char);
+                });
+                this.move_primary(1, 0);
+                this._reset_secondary();
+                return true;
+            }
+        }
+        else {
+            this.remove_selected();
+            this.historical(function () {
+                _this.model_add_text(_this.primary_row, _this.primary_char, char_typed);
+            });
+            this.move_primary(1, 0);
+            this._reset_secondary();
+            return true;
+        }
     };
     /**
      * Indent
@@ -2507,13 +2541,13 @@ var Cursor = (function (_super) {
     Cursor.prototype.indent = function (e) {
         var _this = this;
         var indent = this._make_indents()[0];
-        this._historical(function () {
+        this.historical(function () {
             if (_this.primary_row == _this.secondary_row && _this.primary_char == _this.secondary_char) {
-                _this._model_add_text(_this.primary_row, _this.primary_char, indent);
+                _this.model_add_text(_this.primary_row, _this.primary_char, indent);
             }
             else {
                 for (var row = _this.start_row; row <= _this.end_row; row++) {
-                    _this._model_add_text(row, 0, indent);
+                    _this.model_add_text(row, 0, indent);
                 }
             }
         });
@@ -2535,14 +2569,14 @@ var Cursor = (function (_super) {
         var removed_end = 0;
         // If no text is selected, remove the indent preceding the
         // cursor if it exists.
-        this._historical(function () {
+        this.historical(function () {
             if (_this.primary_row == _this.secondary_row && _this.primary_char == _this.secondary_char) {
                 for (var i = 0; i < indents.length; i++) {
                     var indent = indents[i];
                     if (_this.primary_char >= indent.length) {
                         var before = _this._model.get_text(_this.primary_row, _this.primary_char - indent.length, _this.primary_row, _this.primary_char);
                         if (before == indent) {
-                            _this._model_remove_text(_this.primary_row, _this.primary_char - indent.length, _this.primary_row, _this.primary_char);
+                            _this.model_remove_text(_this.primary_row, _this.primary_char - indent.length, _this.primary_row, _this.primary_char);
                             removed_start = indent.length;
                             removed_end = indent.length;
                             break;
@@ -2556,7 +2590,7 @@ var Cursor = (function (_super) {
                         var indent = indents[i];
                         if (_this._model._rows[row].length >= indent.length) {
                             if (_this._model._rows[row].substring(0, indent.length) == indent) {
-                                _this._model_remove_text(row, 0, row, indent.length);
+                                _this.model_remove_text(row, 0, row, indent.length);
                                 if (row == _this.start_row)
                                     removed_start = indent.length;
                                 if (row == _this.end_row)
@@ -2600,8 +2634,8 @@ var Cursor = (function (_super) {
             left = line_text.indexOf(spaceless);
         }
         var indent = line_text.substring(0, left);
-        this._historical(function () {
-            _this._model_add_text(_this.primary_row, _this.primary_char, '\n' + indent);
+        this.historical(function () {
+            _this.model_add_text(_this.primary_row, _this.primary_char, '\n' + indent);
         });
         this.primary_row += 1;
         this.primary_char = indent.length;
@@ -2617,8 +2651,8 @@ var Cursor = (function (_super) {
     Cursor.prototype.insert_text = function (text) {
         var _this = this;
         this.remove_selected();
-        this._historical(function () {
-            _this._model_add_text(_this.primary_row, _this.primary_char, text);
+        this.historical(function () {
+            _this.model_add_text(_this.primary_row, _this.primary_char, text);
         });
         // Move cursor to the end.
         if (text.indexOf('\n') == -1) {
@@ -2639,8 +2673,8 @@ var Cursor = (function (_super) {
     Cursor.prototype.paste = function (text) {
         var _this = this;
         if (this._copied_row === text) {
-            this._historical(function () {
-                _this._model_add_row(_this.primary_row, text);
+            this.historical(function () {
+                _this.model_add_row(_this.primary_row, text);
             });
             this.primary_row++;
             this.secondary_row++;
@@ -2659,8 +2693,8 @@ var Cursor = (function (_super) {
         if (this.primary_row !== this.secondary_row || this.primary_char !== this.secondary_char) {
             var row_index = this.start_row;
             var char_index = this.start_char;
-            this._historical(function () {
-                _this._model_remove_text(_this.start_row, _this.start_char, _this.end_row, _this.end_char);
+            this.historical(function () {
+                _this.model_remove_text(_this.start_row, _this.start_char, _this.end_row, _this.end_char);
             });
             this.primary_row = row_index;
             this.primary_char = char_index;
@@ -2687,11 +2721,13 @@ var Cursor = (function (_super) {
      * @return selected text
      */
     Cursor.prototype.cut = function () {
+        var _this = this;
         var text = this.get();
         if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
             this._copied_row = this._model._rows[this.primary_row];
-            this._historical(function () {
-                this._model_remove_row(this.primary_row);
+            this.historical(function () {
+                _this.model_remove_row(_this.primary_row);
+                _this.trigger('update');
             });
         }
         else {
@@ -2788,52 +2824,218 @@ var Cursor = (function (_super) {
         return true;
     };
     /**
+     * Record the before and after positions of the cursor for history.
+     * @param  f - executes with `this` context
+     */
+    Cursor.prototype.historical = function (f) {
+        this._start_historical_move();
+        var ret = f.apply(this);
+        this._end_historical_move();
+        return ret;
+    };
+    /**
+     * Adds text to the model while keeping track of the history.
+     */
+    Cursor.prototype.model_add_text = function (row_index, char_index, text) {
+        var _this = this;
+        var lines = text.split('\n');
+        this._push_history('model_add_text', [row_index, char_index, text], 'model_remove_text', [row_index, char_index, row_index + lines.length - 1, lines.length > 1 ? lines[lines.length - 1].length : char_index + text.length], config.history_group_delay || 100);
+        this._model.add_text(row_index, char_index, text);
+        // Move other cursors.
+        this._cursors.cursors.forEach(function (cursor) {
+            if (cursor !== _this) {
+                var changed = false;
+                // If the cursor is on the row where the text was added, and is
+                // at or after the insertion point, move the cursor over.  If
+                // the cursor is on a line below the line where the text was
+                // inserted, move the cursor down the number of lines inserted.
+                // Do this for both primary and secondary cursors.
+                if (cursor.primary_row === row_index && cursor.primary_char >= char_index) {
+                    cursor.primary_char += lines[lines.length - 1].length;
+                    changed = true;
+                }
+                if (lines.length > 1 && cursor.primary_row >= row_index) {
+                    cursor.primary_row += lines.length - 1;
+                    changed = true;
+                }
+                if (cursor.secondary_row === row_index && cursor.secondary_char >= char_index) {
+                    cursor.secondary_char += lines[lines.length - 1].length;
+                    changed = true;
+                }
+                if (lines.length > 1 && cursor.secondary_row >= row_index) {
+                    cursor.secondary_row += lines.length - 1;
+                    changed = true;
+                }
+                if (changed) {
+                    cursor.trigger('change');
+                }
+            }
+        });
+    };
+    /**
+     * Removes text from the model while keeping track of the history.
+     */
+    Cursor.prototype.model_remove_text = function (start_row, start_char, end_row, end_char) {
+        var _this = this;
+        var text = this._model.get_text(start_row, start_char, end_row, end_char);
+        this._push_history('model_remove_text', [start_row, start_char, end_row, end_char], 'model_add_text', [start_row, start_char, text], config.history_group_delay || 100);
+        this._model.remove_text(start_row, start_char, end_row, end_char);
+        // Move other cursors.
+        this._cursors.cursors.forEach(function (cursor) {
+            if (cursor !== _this) {
+                var changed = false;
+                // If cursor is within removed region, move the cursor to
+                // the start of the region.  Do this for both primary and
+                // secondary coordinates.
+                var within = false;
+                if (start_row <= cursor.primary_row && cursor.primary_row <= end_row) {
+                    if (start_row < cursor.primary_row && cursor.primary_row < end_row) {
+                        within = true;
+                    }
+                    else {
+                        within = true;
+                        if (cursor.primary_row === start_row && cursor.primary_char < start_char) {
+                            within = false;
+                        }
+                        if (cursor.primary_row === end_row && cursor.primary_char > end_char) {
+                            within = false;
+                        }
+                    }
+                }
+                if (within) {
+                    cursor.primary_row = start_row;
+                    cursor.primary_char = start_char;
+                    changed = true;
+                }
+                else {
+                    // If the cursor is on or after the removed region move it up 
+                    // the number of lines removed.
+                    // 
+                    // If the cursor is after the removed region, but on the same
+                    // line as the last line of the removed text, move the cursor
+                    // backwards the amount of characters on that line.  Do this 
+                    // for both primary and secondary coordinates.
+                    if (cursor.primary_row >= end_row) {
+                        cursor.primary_row -= end_row - start_row;
+                        if (cursor.primary_row === end_row && cursor.primary_char >= end_char) {
+                            cursor.primary_char += start_char - end_char;
+                        }
+                        changed = true;
+                    }
+                }
+                within = false;
+                if (start_row <= cursor.secondary_row && cursor.secondary_row <= end_row) {
+                    if (start_row < cursor.secondary_row && cursor.secondary_row < end_row) {
+                        within = true;
+                    }
+                    else {
+                        within = true;
+                        if (cursor.secondary_row === start_row && cursor.secondary_char < start_char) {
+                            within = false;
+                        }
+                        if (cursor.secondary_row === end_row && cursor.secondary_char > end_char) {
+                            within = false;
+                        }
+                    }
+                }
+                if (within) {
+                    cursor.secondary_row = start_row;
+                    cursor.secondary_char = start_char;
+                    changed = true;
+                }
+                else {
+                    // If the cursor is on or after the removed region move it up 
+                    // the number of lines removed.
+                    // 
+                    // If the cursor is after the removed region, but on the same
+                    // line as the last line of the removed text, move the cursor
+                    // backwards the amount of characters on that line.  Do this 
+                    // for both primary and secondary coordinates.
+                    if (cursor.secondary_row >= end_row) {
+                        cursor.secondary_row -= end_row - start_row;
+                        if (cursor.secondary_row === end_row && cursor.secondary_char >= end_char) {
+                            cursor.secondary_char += start_char - end_char;
+                        }
+                        changed = true;
+                    }
+                }
+                if (changed) {
+                    cursor.trigger('change');
+                }
+            }
+        });
+    };
+    /**
+     * Adds a row of text while keeping track of the history.
+     */
+    Cursor.prototype.model_add_row = function (row_index, text) {
+        var _this = this;
+        this._push_history('model_add_row', [row_index, text], 'model_remove_row', [row_index], config.history_group_delay || 100);
+        this._model.add_row(row_index, text);
+        // Move other cursors.
+        this._cursors.cursors.forEach(function (cursor) {
+            if (cursor !== _this) {
+                var changed = false;
+                // Cursors on or below the inserted row should be moved 
+                // down a row.
+                if (cursor.primary_row >= row_index) {
+                    cursor.primary_row += 1;
+                    changed = true;
+                }
+                if (cursor.secondary_row >= row_index) {
+                    cursor.secondary_row += 1;
+                    changed = true;
+                }
+                if (changed) {
+                    cursor.trigger('change');
+                }
+            }
+        });
+    };
+    /**
+     * Removes a row of text while keeping track of the history.
+     */
+    Cursor.prototype.model_remove_row = function (row_index) {
+        var _this = this;
+        this._push_history('model_remove_row', [row_index], 'model_add_row', [row_index, this._model._rows[row_index]], config.history_group_delay || 100);
+        this._model.remove_row(row_index);
+        // Move other cursors.
+        this._cursors.cursors.forEach(function (cursor) {
+            if (cursor !== _this) {
+                var changed = false;
+                // For cursors on or below the removed line, move them up 
+                // a line if possible.
+                if (cursor.primary_row >= row_index) {
+                    if (cursor.primary_row === 0) {
+                        cursor.primary_char = 0;
+                    }
+                    else {
+                        cursor.primary_row -= 1;
+                    }
+                    changed = true;
+                }
+                if (cursor.secondary_row >= row_index) {
+                    if (cursor.secondary_row === 0) {
+                        cursor.secondary_char = 0;
+                    }
+                    else {
+                        cursor.secondary_row -= 1;
+                    }
+                    changed = true;
+                }
+                if (changed) {
+                    cursor.trigger('change');
+                }
+            }
+        });
+    };
+    /**
      * Reset the secondary cursor to the value of the primary.
      */
     Cursor.prototype._reset_secondary = function () {
         this.secondary_row = this.primary_row;
         this.secondary_char = this.primary_char;
         this.trigger('change');
-    };
-    /**
-     * Adds text to the model while keeping track of the history.
-     */
-    Cursor.prototype._model_add_text = function (row_index, char_index, text) {
-        var lines = text.split('\n');
-        this._push_history('_model_add_text', [row_index, char_index, text], '_model_remove_text', [row_index, char_index, row_index + lines.length - 1, lines.length > 1 ? lines[lines.length - 1].length : char_index + text.length], config.history_group_delay || 100);
-        this._model.add_text(row_index, char_index, text);
-    };
-    /**
-     * Removes text from the model while keeping track of the history.
-     */
-    Cursor.prototype._model_remove_text = function (start_row, start_char, end_row, end_char) {
-        var text = this._model.get_text(start_row, start_char, end_row, end_char);
-        this._push_history('_model_remove_text', [start_row, start_char, end_row, end_char], '_model_add_text', [start_row, start_char, text], config.history_group_delay || 100);
-        this._model.remove_text(start_row, start_char, end_row, end_char);
-    };
-    /**
-     * Adds a row of text while keeping track of the history.
-     */
-    Cursor.prototype._model_add_row = function (row_index, text) {
-        this._push_history('_model_add_row', [row_index, text], '_model_remove_row', [row_index], config.history_group_delay || 100);
-        this._model.add_row(row_index, text);
-    };
-    /**
-     * Removes a row of text while keeping track of the history.
-     */
-    Cursor.prototype._model_remove_row = function (row_index) {
-        this._push_history('_model_remove_row', [row_index], '_model_add_row', [row_index, this._model._rows[row_index]], config.history_group_delay || 100);
-        this._model.remove_row(row_index);
-    };
-    /**
-     * Record the before and after positions of the cursor for history.
-     * @param  f - executes with `this` context
-     */
-    Cursor.prototype._historical = function (f) {
-        this._start_historical_move();
-        var ret = f.apply(this);
-        this._end_historical_move();
-        return ret;
     };
     /**
      * Record the starting state of the cursor for the history buffer.
@@ -2873,97 +3075,119 @@ var Cursor = (function (_super) {
      */
     Cursor.prototype._register_api = function () {
         var _this = this;
-        register('cursor.set_state', utils.proxy(this.set_state, this), this);
-        register('cursor.remove_selected', utils.proxy(this.remove_selected, this), this);
-        register('cursor.keypress', utils.proxy(this.keypress, this), this);
-        register('cursor.indent', utils.proxy(this.indent, this), this);
-        register('cursor.unindent', utils.proxy(this.unindent, this), this);
-        register('cursor.newline', utils.proxy(this.newline, this), this);
-        register('cursor.insert_text', utils.proxy(this.insert_text, this), this);
-        register('cursor.delete_backward', utils.proxy(this.delete_backward, this), this);
-        register('cursor.delete_forward', utils.proxy(this.delete_forward, this), this);
-        register('cursor.delete_word_left', utils.proxy(this.delete_word_left, this), this);
-        register('cursor.delete_word_right', utils.proxy(this.delete_word_right, this), this);
-        register('cursor.select_all', utils.proxy(this.select_all, this), this);
-        register('cursor.left', function () {
+        var p = utils.proxy(this._validation_lock_proxy, this);
+        register('cursor.set_state', p(this.set_state), this);
+        register('cursor.remove_selected', p(this.remove_selected), this);
+        register('cursor.keypress', p(this.keypress), this);
+        register('cursor.indent', p(this.indent), this);
+        register('cursor.unindent', p(this.unindent), this);
+        register('cursor.newline', p(this.newline), this);
+        register('cursor.insert_text', p(this.insert_text), this);
+        register('cursor.delete_backward', p(this.delete_backward), this);
+        register('cursor.delete_forward', p(this.delete_forward), this);
+        register('cursor.delete_word_left', p(this.delete_word_left), this);
+        register('cursor.delete_word_right', p(this.delete_word_right), this);
+        register('cursor.select_all', p(this.select_all), this);
+        register('cursor.left', p(function () {
             _this.move_primary(-1, 0, true);
             _this._reset_secondary();
             return true;
-        });
-        register('cursor.right', function () {
+        }), this);
+        register('cursor.right', p(function () {
             _this.move_primary(1, 0, true);
             _this._reset_secondary();
             return true;
-        });
-        register('cursor.up', function () {
+        }), this);
+        register('cursor.up', p(function () {
             _this.move_primary(0, -1, true);
             _this._reset_secondary();
             return true;
-        });
-        register('cursor.down', function () {
+        }), this);
+        register('cursor.down', p(function () {
             _this.move_primary(0, 1, true);
             _this._reset_secondary();
             return true;
-        });
-        register('cursor.select_left', function () {
+        }), this);
+        register('cursor.select_left', p(function () {
             _this.move_primary(-1, 0);
             return true;
-        });
-        register('cursor.select_right', function () {
+        }), this);
+        register('cursor.select_right', p(function () {
             _this.move_primary(1, 0);
             return true;
-        });
-        register('cursor.select_up', function () {
+        }), this);
+        register('cursor.select_up', p(function () {
             _this.move_primary(0, -1);
             return true;
-        });
-        register('cursor.select_down', function () {
+        }), this);
+        register('cursor.select_down', p(function () {
             _this.move_primary(0, 1);
             return true;
-        });
-        register('cursor.word_left', function () {
+        }), this);
+        register('cursor.word_left', p(function () {
             _this.word_primary(-1);
             _this._reset_secondary();
             return true;
-        });
-        register('cursor.word_right', function () {
+        }), this);
+        register('cursor.word_right', p(function () {
             _this.word_primary(1);
             _this._reset_secondary();
             return true;
-        });
-        register('cursor.select_word_left', function () {
+        }), this);
+        register('cursor.select_word_left', p(function () {
             _this.word_primary(-1);
             return true;
-        });
-        register('cursor.select_word_right', function () {
+        }), this);
+        register('cursor.select_word_right', p(function () {
             _this.word_primary(1);
             return true;
-        });
-        register('cursor.line_start', function () {
+        }), this);
+        register('cursor.line_start', p(function () {
             _this.primary_goto_start();
             _this._reset_secondary();
             return true;
-        });
-        register('cursor.line_end', function () {
+        }), this);
+        register('cursor.line_end', p(function () {
             _this.primary_goto_end();
             _this._reset_secondary();
             return true;
-        });
-        register('cursor.select_line_start', function () {
+        }), this);
+        register('cursor.select_line_start', p(function () {
             _this.primary_goto_start();
             return true;
-        });
-        register('cursor.select_line_end', function () {
+        }), this);
+        register('cursor.select_line_end', p(function () {
             _this.primary_goto_end();
             return true;
-        });
+        }), this);
+    };
+    /**
+     * Proxy a method for this context, preventing validation from running while
+     * it runs.
+     */
+    Cursor.prototype._validation_lock_proxy = function (x) {
+        var _this = this;
+        return function () {
+            var args = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                args[_i - 0] = arguments[_i];
+            }
+            _this._cursors.lock_validation();
+            try {
+                return x.apply(_this, args);
+            }
+            finally {
+                _this._cursors.unlock_validation();
+                setTimeout(utils.proxy(_this._cursors.validate, _this._cursors), 0);
+            }
+        };
     };
     return Cursor;
 })(utils.PosterClass);
 exports.Cursor = Cursor;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/cursor.js","/control")
-},{"../utils/config":38,"../utils/utils":40,"./map":11,"1YiZ5S":4,"buffer":1}],8:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/cursor.js","/control")
+},{"../utils/config":39,"../utils/utils":41,"./map":11,"buffer":1,"oMfpAn":4}],8:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -2983,6 +3207,7 @@ var Cursors = (function (_super) {
     __extends(Cursors, _super);
     function Cursors(el, model, clipboard, history) {
         _super.call(this);
+        this._validate_lock = false;
         this._el = el;
         this._model = model;
         this.get_row_char = undefined;
@@ -2993,19 +3218,21 @@ var Cursors = (function (_super) {
         // Create initial cursor.
         this.create(undefined, false);
         // Register actions.
-        register('cursors._cursor_proxy', utils.proxy(this._cursor_proxy, this));
-        register('cursors.create', utils.proxy(this.create, this));
-        register('cursors.single', utils.proxy(this.single, this));
-        register('cursors.pop', utils.proxy(this.pop, this));
-        register('cursors.start_selection', utils.proxy(this.start_selection, this));
-        register('cursors.set_selection', utils.proxy(this.set_selection, this));
-        register('cursors.start_set_selection', utils.proxy(this.start_set_selection, this));
-        register('cursors.end_selection', utils.proxy(this.end_selection, this));
-        register('cursors.select_word', utils.proxy(this.select_word, this));
+        register('cursors._cursor_proxy', this._validation_lock_proxy(this._cursor_proxy));
+        register('cursors.create', this._validation_lock_proxy(this.create));
+        register('cursors.single', this._validation_lock_proxy(this.single));
+        register('cursors.pop', this._validation_lock_proxy(this.pop));
+        register('cursors.remove', this._validation_lock_proxy(this.remove));
+        register('cursors.start_new_selection', this._validation_lock_proxy(this.start_new_selection));
+        register('cursors.start_selection', this._validation_lock_proxy(this.start_selection));
+        register('cursors.set_selection', this._validation_lock_proxy(this.set_selection));
+        register('cursors.start_set_selection', this._validation_lock_proxy(this.start_set_selection));
+        register('cursors.end_selection', this._validation_lock_proxy(this.end_selection));
+        register('cursors.select_word', this._validation_lock_proxy(this.select_word));
         // Bind clipboard events.
-        this._clipboard.on('cut', utils.proxy(this._handle_cut, this));
-        this._clipboard.on('copy', utils.proxy(this._handle_copy, this));
-        this._clipboard.on('paste', utils.proxy(this._handle_paste, this));
+        this._clipboard.on('cut', this._validation_lock_proxy(this._handle_cut));
+        this._clipboard.on('copy', this._validation_lock_proxy(this._handle_copy));
+        this._clipboard.on('paste', this._validation_lock_proxy(this._handle_paste));
     }
     /**
      * Creates a cursor and manages it.
@@ -3024,7 +3251,7 @@ var Cursors = (function (_super) {
             _this._history.push_action('cursors._cursor_proxy', [index, forward_name, forward_params], 'cursors._cursor_proxy', [index, backward_name, backward_params], autogroup_delay);
         };
         // Create the cursor.
-        var new_cursor = new cursor.Cursor(this._model, history_proxy);
+        var new_cursor = new cursor.Cursor(this._model, history_proxy, this);
         this.cursors.push(new_cursor);
         // Set the initial properties of the cursor.
         if (state)
@@ -3033,6 +3260,7 @@ var Cursors = (function (_super) {
         new_cursor.on('change', function () {
             _this.trigger('change', new_cursor);
             _this._update_selection();
+            _this.validate();
         });
         this.trigger('change', new_cursor);
         return new_cursor;
@@ -3050,30 +3278,48 @@ var Cursors = (function (_super) {
      * @returns last cursor or null
      */
     Cursors.prototype.pop = function () {
-        if (this.cursors.length > 1) {
-            // Remove the last cursor and unregister it.
-            var cursor = this.cursors.pop();
-            cursor.unregister();
-            cursor.off('change');
-            // Record this action in history.
-            this._history.push_action('cursors.pop', [], 'cursors.create', [cursor.get_state()]);
-            // Alert listeners of changes.
-            this.trigger('change');
-            return cursor;
-        }
-        return null;
+        return this.remove(this.cursors.length - 1);
+    };
+    /**
+     * Removes a cursor.
+     * @returns cursor or null
+     */
+    Cursors.prototype.remove = function (index) {
+        if (index >= this.cursors.length)
+            return null;
+        // Remove the last cursor and unregister it.
+        var cursor = this.cursors.splice(index, 1)[0];
+        cursor.unregister();
+        cursor.off('change');
+        // Record this action in history.
+        this._history.push_action('cursors.remove', [index], 'cursors.create', [cursor.get_state()]);
+        // Alert listeners of changes.
+        this.trigger('change');
+        return cursor;
+    };
+    /**
+     * Creates a cursor and starts selecting text from mouse coordinates.
+     * @param e - mouse event containing the coordinates.
+     */
+    Cursors.prototype.start_new_selection = function (e) {
+        this.create();
+        this.start_selection(e, false);
     };
     /**
      * Starts selecting text from mouse coordinates.
      * @param e - mouse event containing the coordinates.
      */
-    Cursors.prototype.start_selection = function (e) {
+    Cursors.prototype.start_selection = function (e, remove_others) {
+        if (remove_others === void 0) { remove_others = true; }
+        if (remove_others) {
+            this.single();
+        }
         var x = e.offsetX;
         var y = e.offsetY;
         this._selecting_text = true;
         if (this.get_row_char) {
             var location = this.get_row_char(x, y);
-            this.cursors[0].set_both(location.row_index, location.char_index);
+            this.cursors[this.cursors.length - 1].set_both(location.row_index, location.char_index);
         }
     };
     /**
@@ -3116,6 +3362,129 @@ var Cursors = (function (_super) {
             var location = this.get_row_char(x, y);
             this.cursors[this.cursors.length - 1].select_word(location.row_index, location.char_index);
         }
+    };
+    /**
+     * Prevents the cursors from validating.
+     */
+    Cursors.prototype.lock_validation = function () {
+        this._validate_lock = true;
+    };
+    /**
+     * Allows the cursors to validate.
+     */
+    Cursors.prototype.unlock_validation = function () {
+        this._validate_lock = false;
+    };
+    /**
+     * Reduces overlapping cursors and validates cursor coordinates.
+     * Complexity: O(n*ceil(n/2)-(n%2-1)*n/2) ~ O(n^2)
+     */
+    Cursors.prototype.validate = function () {
+        if (this._validate_lock)
+            return;
+        try {
+            this._validate_lock = true;
+            // Validate cursors
+            var i;
+            for (i = 0; i < this.cursors.length; i++) {
+                var changed = false;
+                var cursor = this.cursors[i];
+                if (cursor.primary_row >= this._model._rows.length) {
+                    cursor.primary_row = Math.max(0, this._model._rows.length - 1);
+                    changed = true;
+                }
+                if (cursor.primary_char > this._model._rows[cursor.primary_row].length) {
+                    cursor.primary_char = this._model._rows[cursor.primary_row].length;
+                    changed = true;
+                }
+                if (cursor.secondary_row >= this._model._rows.length) {
+                    cursor.secondary_row = Math.max(0, this._model._rows.length - 1);
+                    changed = true;
+                }
+                if (cursor.secondary_char > this._model._rows[cursor.secondary_row].length) {
+                    cursor.secondary_char = this._model._rows[cursor.secondary_row].length;
+                    changed = true;
+                }
+                if (changed) {
+                    cursor.trigger('change');
+                }
+            }
+            for (i = 0; i < this.cursors.length - 1; i++) {
+                for (var j = i + 1; j < this.cursors.length; j++) {
+                    var a = this.cursors[i];
+                    var b = this.cursors[j];
+                    // Intersection test
+                    //   as     ae  bs      be
+                    //   bs <= ae && be >= as
+                    if (b.start_row <= a.end_row && b.end_row >= a.start_row) {
+                        if (!(b.start_row === a.end_row && b.start_char > a.end_char || b.end_row === a.start_row && b.end_char < a.start_char)) {
+                            var newstartrow = Math.min(a.start_row, b.start_row);
+                            var newendrow = Math.min(a.end_row, b.end_row);
+                            var newstartchar;
+                            var newendchar;
+                            if (a.start_row < b.start_row) {
+                                newstartchar = a.start_char;
+                            }
+                            else if (a.start_row > b.start_row) {
+                                newstartchar = b.start_char;
+                            }
+                            else {
+                                newstartchar = Math.min(a.start_char, b.start_char);
+                            }
+                            if (a.end_row < b.end_row) {
+                                newendchar = b.end_char;
+                            }
+                            else if (a.end_row > b.end_row) {
+                                newendchar = a.end_char;
+                            }
+                            else {
+                                newendchar = Math.max(a.end_char, b.end_char);
+                            }
+                            // Determine if the start should be primary or the
+                            // end.
+                            if ((a.primary_row === newstartrow && a.primary_char === newstartchar) || (b.primary_row === newstartrow && b.primary_char === newstartchar)) {
+                                a.primary_row = newstartrow;
+                                a.primary_char = newstartchar;
+                                a.secondary_row = newendrow;
+                                a.secondary_char = newendchar;
+                            }
+                            else {
+                                a.secondary_row = newstartrow;
+                                a.secondary_char = newstartchar;
+                                a.primary_row = newendrow;
+                                a.primary_char = newendchar;
+                            }
+                            a.trigger('change');
+                            this.remove(j);
+                        }
+                    }
+                }
+            }
+        }
+        finally {
+            this._validate_lock = false;
+        }
+    };
+    /**
+     * Proxy a method for this context, preventing validation from running while
+     * it runs.
+     */
+    Cursors.prototype._validation_lock_proxy = function (x) {
+        var _this = this;
+        return function () {
+            var args = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                args[_i - 0] = arguments[_i];
+            }
+            _this.lock_validation();
+            try {
+                return x.apply(_this, args);
+            }
+            finally {
+                _this.unlock_validation();
+                setTimeout(utils.proxy(_this.validate, _this));
+            }
+        };
     };
     /**
      * Handles history proxy events for individual cursors.
@@ -3174,8 +3543,8 @@ var Cursors = (function (_super) {
 })(utils.PosterClass);
 exports.Cursors = Cursors;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/cursors.js","/control")
-},{"../utils/utils":40,"./cursor":7,"./map":11,"1YiZ5S":4,"buffer":1}],9:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/cursors.js","/control")
+},{"../utils/utils":41,"./cursor":7,"./map":11,"buffer":1,"oMfpAn":4}],9:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var _map;
 if (navigator.appVersion.indexOf("Mac") != -1) {
@@ -3193,6 +3562,9 @@ if (navigator.appVersion.indexOf("Mac") != -1) {
         'meta-a': 'cursor.select_all',
         'meta-z': 'history.undo',
         'meta-y': 'history.redo',
+        'meta-mouse0-down': 'cursors.start_new_selection',
+        'meta-mouse-move': 'cursors.set_selection',
+        'meta-mouse0-up': 'cursors.end_selection'
     };
 }
 else {
@@ -3210,6 +3582,9 @@ else {
         'ctrl-a': 'cursor.select_all',
         'ctrl-z': 'history.undo',
         'ctrl-y': 'history.redo',
+        'ctrl-mouse0-down': 'cursors.start_new_selection',
+        'ctrl-mouse-move': 'cursors.set_selection',
+        'ctrl-mouse0-up': 'cursors.end_selection'
     };
 }
 // Common bindings
@@ -3237,8 +3612,8 @@ _map['shift-tab'] = 'cursor.unindent';
 _map['escape'] = 'cursors.single';
 exports.map = _map;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/default.js","/control")
-},{"1YiZ5S":4,"buffer":1}],10:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/default.js","/control")
+},{"buffer":1,"oMfpAn":4}],10:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -3377,8 +3752,8 @@ var History = (function (_super) {
 })(utils.PosterClass);
 exports.History = History;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/history.js","/control")
-},{"../utils/utils":40,"./map":11,"1YiZ5S":4,"buffer":1}],11:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/history.js","/control")
+},{"../utils/utils":41,"./map":11,"buffer":1,"oMfpAn":4}],11:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -3397,6 +3772,35 @@ var Map = (function (_super) {
     __extends(Map, _super);
     function Map(normalizer) {
         _super.call(this);
+        /**
+         * Registers an action.
+         * @param name - name of the action
+         * @param f
+         * @param (optional) tag - allows you to specify a tag
+         *                  which can be used with the `unregister_by_tag`
+         *                  method to quickly unregister actions with
+         *                  the tag specified.
+         */
+        this.register = function (name, f, tag) {
+            return Map.register(name, f, tag);
+        };
+        /**
+         * Unregister an action.
+         * @param name - name of the action
+         * @param f
+         * @return true if action was found and unregistered
+         */
+        this.unregister = function (name, f) {
+            return Map.unregister(name, f);
+        };
+        /**
+         * Unregisters all of the actions registered with a given tag.
+         * @param tag - specified in Map.register.
+         * @return true if the tag was found and deleted.
+         */
+        this.unregister_by_tag = function (tag) {
+            return Map.unregister_by_tag(tag);
+        };
         this._map = {};
         // Create normalizer property
         this._normalizer = null;
@@ -3606,10 +4010,11 @@ var Map = (function (_super) {
             Map.registry[name] = [f];
         }
         if (tag) {
-            if (Map._registry_tags[tag] === undefined) {
-                Map._registry_tags[tag] = [];
+            var tag_hash = utils.hash(tag);
+            if (Map._registry_tags[tag_hash] === undefined) {
+                Map._registry_tags[tag_hash] = [];
             }
-            Map._registry_tags[tag].push({ name: name, f: f });
+            Map._registry_tags[tag_hash].push({ name: name, f: f });
         }
     };
     /**
@@ -3632,11 +4037,12 @@ var Map = (function (_super) {
      * @return true if the tag was found and deleted.
      */
     Map.unregister_by_tag = function (tag) {
-        if (Map._registry_tags[tag]) {
-            Map._registry_tags[tag].forEach(function (registration) {
+        var tag_hash = utils.hash(tag);
+        if (Map._registry_tags[tag_hash]) {
+            Map._registry_tags[tag_hash].forEach(function (registration) {
                 Map.unregister(registration.name, registration.f);
             });
-            delete Map._registry_tags[tag];
+            delete Map._registry_tags[tag_hash];
             return true;
         }
     };
@@ -3644,8 +4050,8 @@ var Map = (function (_super) {
 })(utils.PosterClass);
 exports.Map = Map;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/map.js","/control")
-},{"../utils/utils":40,"1YiZ5S":4,"buffer":1}],12:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/map.js","/control")
+},{"../utils/utils":41,"buffer":1,"oMfpAn":4}],12:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -3821,8 +4227,8 @@ var Normalizer = (function (_super) {
 })(utils.PosterClass);
 exports.Normalizer = Normalizer;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/normalizer.js","/control")
-},{"../utils/utils":40,"1YiZ5S":4,"buffer":1}],13:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/control/normalizer.js","/control")
+},{"../utils/utils":41,"buffer":1,"oMfpAn":4}],13:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -3858,8 +4264,8 @@ var DocumentController = (function (_super) {
 })(utils.PosterClass);
 exports.DocumentController = DocumentController;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/document_controller.js","/")
-},{"./control/clipboard":6,"./control/cursors":8,"./control/default":9,"./control/history":10,"./control/map":11,"./control/normalizer":12,"./utils/utils":40,"1YiZ5S":4,"buffer":1}],14:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/document_controller.js","/")
+},{"./control/clipboard":6,"./control/cursors":8,"./control/default":9,"./control/history":10,"./control/map":11,"./control/normalizer":12,"./utils/utils":41,"buffer":1,"oMfpAn":4}],14:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -4117,7 +4523,7 @@ var DocumentModel = (function (_super) {
      * Remove a row from the document.
      */
     DocumentModel.prototype.remove_row = function (row_index) {
-        if (0 < row_index && row_index < this._rows.length) {
+        if (0 <= row_index && row_index < this._rows.length) {
             var rows_removed = this._rows.splice(row_index, 1);
             this._resized_rows();
             this.trigger('rows_removed', rows_removed);
@@ -4252,8 +4658,8 @@ var DocumentModel = (function (_super) {
 })(utils.PosterClass);
 exports.DocumentModel = DocumentModel;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/document_model.js","/")
-},{"./utils/superset":39,"./utils/utils":40,"1YiZ5S":4,"buffer":1}],15:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/document_model.js","/")
+},{"./utils/superset":40,"./utils/utils":41,"buffer":1,"oMfpAn":4}],15:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -4291,6 +4697,8 @@ var DocumentView = (function (_super) {
         this.row_renderer = row_renderer;
         // Make sure changes made to the cursor(s) are within the visible region.
         cursors_model.on('change', function (cursor) {
+            if (cursor === undefined)
+                return;
             var row_index = cursor.primary_row;
             var char_index = cursor.primary_char;
             var top = row_renderer.get_row_top(row_index);
@@ -4352,8 +4760,8 @@ var DocumentView = (function (_super) {
 })(batch.BatchRenderer);
 exports.DocumentView = DocumentView;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/document_view.js","/")
-},{"./draw/renderers/batch":18,"./draw/renderers/color":19,"./draw/renderers/cursors":20,"./draw/renderers/highlighted_row":21,"./draw/renderers/selections":24,"./syntax/prism":37,"./utils/utils":40,"1YiZ5S":4,"buffer":1}],16:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/document_view.js","/")
+},{"./draw/renderers/batch":18,"./draw/renderers/color":19,"./draw/renderers/cursors":20,"./draw/renderers/highlighted_row":21,"./draw/renderers/selections":24,"./syntax/prism":38,"./utils/utils":41,"buffer":1,"oMfpAn":4}],16:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -4391,8 +4799,8 @@ var Animator = (function (_super) {
 })(utils.PosterClass);
 exports.Animator = Animator;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/animator.js","/draw")
-},{"../utils/utils":40,"1YiZ5S":4,"buffer":1}],17:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/animator.js","/draw")
+},{"../utils/utils":41,"buffer":1,"oMfpAn":4}],17:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -4404,89 +4812,49 @@ var __extends = this.__extends || function (d, b) {
 var utils = require('../utils/utils');
 var config_mod = require('../utils/config');
 var config = config_mod.config;
-var CompositeOperationEnum = (function () {
-    function CompositeOperationEnum(value) {
-        this.value = value;
-    }
-    CompositeOperationEnum.prototype.toString = function () {
-        return this.value;
-    };
-    // Possible values.
-    CompositeOperationEnum.source_over = new CompositeOperationEnum('source-over');
-    CompositeOperationEnum.source_atop = new CompositeOperationEnum('source-atop');
-    CompositeOperationEnum.source_in = new CompositeOperationEnum('source-in');
-    CompositeOperationEnum.source_out = new CompositeOperationEnum('source-out');
-    CompositeOperationEnum.destination_over = new CompositeOperationEnum('destination-over');
-    CompositeOperationEnum.destination_atop = new CompositeOperationEnum('destination-atop');
-    CompositeOperationEnum.destination_in = new CompositeOperationEnum('destination-in');
-    CompositeOperationEnum.destination_out = new CompositeOperationEnum('destination-out');
-    CompositeOperationEnum.lighter = new CompositeOperationEnum('lighter');
-    CompositeOperationEnum.copy = new CompositeOperationEnum('copy');
-    CompositeOperationEnum.xor = new CompositeOperationEnum('xor');
-    return CompositeOperationEnum;
-})();
-exports.CompositeOperationEnum = CompositeOperationEnum;
-var TextAlignmentEnum = (function () {
-    function TextAlignmentEnum(value) {
-        this.value = value;
-    }
-    TextAlignmentEnum.prototype.toString = function () {
-        return this.value;
-    };
-    // Possible values.
-    TextAlignmentEnum.start = new TextAlignmentEnum('start');
-    TextAlignmentEnum.end = new TextAlignmentEnum('end');
-    TextAlignmentEnum.center = new TextAlignmentEnum('center');
-    TextAlignmentEnum.left = new TextAlignmentEnum('left');
-    TextAlignmentEnum.right = new TextAlignmentEnum('right');
-    return TextAlignmentEnum;
-})();
-exports.TextAlignmentEnum = TextAlignmentEnum;
-var TextBaselineEnum = (function () {
-    function TextBaselineEnum(value) {
-        this.value = value;
-    }
-    TextBaselineEnum.prototype.toString = function () {
-        return this.value;
-    };
-    // Possible values.
-    TextBaselineEnum.alphabetic = new TextBaselineEnum('alphabetic');
-    TextBaselineEnum.top = new TextBaselineEnum('top');
-    TextBaselineEnum.hanging = new TextBaselineEnum('hanging');
-    TextBaselineEnum.middle = new TextBaselineEnum('middle');
-    TextBaselineEnum.ideographic = new TextBaselineEnum('ideographic');
-    TextBaselineEnum.bottom = new TextBaselineEnum('bottom');
-    return TextBaselineEnum;
-})();
-exports.TextBaselineEnum = TextBaselineEnum;
-var LineCapEnum = (function () {
-    function LineCapEnum(value) {
-        this.value = value;
-    }
-    LineCapEnum.prototype.toString = function () {
-        return this.value;
-    };
-    // Possible values.
-    LineCapEnum.butt = new LineCapEnum('butt');
-    LineCapEnum.round = new LineCapEnum('round');
-    LineCapEnum.square = new LineCapEnum('square');
-    return LineCapEnum;
-})();
-exports.LineCapEnum = LineCapEnum;
-var LineJoinEnum = (function () {
-    function LineJoinEnum(value) {
-        this.value = value;
-    }
-    LineJoinEnum.prototype.toString = function () {
-        return this.value;
-    };
-    // Possible values.
-    LineJoinEnum.bevel = new LineJoinEnum('bevel');
-    LineJoinEnum.round = new LineJoinEnum('round');
-    LineJoinEnum.miter = new LineJoinEnum('miter');
-    return LineJoinEnum;
-})();
-exports.LineJoinEnum = LineJoinEnum;
+(function (CompositeOperationEnum) {
+    CompositeOperationEnum[CompositeOperationEnum["source_over"] = 0] = "source_over";
+    CompositeOperationEnum[CompositeOperationEnum["source_atop"] = 1] = "source_atop";
+    CompositeOperationEnum[CompositeOperationEnum["source_in"] = 2] = "source_in";
+    CompositeOperationEnum[CompositeOperationEnum["source_out"] = 3] = "source_out";
+    CompositeOperationEnum[CompositeOperationEnum["destination_over"] = 4] = "destination_over";
+    CompositeOperationEnum[CompositeOperationEnum["destination_atop"] = 5] = "destination_atop";
+    CompositeOperationEnum[CompositeOperationEnum["destination_in"] = 6] = "destination_in";
+    CompositeOperationEnum[CompositeOperationEnum["destination_out"] = 7] = "destination_out";
+    CompositeOperationEnum[CompositeOperationEnum["lighter"] = 8] = "lighter";
+    CompositeOperationEnum[CompositeOperationEnum["copy"] = 9] = "copy";
+    CompositeOperationEnum[CompositeOperationEnum["xor"] = 10] = "xor";
+})(exports.CompositeOperationEnum || (exports.CompositeOperationEnum = {}));
+var CompositeOperationEnum = exports.CompositeOperationEnum;
+(function (TextAlignmentEnum) {
+    TextAlignmentEnum[TextAlignmentEnum["start"] = 0] = "start";
+    TextAlignmentEnum[TextAlignmentEnum["end"] = 1] = "end";
+    TextAlignmentEnum[TextAlignmentEnum["center"] = 2] = "center";
+    TextAlignmentEnum[TextAlignmentEnum["left"] = 3] = "left";
+    TextAlignmentEnum[TextAlignmentEnum["right"] = 4] = "right";
+})(exports.TextAlignmentEnum || (exports.TextAlignmentEnum = {}));
+var TextAlignmentEnum = exports.TextAlignmentEnum;
+(function (TextBaselineEnum) {
+    TextBaselineEnum[TextBaselineEnum["alphabetic"] = 0] = "alphabetic";
+    TextBaselineEnum[TextBaselineEnum["top"] = 1] = "top";
+    TextBaselineEnum[TextBaselineEnum["hanging"] = 2] = "hanging";
+    TextBaselineEnum[TextBaselineEnum["middle"] = 3] = "middle";
+    TextBaselineEnum[TextBaselineEnum["ideographic"] = 4] = "ideographic";
+    TextBaselineEnum[TextBaselineEnum["bottom"] = 5] = "bottom";
+})(exports.TextBaselineEnum || (exports.TextBaselineEnum = {}));
+var TextBaselineEnum = exports.TextBaselineEnum;
+(function (LineCapEnum) {
+    LineCapEnum[LineCapEnum["butt"] = 0] = "butt";
+    LineCapEnum[LineCapEnum["round"] = 1] = "round";
+    LineCapEnum[LineCapEnum["square"] = 2] = "square";
+})(exports.LineCapEnum || (exports.LineCapEnum = {}));
+var LineCapEnum = exports.LineCapEnum;
+(function (LineJoinEnum) {
+    LineJoinEnum[LineJoinEnum["bevel"] = 0] = "bevel";
+    LineJoinEnum[LineJoinEnum["round"] = 1] = "round";
+    LineJoinEnum[LineJoinEnum["miter"] = 2] = "miter";
+})(exports.LineJoinEnum || (exports.LineJoinEnum = {}));
+var LineJoinEnum = exports.LineJoinEnum;
 /**
  * HTML canvas with drawing convinience functions.
  */
@@ -4873,10 +5241,10 @@ var Canvas = (function (_super) {
         // Special options.
         var set_options = {};
         set_options.globalAlpha = (options.alpha === undefined ? 1.0 : options.alpha);
-        set_options.globalCompositeOperation = (options.composite_operation || CompositeOperationEnum.source_over).toString();
+        set_options.globalCompositeOperation = CompositeOperationEnum[(options.composite_operation || 0 /* source_over */)].replace(/_/g, '-');
         // Line style.
-        set_options.lineCap = (options.line_cap || LineCapEnum.butt).toString();
-        set_options.lineJoin = (options.line_join || LineJoinEnum.bevel).toString();
+        set_options.lineCap = LineCapEnum[(options.line_cap || 0 /* butt */)];
+        set_options.lineJoin = LineJoinEnum[(options.line_join || 0 /* bevel */)];
         set_options.lineWidth = options.line_width === undefined ? 1.0 : options.line_width;
         set_options.miterLimit = options.line_miter_limit === undefined ? 10 : options.line_miter_limit;
         this.context.strokeStyle = options.line_color || options.color || 'black'; // TODO: Support gradient
@@ -4907,8 +5275,8 @@ var Canvas = (function (_super) {
         var font = font_style + ' ' + font_variant + ' ' + font_weight + ' ' + font_size + ' ' + font_family;
         set_options.font = font;
         // Text style.
-        set_options.textAlign = (options.text_align || TextAlignmentEnum.left).toString();
-        set_options.textBaseline = (options.text_baseline || TextBaselineEnum.top).toString();
+        set_options.textAlign = TextAlignmentEnum[(options.text_align || 3 /* left */)];
+        set_options.textBaseline = TextBaselineEnum[(options.text_baseline || 1 /* top */)];
         // TODO: Support shadows.
         // Empty the measure text cache if the font is changed.
         if (set_options.font !== this._last_set_options.font) {
@@ -4971,8 +5339,8 @@ var Canvas = (function (_super) {
 })(utils.PosterClass);
 exports.Canvas = Canvas;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/canvas.js","/draw")
-},{"../utils/config":38,"../utils/utils":40,"1YiZ5S":4,"buffer":1}],18:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/canvas.js","/draw")
+},{"../utils/config":39,"../utils/utils":41,"buffer":1,"oMfpAn":4}],18:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -5132,8 +5500,8 @@ var BatchRenderer = (function (_super) {
 })(renderer.RendererBase);
 exports.BatchRenderer = BatchRenderer;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/batch.js","/draw/renderers")
-},{"../../utils/config":38,"../../utils/utils":40,"./renderer":22,"1YiZ5S":4,"buffer":1}],19:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/batch.js","/draw/renderers")
+},{"../../utils/config":39,"../../utils/utils":41,"./renderer":22,"buffer":1,"oMfpAn":4}],19:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -5216,8 +5584,8 @@ var ColorRenderer = (function (_super) {
 })(renderer.RendererBase);
 exports.ColorRenderer = ColorRenderer;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/color.js","/draw/renderers")
-},{"./renderer":22,"1YiZ5S":4,"buffer":1}],20:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/color.js","/draw/renderers")
+},{"./renderer":22,"buffer":1,"oMfpAn":4}],20:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -5342,8 +5710,8 @@ var CursorsRenderer = (function (_super) {
 })(renderer.RendererBase);
 exports.CursorsRenderer = CursorsRenderer;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/cursors.js","/draw/renderers")
-},{"../../utils/utils":40,"../animator":16,"./renderer":22,"1YiZ5S":4,"buffer":1}],21:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/cursors.js","/draw/renderers")
+},{"../../utils/utils":41,"../animator":16,"./renderer":22,"buffer":1,"oMfpAn":4}],21:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -5470,8 +5838,8 @@ var HighlightedRowRenderer = (function (_super) {
 })(row.RowRenderer);
 exports.HighlightedRowRenderer = HighlightedRowRenderer;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/highlighted_row.js","/draw/renderers")
-},{"../../utils/config":38,"../../utils/utils":40,"./row":23,"1YiZ5S":4,"buffer":1}],22:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/highlighted_row.js","/draw/renderers")
+},{"../../utils/config":39,"../../utils/utils":41,"./row":23,"buffer":1,"oMfpAn":4}],22:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -5545,8 +5913,8 @@ var RendererBase = (function (_super) {
 })(utils.PosterClass);
 exports.RendererBase = RendererBase;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/renderer.js","/draw/renderers")
-},{"../../utils/utils":40,"../canvas":17,"1YiZ5S":4,"buffer":1}],23:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/renderer.js","/draw/renderers")
+},{"../../utils/utils":41,"../canvas":17,"buffer":1,"oMfpAn":4}],23:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -5634,7 +6002,7 @@ var RowRenderer = (function (_super) {
             var new_counts = {};
             for (var width in this._row_width_counts) {
                 if (this._row_width_counts.hasOwnProperty(width)) {
-                    new_counts[width + delta] = this._row_width_counts[width];
+                    new_counts[(parseFloat(width) + delta)] = this._row_width_counts[width];
                 }
             }
             this._row_width_counts = new_counts;
@@ -5918,8 +6286,8 @@ var RowRenderer = (function (_super) {
 })(renderer.RendererBase);
 exports.RowRenderer = RowRenderer;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/row.js","/draw/renderers")
-},{"../../utils/utils":40,"../canvas":17,"./renderer":22,"1YiZ5S":4,"buffer":1}],24:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/row.js","/draw/renderers")
+},{"../../utils/utils":41,"../canvas":17,"./renderer":22,"buffer":1,"oMfpAn":4}],24:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -6053,8 +6421,8 @@ var SelectionsRenderer = (function (_super) {
 })(renderer.RendererBase);
 exports.SelectionsRenderer = SelectionsRenderer;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/selections.js","/draw/renderers")
-},{"../../utils/config":38,"./renderer":22,"1YiZ5S":4,"buffer":1}],25:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/renderers/selections.js","/draw/renderers")
+},{"../../utils/config":39,"./renderer":22,"buffer":1,"oMfpAn":4}],25:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -6301,8 +6669,8 @@ var ScrollingCanvas = (function (_super) {
 })(canvas.Canvas);
 exports.ScrollingCanvas = ScrollingCanvas;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/scrolling_canvas.js","/draw")
-},{"../utils/utils":40,"./canvas":17,"1YiZ5S":4,"buffer":1}],26:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/draw/scrolling_canvas.js","/draw")
+},{"../utils/utils":41,"./canvas":17,"buffer":1,"oMfpAn":4}],26:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -6345,6 +6713,7 @@ var Poster = (function (_super) {
         this.plugins = new pluginmanager.PluginManager(this);
         this.plugins.load('gutter');
         this.plugins.load('linenumbers');
+        this.plugins.load('commenthotkey');
     }
     Object.defineProperty(Poster.prototype, "style", {
         get: function () {
@@ -6414,8 +6783,221 @@ window.poster = {
 // Expose prism so the user can load custom language files.
 window.Prism = prism;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/fake_5f07e977.js","/")
-},{"./document_controller":13,"./document_model":14,"./document_view":15,"./draw/renderers/renderer":22,"./draw/scrolling_canvas":25,"./plugins/manager":31,"./plugins/plugin":32,"./styles/style":35,"./utils/config":38,"./utils/utils":40,"1YiZ5S":4,"buffer":1,"prismjs":5}],27:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/fake_6048566a.js","/")
+},{"./document_controller":13,"./document_model":14,"./document_view":15,"./draw/renderers/renderer":22,"./draw/scrolling_canvas":25,"./plugins/manager":32,"./plugins/plugin":33,"./styles/style":36,"./utils/config":39,"./utils/utils":41,"buffer":1,"oMfpAn":4,"prismjs":5}],27:[function(require,module,exports){
+(function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+// Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
+var plugin = require('../plugin');
+var utils = require('../../utils/utils');
+/**
+ * CommentHotKey
+ */
+var CommentHotKey = (function (_super) {
+    __extends(CommentHotKey, _super);
+    function CommentHotKey() {
+        _super.call(this);
+        this.on('load', this._handle_load, this);
+    }
+    /**
+     * Handles when the plugin is loaded.
+     */
+    CommentHotKey.prototype._handle_load = function () {
+        var _this = this;
+        // Register actions.
+        if (navigator.appVersion.indexOf("Mac") != -1) {
+            this.poster.controller.map.map({
+                'meta-fowardslash': 'cursor.comment'
+            });
+        }
+        else {
+            this.poster.controller.map.map({
+                'ctrl-fowardslash': 'cursor.comment'
+            });
+        }
+        this.poster.controller.map.register('cursor.comment', function () {
+            var comment_prefix = _this._get_comment_prefix();
+            var cursors = _this.poster.controller.cursors.cursors;
+            for (var i = 0; i < cursors.length; i++) {
+                _this._comment(cursors[i], comment_prefix);
+            }
+            return true;
+        });
+    };
+    /**
+     * Comment the rows selected by the cursor.
+     */
+    CommentHotKey.prototype._comment = function (cursor, comment) {
+        var _this = this;
+        var comment_block;
+        var comment_prefix;
+        if (utils.is_array(comment)) {
+            comment_block = comment;
+        }
+        else {
+            comment_prefix = comment;
+        }
+        var commented = true;
+        var least_indented = null;
+        for (var i = cursor.start_row; i <= cursor.end_row; i++) {
+            var row = this.poster.model._rows[i];
+            var indent = row.length - utils.ltrim(row).length;
+            if (least_indented === null || indent < least_indented)
+                least_indented = indent;
+            if (comment_block) {
+                if (utils.ltrim(row).substr(0, comment_block[0].length) !== comment_block[0] || utils.rtrim(row).substr(-comment_block[1].length) !== comment_block[1]) {
+                    commented = false;
+                }
+            }
+            else {
+                if (utils.ltrim(row).substr(0, comment_prefix.length) !== comment_prefix) {
+                    commented = false;
+                }
+            }
+        }
+        // If the lines are already commented, remove the comments.
+        cursor.historical(function () {
+            if (commented) {
+                for (var i = cursor.start_row; i <= cursor.end_row; i++) {
+                    var row = _this.poster.model._rows[i];
+                    var indent_size = row.length - utils.ltrim(row).length;
+                    var indent = row.substr(0, indent_size);
+                    if (comment_block) {
+                        var right_indent_size = row.length - utils.rtrim(row).length;
+                        _this._model_replace_row(cursor, i, row.substr(0, indent_size) + row.substr(indent_size + comment_block[0].length, row.length - (indent_size + right_indent_size + comment_block[0].length + comment_block[1].length)) + (right_indent_size > 0 ? row.substr(-right_indent_size) : ''));
+                        cursor.primary_char -= comment_block[0].length;
+                        cursor.secondary_char -= comment_block[0].length;
+                    }
+                    else {
+                        _this._model_replace_row(cursor, i, row.substr(0, indent_size) + row.substr(indent_size + comment_prefix.length));
+                        cursor.primary_char -= comment_prefix.length;
+                        cursor.secondary_char -= comment_prefix.length;
+                    }
+                }
+            }
+            else {
+                for (var i = cursor.start_row; i <= cursor.end_row; i++) {
+                    var row = _this.poster.model._rows[i];
+                    if (comment_block) {
+                        var right_indent_size = row.length - utils.rtrim(row).length;
+                        _this._model_replace_row(cursor, i, row.substr(0, least_indented) + comment_block[0] + row.substr(least_indented, row.length - least_indented - right_indent_size) + comment_block[1] + (right_indent_size > 0 ? row.substr(-right_indent_size) : ''));
+                        cursor.primary_char += comment_block[0].length;
+                        cursor.secondary_char += comment_block[0].length;
+                    }
+                    else {
+                        _this._model_replace_row(cursor, i, row.substr(0, least_indented) + comment_prefix + row.substr(least_indented));
+                        cursor.primary_char += comment_prefix.length;
+                        cursor.secondary_char += comment_prefix.length;
+                    }
+                }
+            }
+        });
+        cursor.trigger('change');
+    };
+    /**
+     * Replace a row's text.
+     */
+    CommentHotKey.prototype._model_replace_row = function (cursor, row, text) {
+        cursor.model_remove_row(row);
+        cursor.model_add_row(row, text);
+    };
+    /**
+     * Get the comment identifier for the current language.
+     */
+    CommentHotKey.prototype._get_comment_prefix = function () {
+        switch (this.poster.language) {
+            case 'actionscript':
+            case 'c':
+            case 'clike':
+            case 'cpp':
+            case 'csharp':
+            case 'dart':
+            case 'fsharp':
+            case 'go':
+            case 'groovy':
+            case 'jade':
+            case 'java':
+            case 'javascript':
+            case 'jsx':
+            case 'less':
+            case 'objectivec':
+            case 'pascal':
+            case 'php - extras':
+            case 'php':
+            case 'rust':
+            case 'scala':
+            case 'swift':
+            case 'stylus':
+            case 'typescript':
+                return '// ';
+            case 'apacheconf':
+            case 'bash':
+            case 'coffeescript':
+            case 'gherkin':
+            case 'git':
+            case 'julia':
+            case 'nsis':
+            case 'perl':
+            case 'powershell':
+            case 'python':
+            case 'r':
+            case 'rip':
+            case 'ruby':
+            case 'yaml':
+                return '# ';
+            case 'applescript':
+            case 'eiffel':
+            case 'haskell':
+            case 'sql':
+                return '-- ';
+            case 'aspnet':
+                return "'";
+            case 'autohotkey':
+            case 'ini':
+            case 'nasm':
+            case 'scheme':
+                return '; ';
+            case 'css':
+            case 'sas':
+            case 'scss':
+                return ['/* ', ' */'];
+            case 'erlang':
+            case 'latex':
+            case 'matlab':
+                return '% ';
+            case 'fortran':
+                return '! ';
+            case 'haml':
+                return '-# ';
+            case 'handlebars':
+            case 'markdown':
+            case 'wiki':
+                return ['<!-- ', ' -->'];
+            case 'lolcode':
+                return 'BTW ';
+            case 'rest':
+                return '.. ';
+            case 'smalltalk':
+                return ['"', '"'];
+            case 'smarty':
+                return ['{* ', ' *}'];
+            case 'twig':
+                return ['{# ', ' #}'];
+            default:
+                return null;
+        }
+    };
+    return CommentHotKey;
+})(plugin.PluginBase);
+exports.CommentHotKey = CommentHotKey;
+
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/commenthotkey/commenthotkey.js","/plugins/commenthotkey")
+},{"../../utils/utils":41,"../plugin":33,"buffer":1,"oMfpAn":4}],28:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -6488,8 +7070,8 @@ var Gutter = (function (_super) {
 })(plugin.PluginBase);
 exports.Gutter = Gutter;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/gutter/gutter.js","/plugins/gutter")
-},{"../plugin":32,"./renderer":28,"1YiZ5S":4,"buffer":1}],28:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/gutter/gutter.js","/plugins/gutter")
+},{"../plugin":33,"./renderer":29,"buffer":1,"oMfpAn":4}],29:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -6558,8 +7140,8 @@ var GutterRenderer = (function (_super) {
 })(renderer.RendererBase);
 exports.GutterRenderer = GutterRenderer;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/gutter/renderer.js","/plugins/gutter")
-},{"../../draw/renderers/renderer":22,"1YiZ5S":4,"buffer":1}],29:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/gutter/renderer.js","/plugins/gutter")
+},{"../../draw/renderers/renderer":22,"buffer":1,"oMfpAn":4}],30:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -6598,8 +7180,8 @@ var LineNumbers = (function (_super) {
 })(plugin.PluginBase);
 exports.LineNumbers = LineNumbers;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/linenumbers/linenumbers.js","/plugins/linenumbers")
-},{"../plugin":32,"./renderer":30,"1YiZ5S":4,"buffer":1}],30:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/linenumbers/linenumbers.js","/plugins/linenumbers")
+},{"../plugin":33,"./renderer":31,"buffer":1,"oMfpAn":4}],31:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -6785,8 +7367,8 @@ var LineNumbersRenderer = (function (_super) {
 })(renderer.RendererBase);
 exports.LineNumbersRenderer = LineNumbersRenderer;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/linenumbers/renderer.js","/plugins/linenumbers")
-},{"../../draw/canvas":17,"../../draw/renderers/renderer":22,"../../utils/utils":40,"1YiZ5S":4,"buffer":1}],31:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/linenumbers/renderer.js","/plugins/linenumbers")
+},{"../../draw/canvas":17,"../../draw/renderers/renderer":22,"../../utils/utils":41,"buffer":1,"oMfpAn":4}],32:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -6799,6 +7381,7 @@ var utils = require('../utils/utils');
 var pluginbase = require('./plugin');
 var gutter = require('./gutter/gutter');
 var linenumbers = require('./linenumbers/linenumbers');
+var commenthotkey = require('./commenthotkey/commenthotkey');
 /**
  * Plugin manager class
  */
@@ -6812,6 +7395,7 @@ var PluginManager = (function (_super) {
         this._internal_plugins = {};
         this._internal_plugins['gutter'] = gutter.Gutter;
         this._internal_plugins['linenumbers'] = linenumbers.LineNumbers;
+        this._internal_plugins['commenthotkey'] = commenthotkey.CommentHotKey;
     }
     Object.defineProperty(PluginManager.prototype, "plugins", {
         /**
@@ -6866,8 +7450,8 @@ var PluginManager = (function (_super) {
 })(utils.PosterClass);
 exports.PluginManager = PluginManager;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/manager.js","/plugins")
-},{"../utils/utils":40,"./gutter/gutter":27,"./linenumbers/linenumbers":29,"./plugin":32,"1YiZ5S":4,"buffer":1}],32:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/manager.js","/plugins")
+},{"../utils/utils":41,"./commenthotkey/commenthotkey":27,"./gutter/gutter":28,"./linenumbers/linenumbers":30,"./plugin":33,"buffer":1,"oMfpAn":4}],33:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -6947,16 +7531,16 @@ var PluginBase = (function (_super) {
 })(utils.PosterClass);
 exports.PluginBase = PluginBase;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/plugin.js","/plugins")
-},{"../utils/utils":40,"1YiZ5S":4,"buffer":1}],33:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/plugins/plugin.js","/plugins")
+},{"../utils/utils":41,"buffer":1,"oMfpAn":4}],34:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var peacock = require('./peacock');
 exports.styles = {
     "peacock": peacock,
 };
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/styles/init.js","/styles")
-},{"./peacock":34,"1YiZ5S":4,"buffer":1}],34:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/styles/init.js","/styles")
+},{"./peacock":35,"buffer":1,"oMfpAn":4}],35:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 exports.style = {
     comment: '#7a7267',
@@ -6984,8 +7568,8 @@ exports.style = {
     ],
 };
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/styles/peacock.js","/styles")
-},{"1YiZ5S":4,"buffer":1}],35:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/styles/peacock.js","/styles")
+},{"buffer":1,"oMfpAn":4}],36:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -7056,8 +7640,8 @@ var Style = (function (_super) {
 })(utils.PosterClass);
 exports.Style = Style;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/styles/style.js","/styles")
-},{"../utils/utils":40,"./init":33,"1YiZ5S":4,"buffer":1}],36:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/styles/style.js","/styles")
+},{"../utils/utils":41,"./init":34,"buffer":1,"oMfpAn":4}],37:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -7131,8 +7715,8 @@ var HighlighterBase = (function (_super) {
 })(utils.PosterClass);
 exports.HighlighterBase = HighlighterBase;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/syntax/highlighter.js","/syntax")
-},{"../utils/utils":40,"1YiZ5S":4,"buffer":1}],37:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/syntax/highlighter.js","/syntax")
+},{"../utils/utils":41,"buffer":1,"oMfpAn":4}],38:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -7303,8 +7887,8 @@ var PrismHighlighter = (function (_super) {
 })(highlighter.HighlighterBase);
 exports.PrismHighlighter = PrismHighlighter;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/syntax/prism.js","/syntax")
-},{"../utils/superset":39,"./highlighter":36,"1YiZ5S":4,"buffer":1,"prismjs":5}],38:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/syntax/prism.js","/syntax")
+},{"../utils/superset":40,"./highlighter":37,"buffer":1,"oMfpAn":4,"prismjs":5}],39:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -7335,8 +7919,8 @@ exports.config.tab_width = 4;
 exports.config.use_spaces = true;
 exports.config.history_group_delay = 100;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/utils/config.js","/utils")
-},{"./utils":40,"1YiZ5S":4,"buffer":1}],39:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/utils/config.js","/utils")
+},{"./utils":41,"buffer":1,"oMfpAn":4}],40:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 // Copyright (c) Jonathan Frederic, see the LICENSE file for more info.
 var __extends = this.__extends || function (d, b) {
@@ -7439,8 +8023,8 @@ var Superset = (function (_super) {
 })(utils.PosterClass);
 exports.Superset = Superset;
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/utils/superset.js","/utils")
-},{"./utils":40,"1YiZ5S":4,"buffer":1}],40:[function(require,module,exports){
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/utils/superset.js","/utils")
+},{"./utils":41,"buffer":1,"oMfpAn":4}],41:[function(require,module,exports){
 (function (process,global,Buffer,__argument0,__argument1,__argument2,__argument3,__filename,__dirname){
 ;
 /**
@@ -7814,10 +8398,22 @@ var _hashed_objects = 0;
  */
 exports.hash = function (x) {
     if (x.__hash__ === undefined) {
-        x.__hash__ = _hashed_objects++;
+        x.__hash__ = String(_hashed_objects++);
     }
     return x.__hash__;
 };
+/**
+ * Left trim a string.
+ */
+exports.ltrim = function (x) {
+    return x.replace(/^\s+/g, '');
+};
+/**
+ * Right trim a string.
+ */
+exports.rtrim = function (x) {
+    return x.replace(/\s+$/g, '');
+};
 
-}).call(this,require("1YiZ5S"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/utils/utils.js","/utils")
-},{"1YiZ5S":4,"buffer":1}]},{},[26])
+}).call(this,require("oMfpAn"),typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("buffer").Buffer,arguments[3],arguments[4],arguments[5],arguments[6],"/utils/utils.js","/utils")
+},{"buffer":1,"oMfpAn":4}]},{},[26])
