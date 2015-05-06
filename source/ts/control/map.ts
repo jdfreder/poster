@@ -39,11 +39,24 @@ export class Map extends utils.PosterClass {
         }
 
         if (tag) {
-            if (Map._registry_tags[tag] === undefined) {
-                Map._registry_tags[tag] = [];
+            var tag_hash: string = utils.hash(tag);
+            if (Map._registry_tags[tag_hash] === undefined) {
+                Map._registry_tags[tag_hash] = [];
             }
-            Map._registry_tags[tag].push({name: name, f: f});
+            Map._registry_tags[tag_hash].push({ name: name, f: f });
         }
+    }
+    /**
+     * Registers an action.
+     * @param name - name of the action
+     * @param f
+     * @param (optional) tag - allows you to specify a tag
+     *                  which can be used with the `unregister_by_tag`
+     *                  method to quickly unregister actions with
+     *                  the tag specified.
+     */
+    public register = function(name: string, f: utils.ICallback, tag?: any): void {
+        return Map.register(name, f, tag);
     }
 
     /**
@@ -60,6 +73,15 @@ export class Map extends utils.PosterClass {
         }
         return false;
     }
+    /**
+     * Unregister an action.
+     * @param name - name of the action
+     * @param f
+     * @return true if action was found and unregistered
+     */
+    public unregister = function(name: string, f: utils.ICallback): boolean {
+        return Map.unregister(name, f);
+    }
 
     /**
      * Unregisters all of the actions registered with a given tag.
@@ -67,13 +89,22 @@ export class Map extends utils.PosterClass {
      * @return true if the tag was found and deleted.
      */
     public static unregister_by_tag = function(tag: any): boolean {
-        if (Map._registry_tags[tag]) {
-            Map._registry_tags[tag].forEach(registration => {
+        var tag_hash: string = utils.hash(tag);
+        if (Map._registry_tags[tag_hash]) {
+            Map._registry_tags[tag_hash].forEach(registration => {
                 Map.unregister(registration.name, registration.f);
             });
-            delete Map._registry_tags[tag];
+            delete Map._registry_tags[tag_hash];
             return true;
         }
+    }
+    /**
+     * Unregisters all of the actions registered with a given tag.
+     * @param tag - specified in Map.register.
+     * @return true if the tag was found and deleted.
+     */
+    public unregister_by_tag = function(tag: any): boolean {
+        return Map.unregister_by_tag(tag);
     }
 
     public constructor(normalizer) {

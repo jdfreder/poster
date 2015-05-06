@@ -121,7 +121,7 @@ export class RowRenderer extends renderer.RendererBase implements IRowRenderer {
         var new_counts: generics.INumericDictionary<number> = {};
         for (var width in this._row_width_counts) {
             if (this._row_width_counts.hasOwnProperty(width)) {
-                new_counts[width+delta] = this._row_width_counts[width];
+                new_counts[(parseFloat(width)+delta)] = this._row_width_counts[width];
             }
         }
         this._row_width_counts = new_counts

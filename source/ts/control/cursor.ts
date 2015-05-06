@@ -3,6 +3,7 @@ import keymap = require('./map');
 var register = keymap.Map.register;
 
 import document_model = require('../document_model');
+import cursors = require('./cursors');
 import utils = require('../utils/utils');
 import config_mod = require('../utils/config');
 import history = require('./history'); // interfaces only
@@ -31,11 +32,13 @@ export class Cursor extends utils.PosterClass {
     private _memory_char: number;
     private _copied_row: string;
     private _historical_start: ICursorState;
+    private _cursors: cursors.Cursors;
 
-    public constructor(model: document_model.DocumentModel, push_history: history.IHistoryPush) {
+    public constructor(model: document_model.DocumentModel, push_history: history.IHistoryPush, cursors: cursors.Cursors) {
         super();
         this._model = model;
         this._push_history = push_history;
+        this._cursors = cursors;
 
         this.primary_row = 0;
         this.primary_char = 0;
@@ -338,13 +341,60 @@ export class Cursor extends utils.PosterClass {
     public keypress(e: KeyboardEvent): boolean {
         var char_code: number = e.which || e.keyCode;
         var char_typed: string = String.fromCharCode(char_code);
-        this.remove_selected();
-        this._historical(() => {
-            this._model_add_text(this.primary_row, this.primary_char, char_typed);
-        });
-        this.move_primary(1, 0);
-        this._reset_secondary();
-        return true;
+        var enclosing: boolean = '\'"[{(`<'.indexOf(char_typed) !== -1;
+        var highlighted: boolean = (this.primary_row !== this.secondary_row || this.primary_char !== this.secondary_char);
+
+        // Check if the primary character is the last character of the row,
+        // or if it is whitespace or a right closing character.
+        var current_char: string = this._model._rows[this.primary_row][this.primary_char];
+        var right_padded: boolean = 
+            this.primary_char === this._model._rows[this.primary_row].length ||
+            current_char.trim() === '' ||
+            ']}>)'.indexOf(current_char) !== -1;
+
+        if (enclosing && (highlighted || right_padded)) {
+            var right_char: string = char_typed;
+            var inverses = {'[': ']', '(': ')', '<': '>', '{': '}'};
+            if (inverses[right_char] !== undefined) right_char = inverses[right_char];
+
+            // If one or more characters are highlighted, surround them using
+            // the block characters.
+            if (highlighted) {
+                var primary_row: number = this.primary_row;
+                var primary_char: number = this.primary_char;
+                var secondary_row: number = this.secondary_row;
+                var secondary_char: number = this.secondary_char;
+                var same_row = this.start_row === this.end_row;
+                this.historical(() => {
+                    this.model_add_text(this.start_row, this.start_char, char_typed);
+                    this.model_add_text(this.end_row, this.end_char+(same_row?1:0), right_char);
+                });
+                this.primary_row = primary_row;
+                this.primary_char = primary_char+(same_row||this.primary_row<this.secondary_row?1:0);
+                this.secondary_row = secondary_row;
+                this.secondary_char = secondary_char+(same_row||this.primary_row>this.secondary_row?1:0);
+                this.trigger('change'); 
+                return true;
+
+            // No text is highlighted, text must be right padded.
+            } else {
+                this.historical(() => {
+                    this.model_add_text(this.primary_row, this.primary_char, char_typed);
+                    this.model_add_text(this.primary_row, this.primary_char+1, right_char);
+                });
+                this.move_primary(1, 0);
+                this._reset_secondary();
+                return true;
+            }
+        } else { // If text isn't highlighted, default to normal keypress.
+            this.remove_selected();
+            this.historical(() => {
+                this.model_add_text(this.primary_row, this.primary_char, char_typed);
+            });
+            this.move_primary(1, 0);
+            this._reset_secondary();
+            return true;
+        }
     }
 
     /**
@@ -354,12 +404,12 @@ export class Cursor extends utils.PosterClass {
      */
     public indent(e: Event): boolean {
         var indent: string = this._make_indents()[0];
-        this._historical(() => {
+        this.historical(() => {
             if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
-                this._model_add_text(this.primary_row, this.primary_char, indent);
+                this.model_add_text(this.primary_row, this.primary_char, indent);
             } else {
                 for (var row = this.start_row; row <= this.end_row; row++) {
-                    this._model_add_text(row, 0, indent);
+                    this.model_add_text(row, 0, indent);
                 }
             }
         });
@@ -382,14 +432,14 @@ export class Cursor extends utils.PosterClass {
 
         // If no text is selected, remove the indent preceding the
         // cursor if it exists.
-        this._historical(() => {
+        this.historical(() => {
             if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
                 for (var i: number = 0; i < indents.length; i++) {
                     var indent = indents[i];
                     if (this.primary_char >= indent.length) {
                         var before = this._model.get_text(this.primary_row, this.primary_char-indent.length, this.primary_row, this.primary_char);
                         if (before == indent) {
-                            this._model_remove_text(this.primary_row, this.primary_char-indent.length, this.primary_row, this.primary_char);
+                            this.model_remove_text(this.primary_row, this.primary_char-indent.length, this.primary_row, this.primary_char);
                             removed_start = indent.length;
                             removed_end = indent.length;
                             break;
@@ -405,7 +455,7 @@ export class Cursor extends utils.PosterClass {
                         var indent = indents[i];
                         if (this._model._rows[row].length >= indent.length) {
                             if (this._model._rows[row].substring(0, indent.length) == indent) {
-                                this._model_remove_text(row, 0, row, indent.length);
+                                this.model_remove_text(row, 0, row, indent.length);
                                 if (row == this.start_row) removed_start = indent.length;
                                 if (row == this.end_row) removed_end = indent.length;
                                 break;
@@ -447,8 +497,8 @@ export class Cursor extends utils.PosterClass {
         }
         var indent: string = line_text.substring(0, left);
         
-        this._historical(() => {
-            this._model_add_text(this.primary_row, this.primary_char, '\n' + indent);
+        this.historical(() => {
+            this.model_add_text(this.primary_row, this.primary_char, '\n' + indent);
         });
         this.primary_row += 1;
         this.primary_char = indent.length;
@@ -464,8 +514,8 @@ export class Cursor extends utils.PosterClass {
      */
     public insert_text(text: string): boolean {
         this.remove_selected();
-        this._historical(() => {
-            this._model_add_text(this.primary_row, this.primary_char, text);
+        this.historical(() => {
+            this.model_add_text(this.primary_row, this.primary_char, text);
         });
         
         // Move cursor to the end.
@@ -487,8 +537,8 @@ export class Cursor extends utils.PosterClass {
      */
     public paste(text: string): void {
         if (this._copied_row === text) {
-            this._historical(() => {
-                this._model_add_row(this.primary_row, text);
+            this.historical(() => {
+                this.model_add_row(this.primary_row, text);
             });
             this.primary_row++;
             this.secondary_row++;
@@ -506,8 +556,8 @@ export class Cursor extends utils.PosterClass {
         if (this.primary_row !== this.secondary_row || this.primary_char !== this.secondary_char) {
             var row_index: number = this.start_row;
             var char_index: number = this.start_char;
-            this._historical(() => {
-                this._model_remove_text(this.start_row, this.start_char, this.end_row, this.end_char);
+            this.historical(() => {
+                this.model_remove_text(this.start_row, this.start_char, this.end_row, this.end_char);
             });
             this.primary_row = row_index;
             this.primary_char = char_index;
@@ -538,8 +588,9 @@ export class Cursor extends utils.PosterClass {
         var text = this.get();
         if (this.primary_row == this.secondary_row && this.primary_char == this.secondary_char) {
             this._copied_row = this._model._rows[this.primary_row];    
-            this._historical(function() {
-                this._model_remove_row(this.primary_row);
+            this.historical(() => {
+                this.model_remove_row(this.primary_row);
+                this.trigger('update');
             });
         } else {
             this._copied_row = null;
@@ -638,6 +689,243 @@ export class Cursor extends utils.PosterClass {
     }
 
     /**
+     * Record the before and after positions of the cursor for history.
+     * @param  f - executes with `this` context
+     */
+    public historical(f: utils.ICallback): any {
+        this._start_historical_move();
+        var ret: any = f.apply(this);
+        this._end_historical_move();
+        return ret;
+    }
+
+    /**
+     * Adds text to the model while keeping track of the history.
+     */
+    public model_add_text(row_index: number, char_index: number, text: string): void {
+        var lines: string[] = text.split('\n');
+        this._push_history(
+            'model_add_text',
+            [row_index, char_index, text],
+            'model_remove_text',
+            [row_index, char_index, row_index + lines.length - 1, lines.length > 1 ? lines[lines.length - 1].length : char_index + text.length],
+            config.history_group_delay || 100);
+        this._model.add_text(row_index, char_index, text);
+
+        // Move other cursors.
+        this._cursors.cursors.forEach((cursor: Cursor) => {
+            if (cursor !== this) {
+                var changed: boolean = false;
+
+                // If the cursor is on the row where the text was added, and is
+                // at or after the insertion point, move the cursor over.  If
+                // the cursor is on a line below the line where the text was
+                // inserted, move the cursor down the number of lines inserted.
+                // Do this for both primary and secondary cursors.
+                if (cursor.primary_row === row_index && cursor.primary_char >= char_index) {
+                    cursor.primary_char += lines[lines.length - 1].length;
+                    changed = true;
+                }
+                if (lines.length > 1 && cursor.primary_row >= row_index) {
+                    cursor.primary_row += lines.length - 1;
+                    changed = true;
+                }
+                if (cursor.secondary_row === row_index && cursor.secondary_char >= char_index) {
+                    cursor.secondary_char += lines[lines.length - 1].length;
+                    changed = true;
+                }
+                if (lines.length > 1 && cursor.secondary_row >= row_index) {
+                    cursor.secondary_row += lines.length - 1;
+                    changed = true;
+                }
+                if (changed) {
+                    cursor.trigger('change');
+                }
+            }
+        });
+    }
+
+    /**
+     * Removes text from the model while keeping track of the history.
+     */
+    public model_remove_text(start_row: number, start_char: number, end_row: number, end_char: number): void {
+        var text: string = this._model.get_text(start_row, start_char, end_row, end_char);
+        this._push_history(
+            'model_remove_text',
+            [start_row, start_char, end_row, end_char],
+            'model_add_text',
+            [start_row, start_char, text],
+            config.history_group_delay || 100);
+        this._model.remove_text(start_row, start_char, end_row, end_char);
+
+        // Move other cursors.
+        this._cursors.cursors.forEach((cursor: Cursor) => {
+            if (cursor !== this) {
+                var changed: boolean = false;
+                
+                // If cursor is within removed region, move the cursor to
+                // the start of the region.  Do this for both primary and
+                // secondary coordinates.
+                var within: boolean = false;
+                if (start_row <= cursor.primary_row && cursor.primary_row <= end_row) {
+                    if (start_row < cursor.primary_row && cursor.primary_row < end_row) {
+                        within = true;
+                    } else {
+                        within = true;
+                        if (cursor.primary_row === start_row && cursor.primary_char < start_char) {
+                            within = false;
+                        }
+                        if (cursor.primary_row === end_row && cursor.primary_char > end_char) {
+                            within = false;
+                        }
+                    }
+                }
+
+                if (within) {
+                    cursor.primary_row = start_row;
+                    cursor.primary_char = start_char;
+                    changed = true;
+                } else {
+
+                    // If the cursor is on or after the removed region move it up 
+                    // the number of lines removed.
+                    // 
+                    // If the cursor is after the removed region, but on the same
+                    // line as the last line of the removed text, move the cursor
+                    // backwards the amount of characters on that line.  Do this 
+                    // for both primary and secondary coordinates.
+                    if (cursor.primary_row >= end_row) {
+                        cursor.primary_row -= end_row - start_row;
+                        if (cursor.primary_row === end_row && cursor.primary_char >= end_char) {
+                            cursor.primary_char += start_char - end_char
+                        }
+                        changed = true;
+                    }
+                }
+
+                within = false;
+                if (start_row <= cursor.secondary_row && cursor.secondary_row <= end_row) {
+                    if (start_row < cursor.secondary_row && cursor.secondary_row < end_row) {
+                        within = true;
+                    } else {
+                        within = true;
+                        if (cursor.secondary_row === start_row && cursor.secondary_char < start_char) {
+                            within = false;
+                        }
+                        if (cursor.secondary_row === end_row && cursor.secondary_char > end_char) {
+                            within = false;
+                        }
+                    }
+                }
+
+                if (within) {
+                    cursor.secondary_row = start_row;
+                    cursor.secondary_char = start_char;
+                    changed = true;
+                } else {
+
+                    // If the cursor is on or after the removed region move it up 
+                    // the number of lines removed.
+                    // 
+                    // If the cursor is after the removed region, but on the same
+                    // line as the last line of the removed text, move the cursor
+                    // backwards the amount of characters on that line.  Do this 
+                    // for both primary and secondary coordinates.
+                    if (cursor.secondary_row >= end_row) {
+                        cursor.secondary_row -= end_row - start_row;
+                        if (cursor.secondary_row === end_row && cursor.secondary_char >= end_char) {
+                            cursor.secondary_char += start_char - end_char
+                        }
+                        changed = true;
+                    }
+                }
+
+                if (changed) {
+                    cursor.trigger('change');
+                }
+            }
+        });
+    }
+
+    /**
+     * Adds a row of text while keeping track of the history.
+     */
+    public model_add_row(row_index: number, text: string): void {
+        this._push_history(
+            'model_add_row',
+            [row_index, text],
+            'model_remove_row',
+            [row_index],
+            config.history_group_delay || 100);
+        this._model.add_row(row_index, text);
+
+        // Move other cursors.
+        this._cursors.cursors.forEach((cursor: Cursor) => {
+            if (cursor !== this) {
+                var changed: boolean = false;
+                
+                // Cursors on or below the inserted row should be moved 
+                // down a row.
+                if (cursor.primary_row >= row_index) {
+                    cursor.primary_row += 1
+                    changed = true;
+                }
+                if (cursor.secondary_row >= row_index) {
+                    cursor.secondary_row += 1
+                    changed = true;
+                }
+                
+                if (changed) {
+                    cursor.trigger('change');
+                }
+            }
+        });
+    }
+
+    /**
+     * Removes a row of text while keeping track of the history.
+     */
+    public model_remove_row(row_index: number): void {
+        this._push_history(
+            'model_remove_row',
+            [row_index],
+            'model_add_row',
+            [row_index, this._model._rows[row_index]],
+            config.history_group_delay || 100);
+        this._model.remove_row(row_index);
+
+        // Move other cursors.
+        this._cursors.cursors.forEach((cursor: Cursor) => {
+            if (cursor !== this) {
+                var changed: boolean = false;
+                
+                // For cursors on or below the removed line, move them up 
+                // a line if possible.
+                if (cursor.primary_row >= row_index) {
+                    if (cursor.primary_row === 0) {
+                        cursor.primary_char = 0;
+                    } else {
+                        cursor.primary_row -= 1;
+                    }
+                    changed = true;
+                }
+                if (cursor.secondary_row >= row_index) {
+                    if (cursor.secondary_row === 0) {
+                        cursor.secondary_char = 0;
+                    } else {
+                        cursor.secondary_row -= 1;
+                    }
+                    changed = true;
+                }
+
+                if (changed) {
+                    cursor.trigger('change');
+                }
+            }
+        });
+    }
+
+    /**
      * Reset the secondary cursor to the value of the primary.
      */
     private _reset_secondary(): void {
@@ -645,71 +933,6 @@ export class Cursor extends utils.PosterClass {
         this.secondary_char = this.primary_char;
 
         this.trigger('change'); 
-    }
-
-    /**
-     * Adds text to the model while keeping track of the history.
-     */
-    private _model_add_text(row_index: number, char_index: number, text: string): void {
-        var lines: string[] = text.split('\n');
-        this._push_history(
-            '_model_add_text', 
-            [row_index, char_index, text], 
-            '_model_remove_text', 
-            [row_index, char_index, row_index + lines.length - 1, lines.length > 1 ? lines[lines.length-1].length : char_index + text.length], 
-            config.history_group_delay || 100);
-        this._model.add_text(row_index, char_index, text);
-    }
-
-    /**
-     * Removes text from the model while keeping track of the history.
-     */
-    private _model_remove_text(start_row: number, start_char: number, end_row: number, end_char: number): void {
-        var text: string = this._model.get_text(start_row, start_char, end_row, end_char);
-        this._push_history(
-            '_model_remove_text', 
-            [start_row, start_char, end_row, end_char], 
-            '_model_add_text', 
-            [start_row, start_char, text], 
-            config.history_group_delay || 100);
-        this._model.remove_text(start_row, start_char, end_row, end_char);
-    }
-
-    /**
-     * Adds a row of text while keeping track of the history.
-     */
-    private _model_add_row(row_index: number, text: string): void {
-        this._push_history(
-            '_model_add_row', 
-            [row_index, text], 
-            '_model_remove_row', 
-            [row_index], 
-            config.history_group_delay || 100);
-        this._model.add_row(row_index, text);
-    }
-
-    /**
-     * Removes a row of text while keeping track of the history.
-     */
-    private _model_remove_row(row_index: number): void {
-        this._push_history(
-            '_model_remove_row', 
-            [row_index], 
-            '_model_add_row', 
-            [row_index, this._model._rows[row_index]], 
-            config.history_group_delay || 100);
-        this._model.remove_row(row_index);
-    }
-
-    /**
-     * Record the before and after positions of the cursor for history.
-     * @param  f - executes with `this` context
-     */
-    private _historical(f: utils.ICallback): any {
-        this._start_historical_move();
-        var ret: any = f.apply(this);
-        this._end_historical_move();
-        return ret;
     }
 
     /**
@@ -757,33 +980,50 @@ export class Cursor extends utils.PosterClass {
      * Registers an action API with the map
      */
     private _register_api(): void {
-        register('cursor.set_state', utils.proxy(this.set_state, this), this);
-        register('cursor.remove_selected', utils.proxy(this.remove_selected, this), this);
-        register('cursor.keypress', utils.proxy(this.keypress, this), this);
-        register('cursor.indent', utils.proxy(this.indent, this), this);
-        register('cursor.unindent', utils.proxy(this.unindent, this), this);
-        register('cursor.newline', utils.proxy(this.newline, this), this);
-        register('cursor.insert_text', utils.proxy(this.insert_text, this), this);
-        register('cursor.delete_backward', utils.proxy(this.delete_backward, this), this);
-        register('cursor.delete_forward', utils.proxy(this.delete_forward, this), this);
-        register('cursor.delete_word_left', utils.proxy(this.delete_word_left, this), this);
-        register('cursor.delete_word_right', utils.proxy(this.delete_word_right, this), this);
-        register('cursor.select_all', utils.proxy(this.select_all, this), this);
-        register('cursor.left', () => { this.move_primary(-1, 0, true); this._reset_secondary(); return true; });
-        register('cursor.right', () => { this.move_primary(1, 0, true); this._reset_secondary(); return true; });
-        register('cursor.up', () => { this.move_primary(0, -1, true); this._reset_secondary(); return true; });
-        register('cursor.down', () => { this.move_primary(0, 1, true); this._reset_secondary(); return true; });
-        register('cursor.select_left', () => { this.move_primary(-1, 0); return true; });
-        register('cursor.select_right', () => { this.move_primary(1, 0); return true; });
-        register('cursor.select_up', () => { this.move_primary(0, -1); return true; });
-        register('cursor.select_down', () => { this.move_primary(0, 1); return true; });
-        register('cursor.word_left', () => { this.word_primary(-1); this._reset_secondary(); return true; });
-        register('cursor.word_right', () => { this.word_primary(1); this._reset_secondary(); return true; });
-        register('cursor.select_word_left', () => { this.word_primary(-1); return true; });
-        register('cursor.select_word_right', () => { this.word_primary(1); return true; });
-        register('cursor.line_start', () => { this.primary_goto_start(); this._reset_secondary(); return true; });
-        register('cursor.line_end', () => { this.primary_goto_end(); this._reset_secondary(); return true; });
-        register('cursor.select_line_start', () => { this.primary_goto_start(); return true; });
-        register('cursor.select_line_end', () => { this.primary_goto_end(); return true; });
+        var p = utils.proxy(this._validation_lock_proxy, this);
+        register('cursor.set_state', p(this.set_state), this);
+        register('cursor.remove_selected', p(this.remove_selected), this);
+        register('cursor.keypress', p(this.keypress), this);
+        register('cursor.indent', p(this.indent), this);
+        register('cursor.unindent', p(this.unindent), this);
+        register('cursor.newline', p(this.newline), this);
+        register('cursor.insert_text', p(this.insert_text), this);
+        register('cursor.delete_backward', p(this.delete_backward), this);
+        register('cursor.delete_forward', p(this.delete_forward), this);
+        register('cursor.delete_word_left', p(this.delete_word_left), this);
+        register('cursor.delete_word_right', p(this.delete_word_right), this);
+        register('cursor.select_all', p(this.select_all), this);
+        register('cursor.left', p(() => { this.move_primary(-1, 0, true); this._reset_secondary(); return true; }), this);
+        register('cursor.right', p(() => { this.move_primary(1, 0, true); this._reset_secondary(); return true; }), this);
+        register('cursor.up', p(() => { this.move_primary(0, -1, true); this._reset_secondary(); return true; }), this);
+        register('cursor.down', p(() => { this.move_primary(0, 1, true); this._reset_secondary(); return true; }), this);
+        register('cursor.select_left', p(() => { this.move_primary(-1, 0); return true; }), this);
+        register('cursor.select_right', p(() => { this.move_primary(1, 0); return true; }), this);
+        register('cursor.select_up', p(() => { this.move_primary(0, -1); return true; }), this);
+        register('cursor.select_down', p(() => { this.move_primary(0, 1); return true; }), this);
+        register('cursor.word_left', p(() => { this.word_primary(-1); this._reset_secondary(); return true; }), this);
+        register('cursor.word_right', p(() => { this.word_primary(1); this._reset_secondary(); return true; }), this);
+        register('cursor.select_word_left', p(() => { this.word_primary(-1); return true; }), this);
+        register('cursor.select_word_right', p(() => { this.word_primary(1); return true; }), this);
+        register('cursor.line_start', p(() => { this.primary_goto_start(); this._reset_secondary(); return true; }), this);
+        register('cursor.line_end', p(() => { this.primary_goto_end(); this._reset_secondary(); return true; }), this);
+        register('cursor.select_line_start', p(() => { this.primary_goto_start(); return true; }), this);
+        register('cursor.select_line_end', p(() => { this.primary_goto_end(); return true; }), this);
+    }
+
+    /**
+     * Proxy a method for this context, preventing validation from running while
+     * it runs.
+     */
+    private _validation_lock_proxy(x: any): any {
+        return (...args: any[]): any => {
+            this._cursors.lock_validation();
+            try {
+                return x.apply(this, args);
+            } finally {
+                this._cursors.unlock_validation();
+                setTimeout(utils.proxy(this._cursors.validate, this._cursors), 0);
+            }
+        };
     }
 }

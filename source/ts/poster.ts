@@ -54,6 +54,7 @@ class Poster extends utils.PosterClass implements iposter.IPoster {
         this.plugins = new pluginmanager.PluginManager(this);
         this.plugins.load('gutter');
         this.plugins.load('linenumbers');
+        this.plugins.load('commenthotkey');
     }
 
     public get style(): style.Style {

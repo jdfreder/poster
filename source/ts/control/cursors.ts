@@ -21,6 +21,7 @@ export class Cursors extends utils.PosterClass {
     private _clipboard: clipboard.Clipboard;
     private _history: history.IHistory;
     private _el: HTMLElement;
+    private _validate_lock: boolean = false;
     
     public constructor(el: HTMLElement, model: document_model.DocumentModel, clipboard: clipboard.Clipboard, history: history.IHistory) {
         super();
@@ -36,20 +37,22 @@ export class Cursors extends utils.PosterClass {
         this.create(undefined, false);
 
         // Register actions.
-        register('cursors._cursor_proxy', utils.proxy(this._cursor_proxy, this));
-        register('cursors.create', utils.proxy(this.create, this));
-        register('cursors.single', utils.proxy(this.single, this));
-        register('cursors.pop', utils.proxy(this.pop, this));
-        register('cursors.start_selection', utils.proxy(this.start_selection, this));
-        register('cursors.set_selection', utils.proxy(this.set_selection, this));
-        register('cursors.start_set_selection', utils.proxy(this.start_set_selection, this));
-        register('cursors.end_selection', utils.proxy(this.end_selection, this));
-        register('cursors.select_word', utils.proxy(this.select_word, this));
+        register('cursors._cursor_proxy', this._validation_lock_proxy(this._cursor_proxy));
+        register('cursors.create', this._validation_lock_proxy(this.create));
+        register('cursors.single', this._validation_lock_proxy(this.single));
+        register('cursors.pop', this._validation_lock_proxy(this.pop));
+        register('cursors.remove', this._validation_lock_proxy(this.remove));
+        register('cursors.start_new_selection', this._validation_lock_proxy(this.start_new_selection));
+        register('cursors.start_selection', this._validation_lock_proxy(this.start_selection));
+        register('cursors.set_selection', this._validation_lock_proxy(this.set_selection));
+        register('cursors.start_set_selection', this._validation_lock_proxy(this.start_set_selection));
+        register('cursors.end_selection', this._validation_lock_proxy(this.end_selection));
+        register('cursors.select_word', this._validation_lock_proxy(this.select_word));
 
         // Bind clipboard events.
-        this._clipboard.on('cut', utils.proxy(this._handle_cut, this));
-        this._clipboard.on('copy', utils.proxy(this._handle_copy, this));
-        this._clipboard.on('paste', utils.proxy(this._handle_paste, this));
+        this._clipboard.on('cut', this._validation_lock_proxy(this._handle_cut));
+        this._clipboard.on('copy', this._validation_lock_proxy(this._handle_copy));
+        this._clipboard.on('paste', this._validation_lock_proxy(this._handle_paste));
     }
 
     /**
@@ -73,7 +76,7 @@ export class Cursors extends utils.PosterClass {
         };
 
         // Create the cursor.
-        var new_cursor = new cursor.Cursor(this._model, history_proxy);
+        var new_cursor = new cursor.Cursor(this._model, history_proxy, this);
         this.cursors.push(new_cursor);
 
         // Set the initial properties of the cursor.
@@ -83,6 +86,7 @@ export class Cursors extends utils.PosterClass {
         new_cursor.on('change', () => {
             this.trigger('change', new_cursor);
             this._update_selection();
+            this.validate();
         });
         this.trigger('change', new_cursor);
 
@@ -103,35 +107,54 @@ export class Cursors extends utils.PosterClass {
      * @returns last cursor or null
      */
     public pop(): cursor.Cursor {
-        if (this.cursors.length > 1) {
+        return this.remove(this.cursors.length - 1);
+    }
 
-            // Remove the last cursor and unregister it.
-            var cursor: cursor.Cursor = this.cursors.pop();
-            cursor.unregister();
-            cursor.off('change');
+    /**
+     * Removes a cursor.
+     * @returns cursor or null
+     */
+    public remove(index: number): cursor.Cursor {
+        if (index >= this.cursors.length) return null;
 
-            // Record this action in history.
-            this._history.push_action('cursors.pop', [], 'cursors.create', [cursor.get_state()]);
+        // Remove the last cursor and unregister it.
+        var cursor: cursor.Cursor = this.cursors.splice(index, 1)[0];
+        cursor.unregister();
+        cursor.off('change');
 
-            // Alert listeners of changes.
-            this.trigger('change');
-            return cursor;
-        }
-        return null;
+        // Record this action in history.
+        this._history.push_action('cursors.remove', [index], 'cursors.create', [cursor.get_state()]);
+
+        // Alert listeners of changes.
+        this.trigger('change');
+        return cursor;
+    }
+
+    /**
+     * Creates a cursor and starts selecting text from mouse coordinates.
+     * @param e - mouse event containing the coordinates.
+     */
+    public start_new_selection(e: MouseEvent): void {
+        this.create();
+        this.start_selection(e, false);
     }
 
     /**
      * Starts selecting text from mouse coordinates.
      * @param e - mouse event containing the coordinates.
      */
-    public start_selection(e: MouseEvent): void {
+    public start_selection(e: MouseEvent, remove_others: boolean=true): void {
+        if (remove_others) {
+            this.single();
+        }
+
         var x: number = e.offsetX;
         var y: number = e.offsetY;
 
         this._selecting_text = true;
         if (this.get_row_char) {
             var location: row_renderer.ICharacterCoords = this.get_row_char(x, y);
-            this.cursors[0].set_both(location.row_index, location.char_index);
+            this.cursors[this.cursors.length - 1].set_both(location.row_index, location.char_index);
         }
     }
 
@@ -178,6 +201,129 @@ export class Cursors extends utils.PosterClass {
             var location: row_renderer.ICharacterCoords = this.get_row_char(x, y);
             this.cursors[this.cursors.length-1].select_word(location.row_index, location.char_index);
         }
+    }
+
+    /**
+     * Prevents the cursors from validating.
+     */
+    public lock_validation(): void {
+        this._validate_lock = true;
+    }
+
+    /**
+     * Allows the cursors to validate.
+     */
+    public unlock_validation(): void {
+        this._validate_lock = false;
+    }
+
+    /**
+     * Reduces overlapping cursors and validates cursor coordinates.
+     * Complexity: O(n*ceil(n/2)-(n%2-1)*n/2) ~ O(n^2)
+     */
+    public validate(): void {
+        if (this._validate_lock) return;
+        try {
+            this._validate_lock = true;
+
+            // Validate cursors
+            var i: number;
+            for (i = 0; i < this.cursors.length; i++) {
+                var changed: boolean = false;
+                var cursor: cursor.Cursor = this.cursors[i];
+                if (cursor.primary_row >= this._model._rows.length) {
+                    cursor.primary_row = Math.max(0, this._model._rows.length - 1);
+                    changed = true;
+                }
+                if (cursor.primary_char > this._model._rows[cursor.primary_row].length) {
+                    cursor.primary_char = this._model._rows[cursor.primary_row].length;
+                    changed = true;
+                }
+                if (cursor.secondary_row >= this._model._rows.length) {
+                    cursor.secondary_row = Math.max(0, this._model._rows.length - 1);
+                    changed = true;
+                }
+                if (cursor.secondary_char > this._model._rows[cursor.secondary_row].length) {
+                    cursor.secondary_char = this._model._rows[cursor.secondary_row].length;
+                    changed = true;
+                }
+                if (changed) {
+                    cursor.trigger('change');
+                }
+            }
+
+            // Check for cursor intersection
+            for (i = 0; i < this.cursors.length - 1; i++) {
+                for (var j: number = i + 1; j < this.cursors.length; j++) {
+                    var a: cursor.Cursor = this.cursors[i];
+                    var b: cursor.Cursor = this.cursors[j];
+                    
+                    // Intersection test
+                    //   as     ae  bs      be
+                    //   bs <= ae && be >= as
+                    if (b.start_row <= a.end_row && b.end_row >= a.start_row) {
+                        if (!(b.start_row === a.end_row && b.start_char > a.end_char ||
+                            b.end_row === a.start_row && b.end_char < a.start_char)) {
+                            
+                            var newstartrow: number = Math.min(a.start_row, b.start_row);
+                            var newendrow: number = Math.min(a.end_row, b.end_row);
+                            var newstartchar: number;
+                            var newendchar: number;
+                            if (a.start_row < b.start_row) {
+                                newstartchar = a.start_char;
+                            } else if (a.start_row > b.start_row) {
+                                newstartchar = b.start_char;
+                            } else {
+                                newstartchar = Math.min(a.start_char, b.start_char);
+                            }
+                            if (a.end_row < b.end_row) {
+                                newendchar = b.end_char;
+                            } else if (a.end_row > b.end_row) {
+                                newendchar = a.end_char;
+                            } else {
+                                newendchar = Math.max(a.end_char, b.end_char);
+                            }
+
+                            // Determine if the start should be primary or the
+                            // end.
+                            if ((a.primary_row === newstartrow && a.primary_char === newstartchar) ||
+                                (b.primary_row === newstartrow && b.primary_char === newstartchar)) {
+
+                                a.primary_row = newstartrow;
+                                a.primary_char = newstartchar;
+                                a.secondary_row = newendrow;
+                                a.secondary_char = newendchar;
+                            } else {
+                                a.secondary_row = newstartrow;
+                                a.secondary_char = newstartchar;
+                                a.primary_row = newendrow;
+                                a.primary_char = newendchar;
+                            }
+                            a.trigger('change');
+                            this.remove(j);
+                        }
+                    }
+                }
+            }
+        } finally {
+            this._validate_lock = false;
+        }
+    }
+
+    /**
+     * Proxy a method for this context, preventing validation from running while
+     * it runs.
+     */
+    private _validation_lock_proxy(x: any): any {
+        return (...args: any[]): any => {
+            this.lock_validation();
+            try {
+                return x.apply(this, args);
+            } finally {
+                this.unlock_validation();
+                setTimeout(utils.proxy(this.validate, this));
+            }
+        };
     }
 
     /**

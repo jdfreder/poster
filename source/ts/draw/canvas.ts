@@ -21,62 +21,47 @@ export interface IPointPair {
     y2: number;
 }
 
-export class CompositeOperationEnum {
-    public constructor(public value: string) { }
-    public toString(): string { return this.value; }
-    // Possible values.
-    static source_over = new CompositeOperationEnum('source-over');
-    static source_atop = new CompositeOperationEnum('source-atop');
-    static source_in = new CompositeOperationEnum('source-in');
-    static source_out = new CompositeOperationEnum('source-out');
-    static destination_over = new CompositeOperationEnum('destination-over');
-    static destination_atop = new CompositeOperationEnum('destination-atop');
-    static destination_in = new CompositeOperationEnum('destination-in');
-    static destination_out = new CompositeOperationEnum('destination-out');
-    static lighter = new CompositeOperationEnum('lighter');
-    static copy = new CompositeOperationEnum('copy');
-    static xor = new CompositeOperationEnum('xor');
+export enum CompositeOperationEnum {
+    source_over,
+    source_atop,
+    source_in,
+    source_out,
+    destination_over,
+    destination_atop,
+    destination_in,
+    destination_out,
+    lighter,
+    copy,
+    xor
 }
 
-export class TextAlignmentEnum {
-    public constructor(public value: string) { }
-    public toString(): string { return this.value; }
-    // Possible values.
-    static start = new TextAlignmentEnum('start');
-    static end = new TextAlignmentEnum('end');
-    static center = new TextAlignmentEnum('center');
-    static left = new TextAlignmentEnum('left');
-    static right = new TextAlignmentEnum('right');
+export enum TextAlignmentEnum {
+    start,
+    end,
+    center,
+    left,
+    right
 }
 
-export class TextBaselineEnum {
-    public constructor(public value: string) { }
-    public toString(): string { return this.value; }
-    // Possible values.
-    static alphabetic = new TextBaselineEnum('alphabetic');
-    static top = new TextBaselineEnum('top');
-    static hanging = new TextBaselineEnum('hanging');
-    static middle = new TextBaselineEnum('middle');
-    static ideographic = new TextBaselineEnum('ideographic');
-    static bottom = new TextBaselineEnum('bottom');
+export enum TextBaselineEnum {
+    alphabetic,
+    top,
+    hanging,
+    middle,
+    ideographic,
+    bottom
 }
 
-export class LineCapEnum {
-    public constructor(public value: string) { }
-    public toString(): string { return this.value; }
-    // Possible values.
-    static butt = new LineCapEnum('butt');
-    static round = new LineCapEnum('round');
-    static square = new LineCapEnum('square');
+export enum LineCapEnum {
+    butt,
+    round,
+    square
 }
 
-export class LineJoinEnum {
-    public constructor(public value: string) { }
-    public toString(): string { return this.value; }
-    // Possible values.
-    static bevel = new LineJoinEnum('bevel');
-    static round = new LineJoinEnum('round');
-    static miter = new LineJoinEnum('miter');
+export enum LineJoinEnum {
+    bevel,
+    round,
+    miter
 }
 
 export interface IDrawOptions {
@@ -586,11 +571,11 @@ export class Canvas extends utils.PosterClass {
         // Special options.
         var set_options: ICanvasOptions = {};
         set_options.globalAlpha = (options.alpha===undefined ? 1.0 : options.alpha);
-        set_options.globalCompositeOperation = (options.composite_operation || CompositeOperationEnum.source_over).toString();
-        
+        set_options.globalCompositeOperation = CompositeOperationEnum[(options.composite_operation || CompositeOperationEnum.source_over)].replace(/_/g, '-');
+
         // Line style.
-        set_options.lineCap = (options.line_cap || LineCapEnum.butt).toString();
-        set_options.lineJoin = (options.line_join || LineJoinEnum.bevel).toString();
+        set_options.lineCap = LineCapEnum[(options.line_cap || LineCapEnum.butt)];
+        set_options.lineJoin = LineJoinEnum[(options.line_join || LineJoinEnum.bevel)];
         set_options.lineWidth = options.line_width===undefined ? 1.0 : options.line_width;
         set_options.miterLimit = options.line_miter_limit===undefined ? 10 : options.line_miter_limit;
         this.context.strokeStyle = options.line_color || options.color || 'black'; // TODO: Support gradient
@@ -622,8 +607,8 @@ export class Canvas extends utils.PosterClass {
         set_options.font = font;
 
         // Text style.
-        set_options.textAlign = (options.text_align || TextAlignmentEnum.left).toString();
-        set_options.textBaseline = (options.text_baseline || TextBaselineEnum.top).toString();
+        set_options.textAlign = TextAlignmentEnum[(options.text_align || TextAlignmentEnum.left)];
+        set_options.textBaseline = TextBaselineEnum[(options.text_baseline || TextBaselineEnum.top)];
 
         // TODO: Support shadows.
         
