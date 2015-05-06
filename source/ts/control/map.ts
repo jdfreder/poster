@@ -39,10 +39,11 @@ export class Map extends utils.PosterClass {
         }
 
         if (tag) {
-            if (Map._registry_tags[tag] === undefined) {
-                Map._registry_tags[tag] = [];
+            var tag_hash: string = utils.hash(tag);
+            if (Map._registry_tags[tag_hash] === undefined) {
+                Map._registry_tags[tag_hash] = [];
             }
-            Map._registry_tags[tag].push({name: name, f: f});
+            Map._registry_tags[tag_hash].push({ name: name, f: f });
         }
     }
     /**
@@ -88,11 +89,12 @@ export class Map extends utils.PosterClass {
      * @return true if the tag was found and deleted.
      */
     public static unregister_by_tag = function(tag: any): boolean {
-        if (Map._registry_tags[tag]) {
-            Map._registry_tags[tag].forEach(registration => {
+        var tag_hash: string = utils.hash(tag);
+        if (Map._registry_tags[tag_hash]) {
+            Map._registry_tags[tag_hash].forEach(registration => {
                 Map.unregister(registration.name, registration.f);
             });
-            delete Map._registry_tags[tag];
+            delete Map._registry_tags[tag_hash];
             return true;
         }
     }

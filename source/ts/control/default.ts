@@ -15,7 +15,10 @@ if (navigator.appVersion.indexOf("Mac") != -1) {
         'shift-meta-rightarrow' : 'cursor.select_line_end',
         'meta-a' : 'cursor.select_all',
         'meta-z' : 'history.undo',
-        'meta-y' : 'history.redo',
+        'meta-y': 'history.redo',
+        'meta-mouse0-down': 'cursors.start_new_selection',
+        'meta-mouse-move': 'cursors.set_selection',
+        'meta-mouse0-up': 'cursors.end_selection'
     };
 
 // Non OSX bindings
@@ -33,7 +36,10 @@ if (navigator.appVersion.indexOf("Mac") != -1) {
         'shift-end' : 'cursor.select_line_end',
         'ctrl-a' : 'cursor.select_all',
         'ctrl-z' : 'history.undo',
-        'ctrl-y' : 'history.redo',
+        'ctrl-y': 'history.redo',
+        'ctrl-mouse0-down': 'cursors.start_new_selection',
+        'ctrl-mouse-move': 'cursors.set_selection',
+        'ctrl-mouse0-up': 'cursors.end_selection'
     };
 
 }

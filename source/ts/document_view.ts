@@ -46,6 +46,8 @@ export class DocumentView extends batch.BatchRenderer {
         
         // Make sure changes made to the cursor(s) are within the visible region.
         cursors_model.on('change', cursor => {
+            if (cursor === undefined) return;
+            
             var row_index: number = cursor.primary_row;
             var char_index: number = cursor.primary_char;
 

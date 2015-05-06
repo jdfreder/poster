@@ -385,9 +385,9 @@ var _hashed_objects: number = 0;
  */
 export var hash = function(x: any): string {
     if (x.__hash__ === undefined) {
-        x.__hash__ = _hashed_objects++;
+        x.__hash__ = String(_hashed_objects++);
     }
-    return x.__hash__;
+    return <string>x.__hash__;
 };
 
 /**
